@@ -208,11 +208,9 @@ set(Launcher_UPDATER_GITHUB_REPO "https://github.com/ElPibeCapo/BetelineyLaunche
 # Name to help updater identify valid artifacts
 set(Launcher_BUILD_ARTIFACT "" CACHE STRING "Artifact name to help the updater identify valid artifacts.")
 
-# El servidor de metadatos — fork de https://github.com/PrismLauncher/meta
-# Para self-hosting: fork ese repo, activa GitHub Pages, y cambia la URL a:
-# https://ElPibeCapo.github.io/meta/v1/
-# TODO: configurar propio servidor de meta
-set(Launcher_META_URL "https://meta.prismlauncher.org/v1/" CACHE STRING "URL to fetch Launcher's meta files from.")
+# El servidor de metadatos — fork propio en https://github.com/ElPibeCapo/meta
+# GitHub Actions genera los JSON cada 6hs y los sirve via GitHub Pages
+set(Launcher_META_URL "https://ElPibeCapo.github.io/meta/v1/" CACHE STRING "URL del servidor de metadatos de BetelineyLauncher")
 
 # Imgur API Client ID
 # TODO: registrar en https://api.imgur.com/oauth2/addclient y reemplazar con tu propio ID
