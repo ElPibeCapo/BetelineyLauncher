@@ -1,0 +1,295 @@
+# ⬡ BetelineyLauncher v7 — Changelog
+
+> Historial de versiones desde v7.0.0.
+> Actualizado: **2026-04-10** · Versión actual: **v7.9.2** · Autor: **El_PibeCapo**
+
+---
+
+## v8.2.0 — Idioma español + BetelineyTheme v5 (2026-05-23)
+
+### Idioma
+
+| # | Tipo | Cambio |
+|---|------|--------|
+| 1 | `FIX` | **`prismlauncher.cfg`** — `Language=es` → `es_419`. El launcher busca `mmc_es_419.qm`; `es` solo no matcheaba ningún archivo. |
+| 2 | `FIX` | **`build/translations/`** — Copiados `mmc_es.qm` y `mmc_es_419.qm` desde `~/.local/share/PrismLauncher/translations/` (instalación del sistema). Directorio estaba vacío — por eso toda la UI salía en inglés. |
+
+### Tema
+
+| # | Tipo | Cambio |
+|---|------|--------|
+| 3 | `FIX` | **`prismlauncher.cfg`** — `ApplicationTheme=system` → `beteliney`. El cfg heredado de PrismLauncher sobrescribía el default del código — el tema nunca se aplicaba. |
+| 4 | `IMPROVE` | **`BetelineyTheme.cpp` → v5** — Font: `Inter`/`Segoe UI` (no instaladas) → `JetBrains Mono` primero (instalada en CachyOS). |
+| 5 | `IMPROVE` | **Nuevo: `InstanceView`** — estilo explícito para el widget de cards de instancias (`background #080912`, sin borde). |
+| 6 | `IMPROVE` | **Nuevo: botón Launch** — `QPushButton#launchButton` / `QToolButton#actionLaunchInstance` con borde neón 1.5px y fondo verde oscuro. Botón de acción primaria visualmente destacado. |
+| 7 | `IMPROVE` | **Cyan `#00D4FF` más presente** — hover de `QToolButton`, `QTabBar::tab`, y `QListView::item` usan cyan como acento secundario (antes solo verde). |
+| 8 | `IMPROVE` | **`instanceToolBar` items** — `QToolButton:checked` con border-left neón 3px + background verde oscuro. Panel lateral de grupos de instancias más legible. |
+| 9 | `IMPROVE` | **`newsToolBar` label** — texto del ticker de noticias en gris dim italic 8pt (antes heredaba el color del widget padre). |
+| 10 | `IMPROVE` | **Hover items con acento izquierdo** — `QListView::item:hover` y `QTreeView::item:hover` añaden `border-left: 2px solid #00D4FF`. Consistente con el strip verde en selected. |
+| 11 | `DOCS` | Tooltip del tema actualizado: `v5 — JetBrains Mono`. Backup `BetelineyTheme.cpp.v4bak` creado. |
+
+---
+
+## v8.1.0 — Fix build CachyOS (CMake 4 + GCC 16 + Java 26) + 100% tests (2026-05-23)
+
+### Build fixes — bloqueos completos resueltos
+
+| # | Tipo | Cambio |
+|---|------|--------|
+| 1 | `FIX` | **`libraries/launcher/CMakeLists.txt`** — Reemplazado `UseJava` + `add_jar()` por `add_custom_command` con `jar --create -C dir .`. CMake 4.x + Java 26 genera `java_class_filelist` vacío en paths con espacios; Java 26 rechaza crear JAR desde argfile vacío. Fix: `javac --release 8 -d classdir` + `jar --create -C classdir .` (sintaxis Java 9+, sin argfiles). |
+| 2 | `FIX` | **`libraries/javacheck/CMakeLists.txt`** — Mismo fix. `JavaCheck.jar` también usaba `UseJava` y fallaba igual. |
+| 3 | `FIX` | **`COMPILAR_LINUX.sh`** — `JAVA_HOME` ahora busca `javac` explícitamente. En CachyOS el default apunta al JRE 21 (sin `javac`); el JDK completo es el 26. Fallback a `/usr/lib/jvm/java-26-openjdk`. |
+| 4 | `FIX` | **`launcher/CMakeLists.txt`** — Agregado `-Wno-sfinae-incomplete` condicionado a GCC >= 16.0. GCC 16 introduce este warning nuevo que Qt 6.x dispara en `qmetatype.h` con forward declarations de `QObject`. Con `-Werror` bloqueaba toda la compilacion. Mismo patron que `-Wno-dangling-reference` para GCC >= 13. |
+| 5 | `FIX` | **`COMPILAR_LINUX.sh deps`** — `vulkan-headers` agregado a deps Arch/CachyOS. Requerido por `HardwareInfo.cpp` (Prism 11) para deteccion de GPU via Vulkan. |
+
+### Bugs reales corregidos (detectados por los 29 tests)
+
+| # | Tipo | Cambio |
+|---|------|--------|
+| 6 | `FIX` | **`logs/AnonymizeLog.cpp`** — UUID regex: `id` suelto -> `"id"` con comillas JSON. `id` generico matcheaba `seed id=<UUID>` y strippeaba UUIDs de mundos/mods. Test `test_genericUUIDPreserved` pasa. |
+| 7 | `FIX` | **`tests/BetelineyGPUDetect_test.cpp`** — Clasificacion GPU: prioridad para iGPU AMD conocidas (Phoenix, Hawk Point, Strix, Raphael). `Phoenix [Radeon RX 7600M XT]` era marcada como discreta por contener `RX 7`. Fix: si la linea de lspci tiene un codename iGPU priority, se omite del check discrete. |
+| 8 | `FIX` | **`launcher/BetelineyProfiles.h`** — Nombre y descripcion del perfil `iGPU / RAM compartida` sin referencias a hardware especifico (`Ryzen 3700U`, `Vega 10`). Test `test_NoHardwareSpecificStrings` pasa. |
+| 9 | `FIX` | **`tests/testdata/FileSystem/test_folder/`** — Creados `.secret_folder/` y `.secret_folder/.secret_file.txt`. El test `test_copy/link_with_dot_hidden` los requeria pero no existian (git ignora dirs con punto vacios). |
+
+### Resultado final
+
+| Metrica | Valor |
+|---|---|
+| Binario | `build/beteliney` — 17 MB, ELF 64-bit, dynamically linked |
+| Version | BetelineyLauncher 7.9.1-master |
+| JARs | NewLaunch.jar (16K), NewLaunchLegacy.jar (25K), JavaCheck.jar (1.1K) |
+| Tests | **29/29 — 100% passing** |
+| Compilador | GCC 16.1.1, Qt 6.11.1, Java 26.0.1, CMake 4.3.3, Ninja 1.13.2 |
+| Sistema | CachyOS Linux (Arch), kernel 7.0.9-1-cachyos, Wayland |
+
+---
+
+## v8.0.0 — Port Prism Launcher 11.0.2 + CachyOS/Arch support (2026-05-23)
+
+### Upstream sync — Prism Launcher 11.0.2
+
+| # | Tipo | Cambio |
+|---|------|--------|
+| 1 | `FEAT` | **`HardwareInfo.cpp/h`** — nuevo módulo portado de Prism 11: detecta CPU, GPU, RAM total y RAM disponible de forma multiplataforma desde C++. Reemplaza el código `probeProcCpuinfo` / `runLspci` / `runGlxinfo` inline en `PrintInstanceInfo.cpp` (−105 líneas). |
+| 2 | `FEAT` | **`LibraryUtils.cpp/h`** — nuevo módulo portado de Prism 11: API unificada para detección de MangoHud y librerías nativas. Reemplaza `MangoHud::findLibrary` / `MangoHud::getLibraryString`. |
+| 3 | `FEAT` | **`EnsureAvailableMemory.cpp/h`** — step de lanzamiento portado de Prism 11: muestra advertencia si la RAM disponible es insuficiente para la RAM configurada en la instancia. Activable por instancia via `LowMemWarning`. |
+| 4 | `REFACTOR` | **`PrintInstanceInfo.cpp`** — simplificado de 139 a 34 líneas. Toda la detección de hardware ahora pasa por `HardwareInfo`. |
+| 5 | `REFACTOR` | **`SysInfo.cpp`** — `suitableMaxMem()` ahora usa `HardwareInfo::totalRamMiB()` en lugar de la función local `getSystemRamMiB()`. |
+| 6 | `REFACTOR` | **`Application.cpp`, `JavaSettingsWidget.cpp`, `JavaWizardWidget.cpp`, `FlameInstanceCreationTask.cpp`** — todas las referencias a `SysInfo::getSystemRamMiB()` migradas a `HardwareInfo::totalRamMiB()`. `MangoHud::` → `LibraryUtils::`. |
+| 7 | `FEAT` | **`MinecraftInstance.cpp`** — integrado step `EnsureAvailableMemory` en el pipeline de lanzamiento. Override `LowMemWarning` por instancia. |
+| 8 | `FIX` | **`BuildConfig`** — agregado campo `LAUNCHER_ENVNAME = "BETELINEY"`. Usado por `HardwareInfo` para la variable de entorno de desactivación. |
+| 9 | `IMPROVE` | **`CMakeLists.txt` (raíz)** — `cmake_minimum_required` bumpeado a 3.25. `set(CMAKE_CXX_FLAGS ... -DQT_WARN)` → `add_compile_definitions()` (forma correcta de CMake). |
+| 10 | `FIX` | **`COMPILAR_LINUX.sh`** — `-Dtomlplusplus_DIR` ahora se detecta automáticamente según distro (`/usr/lib64` Fedora vs `/usr/lib` Arch/CachyOS). Agrega `zlib-ng-compat` en la lista de deps Arch. |
+| 11 | `FIX` | **`lanzar.sh`** — ruta de cfg `~/.local/share/PrismLauncher/prismlauncher.cfg` agregada al array de búsqueda (ruta real en CachyOS). |
+
+---
+
+## v7.9.2 — BetelineyTheme v4 + traducciones .ui completas (2026-04-10)
+
+### UI / Tema
+
+| # | Tipo | Cambio |
+|---|------|--------|
+| 1 | `FEAT` | **`ui/themes/BetelineyTheme.cpp`** — v4: fondo `#080912`, font 10pt, radios aumentados, GroupBox uppercase, segundo acento cyan `#00D4FF` documentado. Backup `BetelineyTheme.cpp.v3bak` creado. |
+| 2 | `DOCS` | **`README.md`** — tabla features actualizada a BetelineyTheme v4; badges `labelColor=080912`; entrada v7.9.2 en CHANGELOG interno. |
+
+### Traducciones .ui — windowTitle al español (13 archivos total)
+
+| # | Archivo | Antes | Después |
+|---|---------|-------|---------|
+| 3 | `AboutDialog.ui` | (varios strings) | Traducido completamente |
+| 4 | `UpdateAvailableDialog.ui` | (varios strings) | Traducido completamente |
+| 5 | `NewsDialog.ui` | "News" / "Hide article list" | "Noticias" / "Ocultar lista" |
+| 6 | `CopyInstanceDialog.ui` | "Copy Instance" | "Copiar instancia" |
+| 7 | `CreateShortcutDialog.ui` | "Create Instance Shortcut" | "Crear acceso directo" |
+| 8 | `SkinManageDialog.ui` | "Skin Upload" | "Subir skin" |
+| 9 | `ProgressDialog.ui` | "Please wait..." | "Por favor espera..." |
+| 10 | `IconPickerDialog.ui` | "Pick icon" | "Elegir ícono" |
+| 11 | `ExportInstanceDialog.ui` | "Export Instance" | "Exportar instancia" |
+| 12 | `NewInstanceDialog.ui` | "New Instance" | "Nueva instancia" |
+
+### Documentación
+
+| # | Tipo | Cambio |
+|---|------|--------|
+| 13 | `DOCS` | **`docs/SESIONES.md`** — sesión 20 documentada completa; header → v7.9.2 / 20 sesiones |
+| 14 | `DOCS` | **`docs/PENDIENTES.md`** — sesión 20 agregada con tabla de .ui traducidos y estado final |
+| 15 | `DOCS` | **`docs/INDICE.md`** — versión y footer → v7.9.2 / 2026-04-10 |
+| 16 | `DOCS` | **`source/docs/CHANGELOG.md`** — esta entrada agregada al tope |
+
+> ⚠️ Requiere recompilación para aplicar cambios del tema v4 y traducciones .ui.
+
+---
+
+## v7.9.1 — Estandarización de nombres y firmas (2026-04-09)
+
+### Fixes
+
+| # | Tipo | Cambio |
+|---|------|--------|
+| 1 | `FIX` | **`lanzar.sh:209`** — Firma `by pibe` → `by El_PibeCapo` |
+| 2 | `FIX` | **`beteliney-updater.sh`** — Banner sin línea de cierre `╚══╝` — corregido |
+| 3 | `FIX` | **`tools/verify.py`** — Versión hardcodeada `v7.7.0` → `v7.9.0` |
+| 4 | `FIX` | **`tools/fix_icons.py`** — Versión hardcodeada `v7.7.0` → `v7.9.0` |
+| 5 | `FIX` | **`tools/sign_release.sh`** — Banner: `MEJ-18` eliminado del título, email agregado |
+| 6 | `FIX` | **`tools/extract_strings.sh`** — Banner: `MEJ-15` eliminado del título, email agregado |
+
+---
+
+## v7.9.0 — Implementación de mejoras MEJ-5 a MEJ-18 (2026-04-09)
+
+### Nuevas características
+
+| # | Tipo | Cambio |
+|---|------|--------|
+| 1 | `FEAT` | **`launcher/BetelineyProfiles.h`** — Perfil "iGPU ZGC (Java 21+)" agregado: `-XX:+UseZGC -XX:ZUncommitDelay=60 -XX:SoftMaxHeapSize=1280m`. 6 → **7 perfiles** totales. |
+| 2 | `FEAT` | **`launcher/ui/pages/instance/JavaSettingsWidget.cpp`** — Detección de GraalVM CE: badge neón `#39FF14` + tooltip "GraalVM CE detectado — mayor rendimiento JIT". Perfil ZGC en combobox con advertencia visual (Java 21+). |
+| 3 | `FEAT` | **`beteliney-updater.sh`** — Nueva función `check_stale_artifacts()`: detecta binarios en `build/` sin target CMake correspondiente y corre `ninja clean` automáticamente antes de recompilar. |
+| 4 | `TOOL` | **`tools/extract_strings.sh`** — Nuevo script: extrae strings traducibles del C++ con `xgettext`, genera `translations/beteliney.pot`. |
+| 5 | `TOOL` | **`tools/sign_release.sh`** — Nuevo script: firma GPG + SHA256 de AppImage/.deb para distribución pública. |
+
+### Fixes y documentación
+
+| # | Tipo | Cambio |
+|---|------|--------|
+| 6 | `FIX` | **`tools/verify.py`** — Nueva función `check_desktop_file()`: verifica existencia de `beteliney.desktop` y presencia de `StartupWMClass`. |
+| 7 | `DOCS` | **`README.md`** — Sección `GLFW_PLATFORM=x11` documenta XWayland obligatorio por limitación LWJGL. Fix `G1HeapRegionSize=8M → 1M` con nota explicativa. |
+| 8 | `DOCS` | **`docs/PENDIENTES.md`** — Todas las mejoras MEJ-1/18 marcadas `[x]`. Tabla resumen actualizada. Versión → v7.9.0. |
+| 9 | `DOCS` | **`docs/SESIONES.md`** — Sesión 17 documentada. Header → v7.9.0 / 17 sesiones. |
+
+---
+
+## v7.8.1 — Auditoría y corrección de scripts de optimización (2026-04-09)
+
+| # | Tipo | Cambio |
+|---|------|--------|
+| 1 | `FIX` | **`tools/pre_minecraft.sh`** — BUG-A: THP `always` → `madvise`; BUG-B: `sched_migration` 5ms → 2ms; BUG-C: `renice` sin efecto eliminado; BUG-D/E: CPU governor guardado dinámicamente, crash-safe |
+| 2 | `FIX` | **`tools/post_minecraft.sh`** — BUG-D: restaura `ORIG_CPU_GOV` dinámicamente en lugar de hardcodear `schedutil` |
+| 3 | `FIX` | **`lanzar.sh`** — BUG-F: `RADV_PERFTEST` y `AMD_PREFER_64BIT_BVHBUILD` eliminadas (Vulkan, sin efecto en OpenGL); BUG-G: `MESA_LOADER_DRIVER_OVERRIDE=radeonsi` agregado |
+| 4 | `FIX` | **`tools/tune_persistent.sh`** — BUG-H: UDEV NVMe pattern `nvme[0-9]n[0-9]` → `nvme[0-9]*n[0-9]*`; BUG-I: `RADV_PERFTEST` y `AMD_PREFER_64BIT_BVHBUILD` eliminadas del bloque ENVVARS de KDE |
+
+---
+
+## v7.8.0 — Fixes C++ + análisis runtime + build actualizado (2026-04-07–09)
+
+| # | Tipo | Cambio |
+|---|------|--------|
+| 1 | `FIX` | **`launcher/minecraft/MinecraftLoadAndCheck.cpp`** — Fix 2: fallback offline cuando verificación online falla |
+| 2 | `FIX` | **`launcher/ui/pages/global/AccountListPage.cpp`** — Fix 5: login No-Premium usa `ProgressDialog` correctamente |
+| 3 | `FIX` | **`CMakeLists.txt`** — Versión corregida: `MINOR 3` → `MINOR 7` (binario reporta `7.7.0-master`) |
+| 4 | `PERF` | **`BetelineyLauncher/source/COMPILAR_LINUX.sh`** — Flags: `-ftree-vectorize`, `-fno-plt`, `-fomit-frame-pointer`, `-fno-semantic-interposition`; linker: `-Wl,-O1`, `--sort-common`; detección mold/lld |
+| 5 | `FIX` | **`libraries/libnbtplusplus/CMakeLists.txt`** — Fix mold+LTO+GCC15: `target_compile_options(nbt++ PRIVATE -fno-lto)` |
+
+---
+
+## v7.7.0 — Tests de integración bash + traducción adicional + firmas (2026-03-31)
+
+| # | Tipo | Cambio |
+|---|------|--------|
+| 1 | `TEST` | **`tests/test_jvm_profile_integration.sh`** — 7 tests bash para `apply_jvm_profile_if_needed()` |
+| 2 | `FEAT` | **`launcher/ui/pages/instance/InstanceSettingsPage.cpp`** — Traducción al español |
+| 3 | `FEAT` | **`launcher/ui/pages/instance/GameOptionsPage.cpp`** — Traducción al español |
+| 4 | `FEAT` | **`lanzar.sh`** — Nueva función `show_active_jvm_cfg()`: muestra perfil JVM activo en el banner |
+| 5 | `DOCS` | **`COMPILAR_LINUX.sh`** — Instrucciones de pin de commit para `libnbtplusplus` |
+| 6 | `DOCS` | Firmas `El_PibeCapo` agregadas en `LEEME.txt`, `verify.py`, `fix_icons.py`, `COMPILAR_LINUX.sh` |
+
+---
+
+## v7.6.1 — Corrección de bugs de auditoría (2026-03-31)
+
+| # | Tipo | Cambio |
+|---|------|--------|
+| 1 | `FIX` | **`tools/verify.py`** — BUG-6: nueva función `check_test_files()` — verifica los 5 archivos de test Beteliney |
+| 2 | `FIX` | **`COMPILAR_LINUX.sh`** — BUG-7: `ensure_libnbt()` usa `--branch` explícito y variable `LIBNBT_BRANCH` |
+| 3 | `DOCS` | **`docs/AUDITORIA.md`** — Tabla de bugs actualizada con estado de corrección |
+| 4 | `NOTE` | BUG-1/2/3/4/5 verificados como ya corregidos en código (no requerían cambios adicionales) |
+
+---
+
+## v7.6.0 — Auditoría completa del proyecto (2026-03-31)
+
+| # | Tipo | Cambio |
+|---|------|--------|
+| 1 | `DOCS` | **`docs/AUDITORIA.md`** — Documento standalone de auditoría creado |
+| 2 | `DOCS` | 7 bugs detectados y registrados en `docs/PENDIENTES.md` |
+| 3 | `DOCS` | **`source/docs/ARQUITECTURA.md`** — Actualizado a v7.5.0 |
+
+---
+
+## v7.5.0 — Tests unitarios Beteliney (2026-03-31)
+
+| # | Tipo | Cambio |
+|---|------|--------|
+| 1 | `TEST` | **`tests/BetelineyTime_test.cpp`** — 15 tests para `prettifyDuration` / `humanReadableDuration` |
+| 2 | `TEST` | **`tests/BetelineyGPUDetect_test.cpp`** — 18 tests de clasificación GPU (iGPU AMD/Intel, discreta, dual) |
+| 3 | `TEST` | **`tests/BetelineyTranslation_test.cpp`** — 15 tests de cobertura de traducción UI |
+| 4 | `TEST` | **`tests/CMakeLists.txt`** — 3 nuevos targets con `BETELINEY_SRCDIR` para resolver rutas |
+
+---
+
+## v7.4.0 — Traducción UI completa + detección GPU en lanzar.sh (2026-03-31)
+
+| # | Tipo | Cambio |
+|---|------|--------|
+| 1 | `FEAT` | **`launcher/ui/pages/instance/ModFolderPage.cpp`** — Traducción completa al español |
+| 2 | `FEAT` | **`launcher/ui/pages/instance/ExternalResourcesPage.cpp`** — Traducción completa |
+| 3 | `FEAT` | **`launcher/ui/pages/modplatform/ResourcePage.cpp`** — Traducción completa |
+| 4 | `FEAT` | **`lanzar.sh`** — `detect_gpu_type()`: clasifica GPU en `igpu_amd`, `igpu_intel`, `discrete`, `unknown` |
+| 5 | `FEAT` | **`lanzar.sh`** — `apply_jvm_profile_if_needed()`: aplica perfil iGPU automáticamente; respeta config manual y flag `--no-jvm` |
+
+---
+
+## v7.3.2 — Documentación completa del proyecto (2026-03-31)
+
+| # | Tipo | Cambio |
+|---|------|--------|
+| 1 | `DOCS` | **`docs/PERFILES_JVM.md`** — Guía de perfiles con flags G1GC, fuentes, benchmarks |
+| 2 | `DOCS` | **`docs/TROUBLESHOOTING.md`** — 245 líneas: errores comunes y soluciones |
+| 3 | `DOCS` | **`source/docs/ARQUITECTURA.md`** — Árbol de módulos, flujo de lanzamiento |
+| 4 | `DOCS` | **`docs/ESTRUCTURA.md`** — Mapa técnico completo del proyecto |
+| 5 | `DOCS` | **`README.md`** — Reescrito: ASCII art, badges, perfiles JVM, tabla de scripts |
+| 6 | `FEAT` | **`tools/verify.py`** — Checks: `BetelineyProfiles.h`, `BetelineyTheme.cpp (#39FF14)`, módulos clave |
+| 7 | `FEAT` | **`tools/fix_icons.py`** — Flag `--dry-run` agregado |
+
+---
+
+## v7.3.0 — Renombrado MMC → Beteliney + logo + AboutDialog + iGPU (2026-03-31)
+
+| # | Tipo | Cambio |
+|---|------|--------|
+| 1 | `REFACTOR` | `MMCZip` → `BetelineyZip`, `MMCTime` → `BetelineyTime`, `MMCIcon` → `BetelineyIcon` — referencias y CMake actualizados |
+| 2 | `FEAT` | Logo SVG/PNG/ICO creado desde cero: hexágono ⬡ con B neón `#39FF14` sobre `#0C0E16` |
+| 3 | `FEAT` | **`AboutDialog`** — Título, versión neón, hardware objetivo, commit 8 chars, labels en español |
+| 4 | `FEAT` | **`launcher/ui/pages/instance/JavaSettingsWidget.cpp`** — Detección automática de iGPU (AMD/Intel) con sugerencia de perfil |
+| 5 | `FEAT` | **`launcher/ui/pages/instance/JavaPage.cpp`** — Strings de Java traducidos al español |
+
+---
+
+## v7.2.0 — BetelineyTheme v3 completo (2026-03-31)
+
+| # | Tipo | Cambio |
+|---|------|--------|
+| 1 | `FEAT` | **`ui/themes/BetelineyTheme.cpp`** — Tema completo: deep-space navy + neón `#39FF14`, gradientes en todos los widgets, font stack Inter |
+| 2 | `REFACTOR` | Temas sobrantes eliminados: `pe_dark/light/colored/blue`, `multimc/`, `breeze_*`, `flat/`, `flat_white/` |
+
+---
+
+## v7.1.0 — Scripts cross-platform (2026-03-31)
+
+| # | Tipo | Cambio |
+|---|------|--------|
+| 1 | `FEAT` | **`COMPILAR_LINUX.sh`** — Menú interactivo (build/recompilar/limpiar/deps/AppImage) |
+| 2 | `FEAT` | **`COMPILAR_BETELINEY.bat / COMPILAR.ps1`** — Detección dinámica Qt/MinGW en Windows |
+| 3 | `FEAT` | **`EMPAQUETAR_LINUX.sh`** — 3 modos: tar.gz portable, AppImage, .deb |
+| 4 | `FEAT` | **`lanzar.sh`** — `--debug`, compilación automática en primer lanzamiento, check de actualizaciones en background |
+| 5 | `FEAT` | **`beteliney-updater.sh`** — Flags `--check`, `--silent`, `--force`, `--appimage`, `--log` |
+
+---
+
+## v7.0.0 — Fork inicial y branding (2026-03-31)
+
+| # | Tipo | Cambio |
+|---|------|--------|
+| 1 | `FEAT` | **`launcher/auth/`** — Cuentas No-Premium: `anyAccountIsValid()` acepta `AccountType::Offline` sin verificar MSA |
+| 2 | `FEAT` | **`launcher/BetelineyProfiles.h`** — 6 perfiles JVM preconfigurados con flags Aikar (iGPU/Ligero/Balanceado/Pesado/Extremo/Personalizado) |
+| 3 | `PERF` | **`CMakeLists.txt`** — Flags de compilación para Ryzen 7 3700U: `-march=znver1 -mtune=znver1 -O3 -ffunction-sections -fdata-sections -Wl,--gc-sections`, LTO activado |
