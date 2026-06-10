@@ -1,0 +1,187 @@
+name: Build BetelineyLauncher
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*.*.*' ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  # ─────────────────────────────────────────
+  #  LINUX
+  # ─────────────────────────────────────────
+  build-linux:
+    name: Linux (Ubuntu 22.04)
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar dependencias
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y \
+            cmake ninja-build extra-cmake-modules \
+            libqt6core5compat6-dev qt6-base-dev qt6-base-private-dev \
+            libqt6networkauth6-dev libqt6svg6-dev \
+            libarchive-dev libcmark-dev libqrencode-dev \
+            zlib1g-dev libtomlplusplus-dev \
+            default-jdk-headless appstream \
+            libgl-dev libgles-dev
+
+      - name: Configurar CMake
+        run: |
+          cmake -B build -S . \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=/usr \
+            -DLauncher_QT_VERSION_MAJOR=6 \
+            -DENABLE_LTO=ON \
+            -G Ninja
+
+      - name: Compilar
+        run: ninja -C build -j$(nproc)
+
+      - name: Empaquetar tar.gz
+        run: |
+          VERSION=$(grep "Launcher_VERSION_NAME " CMakeLists.txt | head -1 | grep -oP '[\d.]+')
+          ARCH=$(uname -m)
+          PKG_NAME="BetelineyLauncher-${VERSION}-Linux-${ARCH}"
+          STAGE="dist/stage/${PKG_NAME}"
+
+          mkdir -p "$STAGE/jars" "$STAGE/lib"
+
+          cp build/beteliney "$STAGE/"
+          cp -r build/libraries/launcher/share/*/     "$STAGE/jars/" 2>/dev/null || true
+          cp -r build/libraries/javacheck/share/*/    "$STAGE/jars/" 2>/dev/null || true
+          find build/jars -name "*.jar" -exec cp {} "$STAGE/jars/" \; 2>/dev/null || true
+
+          # run.sh
+          cat > "$STAGE/run.sh" << 'EOF'
+          #!/bin/bash
+          DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+          export LD_LIBRARY_PATH="$DIR/lib:$LD_LIBRARY_PATH"
+          exec "$DIR/beteliney" "$@"
+          EOF
+          chmod +x "$STAGE/run.sh" "$STAGE/beteliney"
+
+          tar -czf "dist/${PKG_NAME}.tar.gz" -C dist/stage "${PKG_NAME}"
+          echo "PKG_NAME=${PKG_NAME}" >> $GITHUB_ENV
+          echo "TAR_PATH=dist/${PKG_NAME}.tar.gz" >> $GITHUB_ENV
+
+      - name: Subir artefacto Linux
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-build
+          path: ${{ env.TAR_PATH }}
+
+  # ─────────────────────────────────────────
+  #  WINDOWS
+  # ─────────────────────────────────────────
+  build-windows:
+    name: Windows (Server 2022, MSVC)
+    runs-on: windows-2022
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.9.3'
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_msvc2022_64'
+          modules: 'qtnetworkauth'
+          cache: true
+
+      - name: Instalar dependencias con vcpkg
+        run: |
+          vcpkg install --triplet x64-windows `
+            libarchive[bzip2,lz4,lzma,lzo,zstd] `
+            cmark libqrencode zlib tomlplusplus libxml2 `
+            --recurse
+        env:
+          VCPKG_DEFAULT_TRIPLET: x64-windows
+
+      - name: Configurar CMake
+        run: |
+          cmake -B build -S . `
+            -DCMAKE_BUILD_TYPE=Release `
+            -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" `
+            -DVCPKG_TARGET_TRIPLET=x64-windows `
+            -DLauncher_QT_VERSION_MAJOR=6 `
+            -DENABLE_LTO=OFF `
+            -G "Visual Studio 17 2022" -A x64
+
+      - name: Compilar
+        run: cmake --build build --config Release --parallel
+
+      - name: Empaquetar ZIP
+        run: |
+          $VERSION = (Select-String "Launcher_VERSION_NAME " CMakeLists.txt | Select-Object -First 1).Line -replace '.*"([\d.]+)".*','$1'
+          $PKG = "BetelineyLauncher-${VERSION}-Windows-x64"
+          New-Item -ItemType Directory -Path "dist\$PKG\platforms","dist\$PKG\tls","dist\$PKG\imageformats","dist\$PKG\iconengines","dist\$PKG\styles","dist\$PKG\jars" -Force
+
+          Copy-Item "build\Release\beteliney.exe" "dist\$PKG\"
+          Copy-Item "build\libraries\launcher\share\*\*.jar" "dist\$PKG\jars\" -ErrorAction SilentlyContinue
+          Copy-Item "build\libraries\javacheck\share\*\*.jar" "dist\$PKG\jars\" -ErrorAction SilentlyContinue
+
+          windeployqt --release --no-translations `
+            --dir "dist\$PKG" `
+            "build\Release\beteliney.exe"
+
+          Compress-Archive -Path "dist\$PKG\*" -DestinationPath "dist\${PKG}.zip"
+          echo "PKG_NAME=$PKG" >> $env:GITHUB_ENV
+          echo "ZIP_PATH=dist\${PKG}.zip" >> $env:GITHUB_ENV
+
+      - name: Subir artefacto Windows
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-build
+          path: ${{ env.ZIP_PATH }}
+
+  # ─────────────────────────────────────────
+  #  RELEASE — solo cuando se pushea un tag v*
+  # ─────────────────────────────────────────
+  release:
+    name: Crear Release
+    needs: [ build-linux, build-windows ]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Descargar artefacto Linux
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-build
+          path: artifacts/
+
+      - name: Descargar artefacto Windows
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-build
+          path: artifacts/
+
+      - name: Crear Release en GitHub
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "BetelineyLauncher ${{ github.ref_name }}"
+          body: |
+            ## BetelineyLauncher ${{ github.ref_name }}
+
+            ### Descargas
+            - **Windows**: descarga el `.zip`, extrae y ejecuta `beteliney.exe`
+            - **Linux**: descarga el `.tar.gz`, extrae y ejecuta `bash run.sh`
+
+            ### Requisitos
+            - Windows 10/11 (64-bit)
+            - Linux 64-bit con glibc 2.17+
+            - Java (el launcher lo gestiona automáticamente)
+          files: artifacts/*
+          draft: false
+          prerelease: false
