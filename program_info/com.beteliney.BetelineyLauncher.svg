@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg version="1.1" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="hexBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#151B28"/>
+      <stop offset="100%" stop-color="#080B12"/>
+    </linearGradient>
+    <linearGradient id="bFill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#5CFF22"/>
+      <stop offset="100%" stop-color="#1EBB00"/>
+    </linearGradient>
+    <filter id="glowB" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="8" result="blur"/>
+      <feFlood flood-color="#39FF14" flood-opacity="0.75" result="color"/>
+      <feComposite in="color" in2="blur" operator="in" result="shadow"/>
+      <feMerge><feMergeNode in="shadow"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="hexGlow" x="-15%" y="-15%" width="130%" height="130%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="5" result="blur"/>
+      <feFlood flood-color="#39FF14" flood-opacity="0.55" result="color"/>
+      <feComposite in="color" in2="blur" operator="in" result="shadow"/>
+      <feMerge><feMergeNode in="shadow"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <polygon points="256,38 444,148 444,364 256,474 68,364 68,148" fill="url(#hexBg)"/>
+  <polygon points="256,38 444,148 444,364 256,474 68,364 68,148"
+           fill="none" stroke="#39FF14" stroke-width="5" filter="url(#hexGlow)"/>
+  <polygon points="256,66 420,160 420,352 256,446 92,352 92,160"
+           fill="none" stroke="#39FF14" stroke-width="1.2" opacity="0.22"/>
+  <path fill-rule="evenodd" fill="url(#bFill)" filter="url(#glowB)"
+    d="M 140,97 L 140,418 L 270,418 C 398,418 398,258 270,258 C 392,258 392,97 268,97 Z
+       M 204,144 L 260,144 C 326,144 326,246 260,246 L 204,246 Z
+       M 204,270 L 266,270 C 338,270 338,374 266,374 L 204,374 Z"/>
+  <circle cx="256" cy="38"  r="4.5" fill="#39FF14" opacity="0.65"/>
+  <circle cx="444" cy="148" r="4.5" fill="#39FF14" opacity="0.65"/>
+  <circle cx="444" cy="364" r="4.5" fill="#39FF14" opacity="0.65"/>
+  <circle cx="256" cy="474" r="4.5" fill="#39FF14" opacity="0.65"/>
+  <circle cx="68"  cy="364" r="4.5" fill="#39FF14" opacity="0.65"/>
+  <circle cx="68"  cy="148" r="4.5" fill="#39FF14" opacity="0.65"/>
+</svg>

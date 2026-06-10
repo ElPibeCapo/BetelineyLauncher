@@ -1,0 +1,163 @@
+=============================================
+  Beteliney Launcher — v8.2.0
+  2026-06-04
+  Autor: El_PibeCapo <elpibecapoofficial@gmail.com>
+=============================================
+
+COMO COMPILAR (LINUX — Nobara / Fedora / Ubuntu / Arch):
+1. cd BetelineyLauncher/source
+2. bash COMPILAR_LINUX.sh   → [4] instalar deps (solo primera vez)
+3. bash COMPILAR_LINUX.sh   → [1] build completo (~10-30 min primera vez)
+4. bash COMPILAR_LINUX.sh   → [2] recompilar rapido (usa esto siempre)
+5. El ejecutable queda en:  build/beteliney
+
+COMO COMPILAR (WINDOWS):
+1. Doble clic en COMPILAR_BETELINEY.bat
+2. Primera vez: elige [1] build completo
+3. Siempre despues: elige [2] recompilar rapido
+4. El .exe queda en: build\beteliney.exe
+   (la carpeta se abre sola al terminar)
+
+LANZAR RAPIDO (Linux):
+  bash lanzar.sh
+  (compila automaticamente si falta el ejecutable)
+
+ACTUALIZAR (Linux):
+  bash beteliney-updater.sh
+  Flags: --check / --silent / --force / --appimage
+         --log [N]   → muestra los últimos N logs de update (default 1)
+
+DISTRIBUIR:
+  Windows: EMPAQUETAR_WINDOWS.bat → [1] ZIP portable
+  Linux:   EMPAQUETAR_LINUX.sh  → [1] tar.gz portable (sin FUSE)
+                                 → [2] AppImage
+                                 → [3] .deb (Debian/Ubuntu)
+
+---------------------------------------------
+
+MODOS DE COMPILAR_LINUX.sh:
+  [1] Build completo    — configura + compila (primera vez)
+  [2] Recompilar rapido — incremental (usa esto siempre)
+  [3] Limpiar + rebuild — borra todo y recompila (si algo esta raro)
+  [4] Solo instalar deps
+  [5] Crear AppImage    — distribuible sin instalar nada
+
+MODOS DE COMPILAR_BETELINEY.bat:
+  [1] Build completo    — configura + compila (primera vez)
+  [2] Recompilar        — solo compila lo que cambio (rapido)
+  [3] Limpiar + rebuild — borra todo y recompila
+  [4] Solo configurar   — cmake configure sin compilar
+  [5] Debug build       — con simbolos de depuracion (sin LTO)
+
+---------------------------------------------
+
+REQUISITOS WINDOWS (instalar antes de compilar):
+  - Qt 6.x con MinGW 64-bit
+    https://www.qt.io/download-qt-installer
+    Marcar: Qt 6.x → MinGW 64-bit
+            Qt Tools → Ninja + CMake
+  - Java 21 (Eclipse Temurin recomendado)
+    https://adoptium.net
+  - vcpkg incluido en vcpkg_local/ (no requiere instalacion extra)
+  - Git (para el updater)
+
+ADVERTENCIA — MinGW vs MSVC:
+  Este proyecto compila con MinGW (GCC). Son ABI incompatibles con MSVC.
+  NO mezcles DLLs de un build MSVC con este build MinGW → crashes.
+  El bat copia automaticamente las DLLs correctas de MinGW.
+
+---------------------------------------------
+
+---------------------------------------------
+
+PROBLEMAS FRECUENTES:
+
+  StackOverflowError con mods
+    → Agregar -Xss2M en argumentos JVM de la instancia
+    → O usar perfil "Balanceado" que ya incluye -Xss1M
+
+  Lag / stutters cada 5-15 segundos
+    → Usar el perfil JVM adecuado (ver docs/PERFILES_JVM.md)
+    → No asignar más del 60% de RAM total
+    → En Vega 10: usar perfil iGPU (máx 1.5 GB)
+
+  Crash al iniciar en Vega 10
+    → bash lanzar.sh --debug para ver el error exacto
+    → Verificar que Qt6 está instalado correctamente
+
+  CMake Error: Qt6 not found
+    → bash COMPILAR_LINUX.sh → [4] instalar deps
+
+  tomlplusplus not found
+    → El script ya pasa -Dtomlplusplus_DIR automáticamente
+    → Si compilás manualmente: agregar ese flag al cmake
+
+  NTFS partición en read-only
+    → sudo mount -t ntfs-3g /dev/sdXY /mnt/windows
+    → O desactivar Fast Startup/Hibernate en Windows:
+      powercfg /h off   (ejecutar como Admin en Windows)
+
+  GPU integrada no detectada para perfil JVM
+    → El launcher usa lspci para detección automática
+    → Si falla: seleccionar "iGPU / RAM compartida" manualmente
+    → Guía completa: docs/TROUBLESHOOTING.md
+
+---------------------------------------------
+
+CAMBIOS v7.3.0 (2026-03-29):
+  Nuevos / actualizados (2026-03-29):
+    - Logo Beteliney: hexágono ⬡ con B neon #39FF14, reemplaza logo Prism
+      (SVG + PNG 256px + ICO multi-size en program_info/)
+    - EMPAQUETAR_LINUX.sh: empaquetado para Linux (tar.gz / AppImage / .deb)
+    - beteliney-updater.sh: nuevo flag --log [N] para ver logs de update
+    - fix_icons.py: nuevo flag --dry-run para preview sin escribir
+    - docs/PERFILES_JVM.md: documentación técnica completa de perfiles JVM
+    - JavaSettingsWidget: detección automática de iGPU vía lspci (Linux)
+      sugerencia automática del perfil iGPU si se detecta GPU integrada
+    - JavaPage.cpp: strings traducidos al español
+    - AboutDialog: personalizado con branding Beteliney, link al repo,
+      versión en neon, referencia a Prism Launcher como base
+  BetelineyTheme v3:
+    - Tema gamer completo: deep-space navy + neon #39FF14
+    - Gradientes en TODOS los widgets Qt (toolbars, buttons, tabs,
+      scrollbars, sliders, inputs, listas, menus, dialogos, etc.)
+    - Toolbars diferenciadas por nombre (mainToolBar / instanceToolBar / newsToolBar)
+    - Items seleccionados con accent strip lateral 3px #39FF14
+    - GroupBox title: neon #39FF14 bold
+    - ProgressBar: gradient animado #22BB0C → #50FF28
+    - Tab activa: border-bottom 2px #39FF14
+  Cuentas No-Premium:
+    - anyAccountIsValid() acepta AccountType::Offline directamente
+    - No-Premium lanza el juego sin verificar Premium
+    - Textos: "Offline" → "No-Premium", "MSA" → "Premium"
+    - Estados de cuenta en espanol
+  Scripts:
+    - MONTAR_WINDOWS_NOBARA.sh: deteccion dinamica de usuario Windows
+      (sin hardcodear nombres de usuario)
+    - COMPILAR.ps1: Find-Qt y Find-MinGW dinamicos sin rutas hardcodeadas
+
+CAMBIOS v7.1.0:
+  - Nuevo perfil JVM "iGPU / RAM compartida (Vega 10, Intel UHD)"
+  - NumberOfConcurrentDownloads adaptativo segun RAM (4/6/10 hilos)
+  - MinMemAlloc default: 1024 MB → 512 MB
+  - COMPILAR_LINUX.sh: deteccion automatica CPU (znver1 vs native)
+  - Nuevo: MONTAR_WINDOWS_NOBARA.sh y EMPAQUETAR_WINDOWS.bat
+
+CAMBIOS v7.0.2:
+  - G1NewSizePercent: 20 → 30 (perfil Ligero)
+  - Nuevo umbral suitableMaxMem: >= 12 GB → 4 GB para MC
+  - MinMemAlloc default: 1024 → 512 MB
+
+CAMBIOS v7.0.1:
+  - Xss: 768k → 1M (perfil Ligero, fix StackOverflowError con mods)
+  - minMemMB: 1024 → 2048 (perfil Balanceado)
+  - windeployqt: --skip-plugin-types generic,networkinformation
+  - Launcher_Domain: beteliney.local → beteliney.github.io (fix RFC 6762)
+
+CAMBIOS v7.0.0:
+  - XboxProfileStep, branding Beteliney, perfiles JVM Aikar
+  - Flags: -O3 -march=znver1 -mtune=znver1, LTO, --gc-sections
+  - Menu completo en COMPILAR_BETELINEY.bat
+
+Changelog tecnico completo: docs/CHANGELOG.md
+
