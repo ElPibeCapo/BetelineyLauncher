@@ -34,23 +34,14 @@ jobs:
 
       - name: Fix cmark cmake config (CMake 4.x)
         run: |
-          CMARK_LIB=$(find /usr/lib -name "libcmark.so*" -o -name "libcmark.a" 2>/dev/null | head -1)
+          CMARK_LIB=$(find /usr/lib -name "libcmark.so*" | grep -v debug | head -1)
           CMARK_INC=$(find /usr/include -name "cmark.h" 2>/dev/null | head -1 | xargs dirname)
           mkdir -p /tmp/cmark_fix
-          cat > /tmp/cmark_fix/cmark-config.cmake << EOF
-          if(NOT TARGET cmark::cmark)
-            add_library(cmark::cmark SHARED IMPORTED)
-            set_target_properties(cmark::cmark PROPERTIES
-              IMPORTED_LOCATION         "$CMARK_LIB"
-              IMPORTED_IMPLIB           "$CMARK_LIB"
-              IMPORTED_LOCATION_RELEASE "$CMARK_LIB"
-              IMPORTED_IMPLIB_RELEASE   "$CMARK_LIB"
-              INTERFACE_INCLUDE_DIRECTORIES "$CMARK_INC"
-            )
-          endif()
-          EOF
-          echo "VERSION 0.31.0" > /tmp/cmark_fix/cmark-config-version.cmake
-          echo "CMARK_DIR=/tmp/cmark_fix" >> $GITHUB_ENV
+          printf 'if(NOT TARGET cmark::cmark)\n  add_library(cmark::cmark SHARED IMPORTED)\n  set_target_properties(cmark::cmark PROPERTIES\n    IMPORTED_LOCATION "%s"\n    IMPORTED_IMPLIB "%s"\n    IMPORTED_LOCATION_RELEASE "%s"\n    IMPORTED_IMPLIB_RELEASE "%s"\n    INTERFACE_INCLUDE_DIRECTORIES "%s"\n  )\nendif()\n' \
+            "$CMARK_LIB" "$CMARK_LIB" "$CMARK_LIB" "$CMARK_LIB" "$CMARK_INC" \
+            > /tmp/cmark_fix/cmark-config.cmake
+          printf 'set(PACKAGE_VERSION "0.31.0")\nset(PACKAGE_VERSION_COMPATIBLE TRUE)\nset(PACKAGE_VERSION_EXACT TRUE)\n' \
+            > /tmp/cmark_fix/cmark-config-version.cmake
 
       - name: Configurar CMake
         run: |
