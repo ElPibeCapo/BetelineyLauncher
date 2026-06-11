@@ -32,11 +32,32 @@ jobs:
             libtomlplusplus-dev || \
           sudo apt-get install -y libtomlplusplus3-dev || true
 
+      - name: Fix cmark cmake config (CMake 4.x)
+        run: |
+          CMARK_LIB=$(find /usr/lib -name "libcmark.so*" -o -name "libcmark.a" 2>/dev/null | head -1)
+          CMARK_INC=$(find /usr/include -name "cmark.h" 2>/dev/null | head -1 | xargs dirname)
+          mkdir -p /tmp/cmark_fix
+          cat > /tmp/cmark_fix/cmark-config.cmake << EOF
+          if(NOT TARGET cmark::cmark)
+            add_library(cmark::cmark SHARED IMPORTED)
+            set_target_properties(cmark::cmark PROPERTIES
+              IMPORTED_LOCATION         "$CMARK_LIB"
+              IMPORTED_IMPLIB           "$CMARK_LIB"
+              IMPORTED_LOCATION_RELEASE "$CMARK_LIB"
+              IMPORTED_IMPLIB_RELEASE   "$CMARK_LIB"
+              INTERFACE_INCLUDE_DIRECTORIES "$CMARK_INC"
+            )
+          endif()
+          EOF
+          echo "VERSION 0.31.0" > /tmp/cmark_fix/cmark-config-version.cmake
+          echo "CMARK_DIR=/tmp/cmark_fix" >> $GITHUB_ENV
+
       - name: Configurar CMake
         run: |
           cmake -B build -S . \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_INSTALL_PREFIX=/usr \
+            -Dcmark_DIR=/tmp/cmark_fix \
             -DLauncher_QT_VERSION_MAJOR=6 \
             -DENABLE_LTO=ON \
             -G Ninja
@@ -86,10 +107,10 @@ jobs:
           java-version: '21'
         continue-on-error: true
 
-      - name: Instalar Qt 6.8.3
+      - name: Instalar Qt 6.7.3
         uses: jurplel/install-qt-action@v4
         with:
-          version: '6.8.3'
+          version: '6.7.3'
           host: windows
           target: desktop
           arch: win64_msvc2022_64
