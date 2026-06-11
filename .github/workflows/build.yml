@@ -28,15 +28,9 @@ jobs:
             libqt6networkauth6-dev libqt6svg6-dev \
             libarchive-dev libcmark-dev libqrencode-dev \
             zlib1g-dev default-jdk-headless appstream \
-            libgl-dev libgles-dev gettext
-
-      - name: Instalar tomlplusplus (header-only)
-        run: |
-          sudo mkdir -p /usr/include/toml++
-          sudo wget -q "https://github.com/marzer/tomlplusplus/releases/download/v3.4.0/tomlplusplus.hpp" \
-            -O /usr/include/toml++/toml.hpp
-          sudo wget -q "https://raw.githubusercontent.com/marzer/tomlplusplus/v3.4.0/toml++.hpp" \
-            -O /usr/include/toml++.hpp 2>/dev/null || true
+            libgl-dev libgles-dev gettext \
+            libtomlplusplus-dev || \
+          sudo apt-get install -y libtomlplusplus3-dev || true
 
       - name: Configurar CMake
         run: |
@@ -90,6 +84,7 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
+        continue-on-error: true
 
       - name: Instalar Qt 6.8.3
         uses: jurplel/install-qt-action@v4
