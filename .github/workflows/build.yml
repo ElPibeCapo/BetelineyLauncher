@@ -10,27 +10,33 @@ on:
 
 jobs:
   # ─────────────────────────────────────────
-  #  LINUX
+  #  LINUX (Ubuntu 24.04)
   # ─────────────────────────────────────────
   build-linux:
-    name: Linux (Ubuntu 22.04)
-    runs-on: ubuntu-22.04
+    name: Linux (Ubuntu 24.04)
+    runs-on: ubuntu-24.04
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Instalar dependencias del sistema
+      - name: Instalar dependencias
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y \
             cmake ninja-build extra-cmake-modules \
             qt6-base-dev qt6-base-private-dev \
             libqt6networkauth6-dev libqt6svg6-dev \
-            libqt6opengl6-dev \
             libarchive-dev libcmark-dev libqrencode-dev \
-            zlib1g-dev libtomlplusplus-dev \
-            default-jdk-headless appstream \
+            zlib1g-dev default-jdk-headless appstream \
             libgl-dev libgles-dev gettext
+
+      - name: Instalar tomlplusplus (header-only)
+        run: |
+          sudo mkdir -p /usr/include/toml++
+          sudo wget -q "https://github.com/marzer/tomlplusplus/releases/download/v3.4.0/tomlplusplus.hpp" \
+            -O /usr/include/toml++/toml.hpp
+          sudo wget -q "https://raw.githubusercontent.com/marzer/tomlplusplus/v3.4.0/toml++.hpp" \
+            -O /usr/include/toml++.hpp 2>/dev/null || true
 
       - name: Configurar CMake
         run: |
@@ -45,42 +51,32 @@ jobs:
         run: ninja -C build -j$(nproc)
 
       - name: Obtener version
-        id: version
+        id: ver
         run: |
-          VER=$(grep -oP 'set\(Launcher_VERSION_NAME "\K[\d.]+' CMakeLists.txt | head -1)
+          VER=$(grep -oP 'Launcher_VERSION_NAME "\K[\d.]+' CMakeLists.txt | head -1)
           ARCH=$(uname -m)
-          echo "version=$VER" >> $GITHUB_OUTPUT
           echo "pkgname=BetelineyLauncher-${VER}-Linux-${ARCH}" >> $GITHUB_OUTPUT
           echo "tarname=BetelineyLauncher-${VER}-Linux-${ARCH}.tar.gz" >> $GITHUB_OUTPUT
 
-      - name: Empaquetar tar.gz
+      - name: Empaquetar
         run: |
-          PKG="${{ steps.version.outputs.pkgname }}"
+          PKG="${{ steps.ver.outputs.pkgname }}"
           STAGE="dist/stage/$PKG"
-          mkdir -p "$STAGE/jars" "$STAGE/lib"
-
+          mkdir -p "$STAGE/jars"
           cp build/beteliney "$STAGE/"
           find build/libraries -name "*.jar" -exec cp {} "$STAGE/jars/" \; 2>/dev/null || true
-          find build/jars -name "*.jar" -exec cp {} "$STAGE/jars/" \; 2>/dev/null || true
-
-          cat > "$STAGE/run.sh" << 'EOF'
-          #!/bin/bash
-          DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-          export LD_LIBRARY_PATH="$DIR/lib:$LD_LIBRARY_PATH"
-          exec "$DIR/beteliney" "$@"
-          EOF
+          find build/jars    -name "*.jar" -exec cp {} "$STAGE/jars/" \; 2>/dev/null || true
+          printf '#!/bin/bash\nDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"\nexec "$DIR/beteliney" "$@"\n' > "$STAGE/run.sh"
           chmod +x "$STAGE/run.sh" "$STAGE/beteliney"
-
-          tar -czf "dist/${{ steps.version.outputs.tarname }}" \
-            -C dist/stage "$PKG"
+          tar -czf "dist/${{ steps.ver.outputs.tarname }}" -C dist/stage "$PKG"
 
       - uses: actions/upload-artifact@v4
         with:
           name: linux-build
-          path: dist/${{ steps.version.outputs.tarname }}
+          path: dist/${{ steps.ver.outputs.tarname }}
 
   # ─────────────────────────────────────────
-  #  WINDOWS
+  #  WINDOWS (Server 2022, MSVC)
   # ─────────────────────────────────────────
   build-windows:
     name: Windows (Server 2022, MSVC)
@@ -89,24 +85,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Instalar Qt
-        uses: jurplel/install-qt-action@v4
-        with:
-          version: '6.9.3'
-          host: 'windows'
-          target: 'desktop'
-          arch: 'win64_msvc2022_64'
-          modules: 'qtnetworkauth qtsvg'
-          cache: true
-
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
+          distribution: temurin
           java-version: '21'
 
-      - name: Instalar dependencias via vcpkg (manifest mode)
-        run: vcpkg install
+      - name: Instalar Qt 6.8.3
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.3'
+          host: windows
+          target: desktop
+          arch: win64_msvc2022_64
+          modules: qtnetworkauth qtsvg
+          cache: true
+
+      - name: Instalar dependencias (vcpkg manifest)
+        run: vcpkg install --triplet x64-windows
         env:
           VCPKG_DEFAULT_TRIPLET: x64-windows
 
@@ -124,33 +120,31 @@ jobs:
         run: cmake --build build --config Release --parallel
 
       - name: Obtener version
-        id: version
+        id: ver
         shell: pwsh
         run: |
-          $ver = (Select-String 'set\(Launcher_VERSION_NAME "([\d.]+)"' CMakeLists.txt).Matches[0].Groups[1].Value
-          echo "version=$ver" >> $env:GITHUB_OUTPUT
+          $ver = (Select-String 'Launcher_VERSION_NAME "(\d[\d.]+)"' CMakeLists.txt | `
+            Select-Object -First 1).Matches[0].Groups[1].Value
           echo "pkgname=BetelineyLauncher-${ver}-Windows-x64" >> $env:GITHUB_OUTPUT
           echo "zipname=BetelineyLauncher-${ver}-Windows-x64.zip" >> $env:GITHUB_OUTPUT
 
-      - name: Empaquetar ZIP
+      - name: Empaquetar
         shell: pwsh
         run: |
-          $PKG = "${{ steps.version.outputs.pkgname }}"
-          New-Item -ItemType Directory -Path "dist\$PKG\platforms","dist\$PKG\tls","dist\$PKG\imageformats","dist\$PKG\iconengines","dist\$PKG\styles","dist\$PKG\jars" -Force
-
+          $PKG = "${{ steps.ver.outputs.pkgname }}"
+          $dirs = "platforms","tls","imageformats","iconengines","styles","jars"
+          $dirs | ForEach-Object { New-Item -ItemType Directory -Path "dist\$PKG\$_" -Force | Out-Null }
           Copy-Item "build\Release\beteliney.exe" "dist\$PKG\"
-          Get-ChildItem build\libraries -Recurse -Filter "*.jar" | Copy-Item -Destination "dist\$PKG\jars\" -ErrorAction SilentlyContinue
-
-          & windeployqt --release --no-translations `
-            --dir "dist\$PKG" `
-            "build\Release\beteliney.exe"
-
-          Compress-Archive -Path "dist\$PKG" -DestinationPath "dist\${{ steps.version.outputs.zipname }}"
+          Get-ChildItem build\libraries -Recurse -Filter "*.jar" | `
+            Copy-Item -Destination "dist\$PKG\jars\" -ErrorAction SilentlyContinue
+          windeployqt --release --no-translations `
+            --dir "dist\$PKG" "build\Release\beteliney.exe"
+          Compress-Archive -Path "dist\$PKG" -DestinationPath "dist\${{ steps.ver.outputs.zipname }}"
 
       - uses: actions/upload-artifact@v4
         with:
           name: windows-build
-          path: dist/${{ steps.version.outputs.zipname }}
+          path: dist/${{ steps.ver.outputs.zipname }}
 
   # ─────────────────────────────────────────
   #  RELEASE — solo en tags v*.*.*
@@ -165,14 +159,9 @@ jobs:
 
     steps:
       - uses: actions/download-artifact@v4
-        with:
-          name: linux-build
-          path: artifacts/
-
+        with: { name: linux-build,   path: artifacts/ }
       - uses: actions/download-artifact@v4
-        with:
-          name: windows-build
-          path: artifacts/
+        with: { name: windows-build, path: artifacts/ }
 
       - uses: softprops/action-gh-release@v2
         with:
@@ -180,13 +169,10 @@ jobs:
           body: |
             ## BetelineyLauncher ${{ github.ref_name }}
 
-            ### Descargas
-            | Plataforma | Archivo | Instrucciones |
+            | Plataforma | Descarga | Instrucciones |
             |---|---|---|
-            | **Windows 10/11** | `.zip` | Extraer y ejecutar `beteliney.exe` |
-            | **Linux 64-bit** | `.tar.gz` | Extraer y ejecutar `bash run.sh` |
+            | **Windows 10/11** | `.zip` | Extraer → ejecutar `beteliney.exe` |
+            | **Linux 64-bit** | `.tar.gz` | Extraer → ejecutar `bash run.sh` |
 
             Java es gestionado automáticamente por el launcher.
           files: artifacts/*
-          draft: false
-          prerelease: false
