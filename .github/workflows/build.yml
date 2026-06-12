@@ -34,32 +34,32 @@ jobs:
 
       - name: Fix cmark cmake config (CMake 4.x)
         run: |
-          CMARK_LIB=$(find /usr/lib -name "libcmark.so*" | grep -v debug | head -1)
-          CMARK_INC=$(find /usr/include -name "cmark.h" 2>/dev/null | head -1 | xargs dirname)
+          CMARK_LIB=$(find /usr/lib /usr/lib/x86_64-linux-gnu -name "libcmark.so*" 2>/dev/null | grep -v debug | head -1)
+          CMARK_H=$(find /usr/include -name "cmark.h" 2>/dev/null | head -1)
+          CMARK_INC=${CMARK_H:+$(dirname "$CMARK_H")}
+          CMARK_INC=${CMARK_INC:-/usr/include}
+          echo "CMARK_LIB=$CMARK_LIB  CMARK_INC=$CMARK_INC"
           mkdir -p /tmp/cmark_fix
-          python3 -c "
+          python3 - "$CMARK_LIB" "$CMARK_INC" << 'PYEOF'
           import sys
-          lib = '$CMARK_LIB'
-          inc = '$CMARK_INC'
+          lib, inc = sys.argv[1], sys.argv[2]
           open('/tmp/cmark_fix/cmark-config.cmake','w').write(
-            'if(NOT TARGET cmark::cmark)\n'
-            '  add_library(cmark::cmark SHARED IMPORTED)\n'
-            '  set_target_properties(cmark::cmark PROPERTIES\n'
-            '    IMPORTED_LOCATION \"'+lib+'\"\n'
-            '    IMPORTED_IMPLIB \"'+lib+'\"\n'
-            '    IMPORTED_LOCATION_RELEASE \"'+lib+'\"\n'
-            '    IMPORTED_IMPLIB_RELEASE \"'+lib+'\"\n'
-            '    INTERFACE_INCLUDE_DIRECTORIES \"'+inc+'\"\n'
-            '  )\n'
-            'endif()\n'
-          )
+              'if(NOT TARGET cmark::cmark)\n'
+              '  add_library(cmark::cmark SHARED IMPORTED)\n'
+              '  set_target_properties(cmark::cmark PROPERTIES\n'
+              f'    IMPORTED_LOCATION "{lib}"\n'
+              f'    IMPORTED_IMPLIB "{lib}"\n'
+              f'    IMPORTED_LOCATION_RELEASE "{lib}"\n'
+              f'    IMPORTED_IMPLIB_RELEASE "{lib}"\n'
+              f'    INTERFACE_INCLUDE_DIRECTORIES "{inc}"\n'
+              '  )\n'
+              'endif()\n')
           open('/tmp/cmark_fix/cmark-config-version.cmake','w').write(
-            'set(PACKAGE_VERSION \"0.31.0\")\n'
-            'set(PACKAGE_VERSION_COMPATIBLE TRUE)\n'
-            'set(PACKAGE_VERSION_EXACT TRUE)\n'
-          )
-          print('cmark cmake fix OK')
-          "
+              'set(PACKAGE_VERSION "0.31.0")\n'
+              'set(PACKAGE_VERSION_COMPATIBLE TRUE)\n'
+              'set(PACKAGE_VERSION_EXACT TRUE)\n')
+          print(f"cmark fix OK — lib={lib} inc={inc}")
+          PYEOF
 
       - name: Configurar CMake
         run: |
@@ -116,15 +116,15 @@ jobs:
           java-version: '21'
         continue-on-error: true
 
-      - name: Instalar Qt via aqtinstall
-        shell: pwsh
-        run: |
-          pip install aqtinstall
-          aqt install-qt windows desktop 6.5.3 win64_msvc2022_64 `
-            --outputdir C:\Qt `
-            --modules qtnetworkauth qtsvg
-          echo "Qt6_DIR=C:\Qt\6.5.3\msvc2022_64" >> $env:GITHUB_ENV
-          echo "C:\Qt\6.5.3\msvc2022_64\bin" >> $env:GITHUB_PATH
+      - name: Instalar Qt 6.5.3
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: '6.5.3'
+          host: windows
+          target: desktop
+          arch: win64_msvc2022_64
+          modules: qtnetworkauth qtsvg
+          cache: true
 
       - name: Instalar dependencias (vcpkg manifest)
         run: vcpkg install --triplet x64-windows
