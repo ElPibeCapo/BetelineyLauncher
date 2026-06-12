@@ -19,8 +19,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Instalar dependencias
+      - name: Habilitar universe y instalar dependencias
         run: |
+          sudo add-apt-repository universe -y
           sudo apt-get update -qq
           sudo apt-get install -y \
             cmake ninja-build extra-cmake-modules \
@@ -31,7 +32,7 @@ jobs:
             libgl-dev libgles-dev gettext libgamemode-dev
           sudo apt-get install -y libtomlplusplus-dev 2>/dev/null || \
           sudo apt-get install -y libtomlplusplus3-dev 2>/dev/null || \
-          echo "tomlplusplus no disponible via apt — CMake usara fallback"
+          echo "tomlplusplus: usara fallback de CMake"
 
       - name: Fix cmark cmake config (CMake 4.x)
         run: |
@@ -39,7 +40,6 @@ jobs:
           CMARK_H=$(find /usr/include -name "cmark.h" 2>/dev/null | head -1)
           CMARK_INC=${CMARK_H:+$(dirname "$CMARK_H")}
           CMARK_INC=${CMARK_INC:-/usr/include}
-          echo "CMARK_LIB=$CMARK_LIB  CMARK_INC=$CMARK_INC"
           mkdir -p /tmp/cmark_fix
           python3 - "$CMARK_LIB" "$CMARK_INC" << 'PYEOF'
           import sys
@@ -59,7 +59,7 @@ jobs:
               'set(PACKAGE_VERSION "0.31.0")\n'
               'set(PACKAGE_VERSION_COMPATIBLE TRUE)\n'
               'set(PACKAGE_VERSION_EXACT TRUE)\n')
-          print(f"cmark fix OK — lib={lib} inc={inc}")
+          print(f"cmark OK: {lib}")
           PYEOF
 
       - name: Configurar CMake
@@ -101,71 +101,88 @@ jobs:
           path: dist/${{ steps.ver.outputs.tarname }}
 
   # ─────────────────────────────────────────
-  #  WINDOWS (Server 2022, MSVC)
+  #  WINDOWS (msys2 + MinGW — sin aqtinstall)
   # ─────────────────────────────────────────
   build-windows:
-    name: Windows (Server 2022, MSVC)
+    name: Windows (msys2 MinGW64)
     runs-on: windows-2022
+
+    defaults:
+      run:
+        shell: msys2 {0}
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Java
-        uses: actions/setup-java@v4
+      - uses: msys2/setup-msys2@v2
         with:
-          distribution: temurin
-          java-version: '21'
-        continue-on-error: true
-
-      - name: Instalar Qt 6.6.3
-        uses: jurplel/install-qt-action@v3
-        with:
-          version: '6.6.3'
-          host: windows
-          target: desktop
-          arch: win64_msvc2022_64
-          modules: qtnetworkauth qtsvg
-          cache: true
-
-      - name: Instalar dependencias (vcpkg manifest)
-        run: vcpkg install --triplet x64-windows
-        env:
-          VCPKG_DEFAULT_TRIPLET: x64-windows
+          msystem: MINGW64
+          update: true
+          install: >-
+            mingw-w64-x86_64-cmake
+            mingw-w64-x86_64-ninja
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-qt6-base
+            mingw-w64-x86_64-qt6-networkauth
+            mingw-w64-x86_64-qt6-svg
+            mingw-w64-x86_64-libarchive
+            mingw-w64-x86_64-cmark
+            mingw-w64-x86_64-qrencode
+            mingw-w64-x86_64-zstd
+            mingw-w64-x86_64-zlib
+            mingw-w64-x86_64-tomlplusplus
+            mingw-w64-x86_64-libxml2
+            java-openjdk-devel
 
       - name: Configurar CMake
         run: |
-          cmake -B build -S . `
-            -DCMAKE_BUILD_TYPE=Release `
-            -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" `
-            -DVCPKG_TARGET_TRIPLET=x64-windows `
-            -DLauncher_QT_VERSION_MAJOR=6 `
-            -DENABLE_LTO=OFF `
-            -G "Visual Studio 17 2022" -A x64
+          cmake -B build -S . \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DLauncher_QT_VERSION_MAJOR=6 \
+            -DENABLE_LTO=OFF \
+            -G Ninja
 
       - name: Compilar
-        run: cmake --build build --config Release --parallel
+        run: ninja -C build -j$(nproc)
 
       - name: Obtener version
         id: ver
-        shell: pwsh
         run: |
-          $ver = (Select-String 'Launcher_VERSION_NAME "(\d[\d.]+)"' CMakeLists.txt | `
-            Select-Object -First 1).Matches[0].Groups[1].Value
-          echo "pkgname=BetelineyLauncher-${ver}-Windows-x64" >> $env:GITHUB_OUTPUT
-          echo "zipname=BetelineyLauncher-${ver}-Windows-x64.zip" >> $env:GITHUB_OUTPUT
+          VER=$(grep -oP 'Launcher_VERSION_NAME "\K[\d.]+' CMakeLists.txt | head -1)
+          echo "pkgname=BetelineyLauncher-${VER}-Windows-x64" >> $GITHUB_OUTPUT
+          echo "zipname=BetelineyLauncher-${VER}-Windows-x64.zip" >> $GITHUB_OUTPUT
 
       - name: Empaquetar
-        shell: pwsh
         run: |
-          $PKG = "${{ steps.ver.outputs.pkgname }}"
-          $dirs = "platforms","tls","imageformats","iconengines","styles","jars"
-          $dirs | ForEach-Object { New-Item -ItemType Directory -Path "dist\$PKG\$_" -Force | Out-Null }
-          Copy-Item "build\Release\beteliney.exe" "dist\$PKG\"
-          Get-ChildItem build\libraries -Recurse -Filter "*.jar" | `
-            Copy-Item -Destination "dist\$PKG\jars\" -ErrorAction SilentlyContinue
-          windeployqt --release --no-translations `
-            --dir "dist\$PKG" "build\Release\beteliney.exe"
-          Compress-Archive -Path "dist\$PKG" -DestinationPath "dist\${{ steps.ver.outputs.zipname }}"
+          PKG="${{ steps.ver.outputs.pkgname }}"
+          mkdir -p "dist/$PKG/platforms" "dist/$PKG/tls" "dist/$PKG/imageformats" \
+                   "dist/$PKG/iconengines" "dist/$PKG/styles" "dist/$PKG/jars"
+          cp build/beteliney.exe "dist/$PKG/"
+          find build/libraries -name "*.jar" -exec cp {} "dist/$PKG/jars/" \; 2>/dev/null || true
+          find build/jars    -name "*.jar" -exec cp {} "dist/$PKG/jars/" \; 2>/dev/null || true
+          # Qt plugins y DLLs
+          QT_BIN=$(dirname $(which qmake6 2>/dev/null || which qmake))
+          QT_PLUGINS=$(realpath "$QT_BIN/../share/qt6/plugins" 2>/dev/null || realpath "$QT_BIN/../plugins")
+          cp "$QT_PLUGINS/platforms/qwindows.dll" "dist/$PKG/platforms/" 2>/dev/null || true
+          cp "$QT_PLUGINS/tls/"*.dll               "dist/$PKG/tls/"       2>/dev/null || true
+          cp "$QT_PLUGINS/imageformats/"*.dll       "dist/$PKG/imageformats/" 2>/dev/null || true
+          cp "$QT_PLUGINS/iconengines/"*.dll        "dist/$PKG/iconengines/" 2>/dev/null || true
+          # DLLs de dependencias
+          for dll in Qt6Core Qt6Gui Qt6Widgets Qt6Network Qt6NetworkAuth Qt6Xml Qt6Concurrent Qt6OpenGL Qt6OpenGLWidgets Qt6Svg; do
+            cp "$QT_BIN/${dll}.dll" "dist/$PKG/" 2>/dev/null || true
+          done
+          # Runtime MinGW y otras DLLs necesarias
+          for dll in /mingw64/bin/libgcc_s_seh-1.dll /mingw64/bin/libstdc++-6.dll \
+                     /mingw64/bin/libwinpthread-1.dll /mingw64/bin/libarchive*.dll \
+                     /mingw64/bin/libcmark.dll /mingw64/bin/libqrencode*.dll \
+                     /mingw64/bin/zlib1.dll /mingw64/bin/libzstd.dll \
+                     /mingw64/bin/libbz2*.dll /mingw64/bin/liblzma*.dll \
+                     /mingw64/bin/liblz4*.dll /mingw64/bin/libssl*.dll \
+                     /mingw64/bin/libcrypto*.dll /mingw64/bin/libxml2*.dll \
+                     /mingw64/bin/libiconv*.dll /mingw64/bin/libcharset*.dll; do
+            cp "$dll" "dist/$PKG/" 2>/dev/null || true
+          done
+          cd dist && 7z a "${{ steps.ver.outputs.zipname }}" "$PKG"
 
       - uses: actions/upload-artifact@v4
         with:
