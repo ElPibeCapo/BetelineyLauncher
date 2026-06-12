@@ -513,25 +513,21 @@ add_subdirectory(libraries/libnbtplusplus)
 add_subdirectory(libraries/launcher) # java based launcher part for Minecraft
 add_subdirectory(libraries/javacheck)
 
-# FIX: los tres jars se generan en build/libraries/*/share/<LauncherName>/
-# pero getJarPath() los busca en build/jars/. Copiarlos automáticamente post-build.
-add_custom_command(TARGET JavaCheck POST_BUILD
+# NOTA: add_custom_command(TARGET X) requiere que X sea del mismo directorio (CMake 4.x).
+# Los JARs se copian via add_custom_target independiente que depende de ellos.
+add_custom_target(CopyJars ALL
     COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/jars"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_BINARY_DIR}/libraries/javacheck/share/${Launcher_Name}/JavaCheck.jar"
         "${CMAKE_BINARY_DIR}/jars/JavaCheck.jar"
-    COMMENT "Copiando JavaCheck.jar → build/jars/"
-    VERBATIM
-)
-add_custom_command(TARGET NewLaunch POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/jars"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_BINARY_DIR}/libraries/launcher/share/${Launcher_Name}/NewLaunch.jar"
         "${CMAKE_BINARY_DIR}/jars/NewLaunch.jar"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_BINARY_DIR}/libraries/launcher/share/${Launcher_Name}/NewLaunchLegacy.jar"
         "${CMAKE_BINARY_DIR}/jars/NewLaunchLegacy.jar"
-    COMMENT "Copiando NewLaunch*.jar → build/jars/"
+    DEPENDS JavaCheck NewLaunch
+    COMMENT "Copiando JARs → build/jars/"
     VERBATIM
 )
 
