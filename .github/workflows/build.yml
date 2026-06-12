@@ -29,10 +29,25 @@ jobs:
             libqt6networkauth6-dev libqt6svg6-dev \
             libarchive-dev libcmark-dev libqrencode-dev \
             zlib1g-dev default-jdk-headless appstream \
-            libgl-dev libgles-dev gettext libgamemode-dev
+            libgl-dev libgles-dev gettext
           sudo apt-get install -y libtomlplusplus-dev 2>/dev/null || \
           sudo apt-get install -y libtomlplusplus3-dev 2>/dev/null || \
           echo "tomlplusplus: usara fallback de CMake"
+          sudo apt-get install -y libgamemode-dev 2>/dev/null || true
+
+      - name: Stub gamemode si no esta disponible
+        run: |
+          if ! pkg-config --exists gamemode 2>/dev/null; then
+            sudo mkdir -p /usr/local/lib/pkgconfig
+            sudo tee /usr/local/lib/pkgconfig/gamemode.pc > /dev/null << 'EOF'
+          Name: gamemode
+          Description: Gamemode stub for CI
+          Version: 1.8.1
+          Cflags:
+          Libs:
+          EOF
+            echo "gamemode stub creado"
+          fi
 
       - name: Fix cmark cmake config (CMake 4.x)
         run: |
@@ -132,7 +147,7 @@ jobs:
             mingw-w64-x86_64-zlib
             mingw-w64-x86_64-tomlplusplus
             mingw-w64-x86_64-libxml2
-            java-openjdk-devel
+            mingw-w64-x86_64-extra-cmake-modules
 
       - name: Configurar CMake
         run: |
