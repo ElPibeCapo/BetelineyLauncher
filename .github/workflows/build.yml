@@ -28,9 +28,10 @@ jobs:
             libqt6networkauth6-dev libqt6svg6-dev \
             libarchive-dev libcmark-dev libqrencode-dev \
             zlib1g-dev default-jdk-headless appstream \
-            libgl-dev libgles-dev gettext libgamemode-dev \
-            libtomlplusplus-dev || \
-          sudo apt-get install -y libtomlplusplus3-dev || true
+            libgl-dev libgles-dev gettext libgamemode-dev
+          sudo apt-get install -y libtomlplusplus-dev 2>/dev/null || \
+          sudo apt-get install -y libtomlplusplus3-dev 2>/dev/null || \
+          echo "tomlplusplus no disponible via apt — CMake usara fallback"
 
       - name: Fix cmark cmake config (CMake 4.x)
         run: |
@@ -116,10 +117,10 @@ jobs:
           java-version: '21'
         continue-on-error: true
 
-      - name: Instalar Qt 6.5.3
+      - name: Instalar Qt 6.6.3
         uses: jurplel/install-qt-action@v3
         with:
-          version: '6.5.3'
+          version: '6.6.3'
           host: windows
           target: desktop
           arch: win64_msvc2022_64
