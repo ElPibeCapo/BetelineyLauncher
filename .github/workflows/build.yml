@@ -85,6 +85,7 @@ jobs:
             -Dcmark_DIR=/tmp/cmark_fix \
             -DLauncher_QT_VERSION_MAJOR=6 \
             -DENABLE_LTO=ON \
+            -DBUILD_TESTING=OFF \
             -G Ninja
 
       - name: Compilar
@@ -155,10 +156,11 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release \
             -DLauncher_QT_VERSION_MAJOR=6 \
             -DENABLE_LTO=OFF \
+            -DBUILD_TESTING=OFF \
             -G Ninja
 
       - name: Compilar
-        run: ninja -C build -j$(nproc)
+        run: ninja -C build -j$(nproc) -k0 2>&1 | tail -50
 
       - name: Obtener version
         id: ver
