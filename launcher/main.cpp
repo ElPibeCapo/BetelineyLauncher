@@ -54,7 +54,7 @@ int main(int argc, char* argv[])
     switch (app.status()) {
         case Application::StartingUp:
         case Application::Initialized: {
-            Q_INIT_RESOURCE(multimc);
+            Q_INIT_RESOURCE(beteliney_icons);
             Q_INIT_RESOURCE(backgrounds);
             Q_INIT_RESOURCE(documents);
             Q_INIT_RESOURCE(beteliney);
