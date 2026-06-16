@@ -548,7 +548,9 @@ Presets de configuración completa por tipo:
 
 ### Próximo a implementar
 
-- [ ] FASE 1: `BetelineyLogAnalyzer` — motor de diagnóstico de crashes
+- [x] FASE 1: `BetelineyLogAnalyzer` — motor de diagnóstico de crashes — COMPLETO (commit 4174c4d)
+  - 18 checks: OOM, heap, duplicate mod, missing dep, incompatible mods, mixin, fabric, java not found, java version, forge java, OpenGL, natives crash, Windows DLL, network, Fractureiser, forge early window, forge coremods
+  - Panel visual integrado en LogPage con severidad por color, navegación, acciones y dismiss
 - [ ] FASE 2: Selector de perfiles JVM en JavaPage e InstanceSettingsPage
 
 ---
