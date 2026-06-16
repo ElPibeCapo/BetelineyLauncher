@@ -534,16 +534,17 @@ Presets de configuración completa por tipo:
 
 ### Pendientes de sesión 1 (VERIFICAR PRIMERO)
 
-- [x] Fix `Q_INIT_RESOURCE(beteliney_icons)` duplicado en `main.cpp` — APLICADO
-- [x] `BUILD_TESTING=OFF` como default en CMakeLists — APLICADO
-- [x] API key CurseForge sacada del código — ahora lee `$ENV{CURSEFORGE_API_KEY}` — APLICADO
-- [x] CI inyecta key desde `secrets.CURSEFORGE_API_KEY` — APLICADO
-- [x] `Launcher_BUILD_ARTIFACT` configurado en CI (`"Linux-x86_64"` / `"Windows-x64"`) — APLICADO (activa el auto-updater en builds de CI)
-- [ ] **ACCIÓN REQUERIDA**: Añadir el secret `CURSEFORGE_API_KEY` en GitHub → Settings → Secrets → Actions → New repository secret, con el valor `***CURSEFORGE_KEY_ROTADA_PURGADA***`
-- [ ] Hacer commit + push de estos cambios y verificar que el CI pasa
-- [ ] Verificar `https://ElPibeCapo.github.io/meta/v1/` sirve JSONs correctamente
+- [x] Fix `Q_INIT_RESOURCE(beteliney_icons)` duplicado en `main.cpp` — APLICADO + PUSHEADO
+- [x] `BUILD_TESTING=OFF` como default en CMakeLists — APLICADO + PUSHEADO
+- [x] API key CurseForge sacada del código — ahora lee `$ENV{CURSEFORGE_API_KEY}` — APLICADO + PUSHEADO
+- [x] CI inyecta key desde `secrets.CURSEFORGE_API_KEY` — APLICADO + PUSHEADO
+- [x] `Launcher_BUILD_ARTIFACT` configurado en CI (`"Linux-x86_64"` / `"Windows-x64"`) — APLICADO + PUSHEADO (activa el auto-updater en builds de CI)
+- [x] META server verificado — rama `gh-pages` tiene TODO el contenido (net.minecraft, Forge, NeoForge, Fabric, Quilt, Java Adoptium/Azul/IBM). Workflows corren correctamente cada 6h. Último run: 2026-06-16 05:05 UTC exitoso.
+- [ ] **ACCIÓN REQUERIDA #1**: Añadir secret `CURSEFORGE_API_KEY` en GitHub → Settings → Secrets → Actions → New repository secret. Valor: `***CURSEFORGE_KEY_ROTADA_PURGADA***`
+- [ ] **ACCIÓN REQUERIDA #2**: Activar GitHub Pages en el repo meta → https://github.com/ElPibeCapo/meta/settings/pages → Source: "Deploy from a branch" → Branch: `gh-pages` → `/ (root)` → Save. El contenido está listo, solo falta habilitarlo. URL resultante: `https://elpibecapo.github.io/meta/v1/`
+- [ ] Verificar que el CI del launcher pase tras el push (commit ae1ddd6)
 - [ ] Compilación local limpia y prueba de inicio del launcher
-- [ ] Decidir sobre Imgur (activar o desactivar en UI)
+- [ ] Decidir sobre Imgur
 
 ### Próximo a implementar
 
