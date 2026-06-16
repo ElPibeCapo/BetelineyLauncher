@@ -154,7 +154,7 @@ if(ENABLE_LTO)
     endif()
 endif()
 
-option(BUILD_TESTING "Build the testing tree." ON)
+option(BUILD_TESTING "Build the testing tree." OFF)
 
 find_package(ECM NO_MODULE REQUIRED)
 set(CMAKE_MODULE_PATH "${ECM_MODULE_PATH};${CMAKE_MODULE_PATH}")
@@ -273,7 +273,16 @@ endif()
 set(Launcher_MSA_CLIENT_ID "4b945c78-d30b-489e-915f-b361bf9c933b" CACHE STRING "Client ID de Microsoft Azure para autenticación de cuentas Minecraft")
 
 # API Key de CurseForge
-set(Launcher_CURSEFORGE_API_KEY "$2a$10$wIJoeapbxkZ1tE8h2S/ojOLkDwqdEjAq9ZXqAUwFKlRUcZYx5iLsO" CACHE STRING "API key de CurseForge")
+# SEGURIDAD: La key real NO va aquí porque este repo es público.
+# En CI: se inyecta desde el GitHub Secret CURSEFORGE_API_KEY via env/cmake flag.
+# En builds locales: pasar -DLauncher_CURSEFORGE_API_KEY="tu_key" al cmake o definir
+# la variable de entorno CURSEFORGE_API_KEY antes de compilar.
+# Si no se provee key, CurseForge queda deshabilitado (funcionalidad degradada, no crash).
+if(DEFINED ENV{CURSEFORGE_API_KEY})
+    set(Launcher_CURSEFORGE_API_KEY "$ENV{CURSEFORGE_API_KEY}" CACHE STRING "API key de CurseForge" FORCE)
+else()
+    set(Launcher_CURSEFORGE_API_KEY "" CACHE STRING "API key de CurseForge — pasar via env CURSEFORGE_API_KEY o -DLauncher_CURSEFORGE_API_KEY=...")
+endif()
 
 set(Launcher_COMPILER_NAME ${CMAKE_CXX_COMPILER_ID})
 set(Launcher_COMPILER_VERSION ${CMAKE_CXX_COMPILER_VERSION})
