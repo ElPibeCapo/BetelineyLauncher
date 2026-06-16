@@ -41,11 +41,14 @@
 
 #include "Application.h"
 
+#include <QDesktopServices>
 #include <QIdentityProxyModel>
 #include <QScrollBar>
 #include <QShortcut>
+#include <QUrl>
 
 #include "launch/LaunchTask.h"
+#include "minecraft/MinecraftInstance.h"
 #include "settings/Setting.h"
 
 #include "ui/GuiUtil.h"
@@ -207,6 +210,8 @@ void LogPage::UIToModelState()
 void LogPage::setInstanceLaunchTaskChanged(LaunchTask* proc, bool initial)
 {
     m_process = proc;
+    // Ocultar diagnóstico anterior cuando empieza una nueva sesión de juego
+    hideDiagnosis();
     if (m_process) {
         m_model = proc->getLogModel();
         m_proxy->setSourceModel(m_model.get());
@@ -215,6 +220,8 @@ void LogPage::setInstanceLaunchTaskChanged(LaunchTask* proc, bool initial)
         } else {
             UIToModelState();
         }
+        // Conectar señal de fin de proceso para ejecutar el diagnóstico
+        connect(m_process, &Task::finished, this, &LogPage::onLaunchTaskFinished);
     } else {
         m_proxy->setSourceModel(nullptr);
         m_model.reset();
@@ -327,4 +334,148 @@ void LogPage::findActivated()
 void LogPage::retranslate()
 {
     ui->retranslateUi(this);
+}
+
+// ─── BETELINEY LOG ANALYZER — INTEGRACIÓN ────────────────────────────────────
+
+void LogPage::onLaunchTaskFinished()
+{
+    if (!m_model || !m_process)
+        return;
+
+    // Solo diagnosticar si el juego no cerró limpiamente
+    int exitCode = m_process->gameExitCode();
+    if (exitCode == 0)
+        return;
+
+    QString fullLog = m_model->toPlainText();
+    m_diagnoses     = Beteliney::LogAnalyzer::analyze(fullLog, exitCode);
+
+    if (m_diagnoses.isEmpty())
+        return;
+
+    m_diagnosisIndex = 0;
+    showDiagnosis(0);
+}
+
+void LogPage::showDiagnosis(int index)
+{
+    if (index < 0 || index >= m_diagnoses.size())
+        return;
+
+    const Beteliney::Diagnosis& d = m_diagnoses[index];
+
+    // Icono y color según severidad
+    QString icon;
+    QString panelStyle;
+    switch (d.severity) {
+        case Beteliney::DiagnosisSeverity::Critical:
+            icon       = "🔴";
+            panelStyle = "QFrame#diagnosisPanel { border: 2px solid #FF4444; border-radius: 6px; "
+                         "background-color: rgba(255,68,68,0.12); }";
+            break;
+        case Beteliney::DiagnosisSeverity::Error:
+            icon       = "🟠";
+            panelStyle = "QFrame#diagnosisPanel { border: 2px solid #FF8C00; border-radius: 6px; "
+                         "background-color: rgba(255,140,0,0.12); }";
+            break;
+        case Beteliney::DiagnosisSeverity::Warning:
+            icon       = "🟡";
+            panelStyle = "QFrame#diagnosisPanel { border: 2px solid #FFD700; border-radius: 6px; "
+                         "background-color: rgba(255,215,0,0.10); }";
+            break;
+        default:
+            icon       = "🔵";
+            panelStyle = "QFrame#diagnosisPanel { border: 2px solid #00D4FF; border-radius: 6px; "
+                         "background-color: rgba(0,212,255,0.10); }";
+            break;
+    }
+
+    ui->diagnosisPanel->setStyleSheet(panelStyle);
+    ui->diagnosisIcon->setText(icon);
+
+    // Título en negrita
+    ui->diagnosisTitle->setText(QString("<b>%1</b>").arg(d.title.toHtmlEscaped()));
+
+    // Explicación
+    ui->diagnosisExplanation->setText(d.explanation);
+
+    // Solución con prefijo destacado
+    ui->diagnosisSolution->setText(
+        QString("<span style='color:#39FF14;font-weight:bold;'>→ Solución: </span>%1")
+            .arg(d.solution.toHtmlEscaped()));
+
+    // Detalle del log (fragmento relevante)
+    if (!d.detail.isEmpty()) {
+        ui->diagnosisDetail->setText(
+            QString("<code style='font-size:10px;color:#aaa;'>%1</code>")
+                .arg(d.detail.toHtmlEscaped()));
+        ui->diagnosisDetail->setVisible(true);
+    } else {
+        ui->diagnosisDetail->setVisible(false);
+    }
+
+    // Botón de acción
+    if (!d.actionLabel.isEmpty()) {
+        ui->diagnosisActionBtn->setText(d.actionLabel);
+        ui->diagnosisActionBtn->setVisible(true);
+    } else {
+        ui->diagnosisActionBtn->setVisible(false);
+    }
+
+    // Contador y botón siguiente (si hay más de un diagnóstico)
+    if (m_diagnoses.size() > 1) {
+        ui->diagnosisCounter->setText(
+            QString("%1 / %2").arg(index + 1).arg(m_diagnoses.size()));
+        ui->diagnosisCounter->setVisible(true);
+        ui->diagnosisNextBtn->setVisible(index < m_diagnoses.size() - 1);
+    } else {
+        ui->diagnosisCounter->setVisible(false);
+        ui->diagnosisNextBtn->setVisible(false);
+    }
+
+    ui->diagnosisPanel->setVisible(true);
+}
+
+void LogPage::hideDiagnosis()
+{
+    m_diagnoses.clear();
+    m_diagnosisIndex = 0;
+    ui->diagnosisPanel->setVisible(false);
+}
+
+void LogPage::on_diagnosisActionBtn_clicked()
+{
+    if (m_diagnosisIndex < 0 || m_diagnosisIndex >= m_diagnoses.size())
+        return;
+
+    const QString& target = m_diagnoses[m_diagnosisIndex].actionTarget;
+
+    if (target == "java") {
+        APPLICATION->ShowGlobalSettings(this, "java-settings");
+    } else if (target == "mods-folder") {
+        // Abrir la carpeta mods de la instancia en el explorador de archivos
+        auto* mcInstance = dynamic_cast<MinecraftInstance*>(m_instance);
+        if (mcInstance)
+            QDesktopServices::openUrl(QUrl::fromLocalFile(mcInstance->modsRoot()));
+        else
+            QDesktopServices::openUrl(QUrl::fromLocalFile(m_instance->gameRoot()));
+    } else if (target.startsWith("search-modrinth:")) {
+        QString modId = target.mid(QString("search-modrinth:").size());
+        QDesktopServices::openUrl(
+            QUrl(QString("https://modrinth.com/mods?q=%1").arg(modId)));
+    }
+}
+
+void LogPage::on_diagnosisNextBtn_clicked()
+{
+    if (m_diagnosisIndex + 1 < m_diagnoses.size()) {
+        m_diagnosisIndex++;
+        showDiagnosis(m_diagnosisIndex);
+    }
+}
+
+void LogPage::on_diagnosisDismissBtn_clicked()
+{
+    hideDiagnosis();
 }

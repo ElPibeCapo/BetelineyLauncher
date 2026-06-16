@@ -41,6 +41,7 @@
 
 #include "BaseInstance.h"
 #include "launch/LaunchTask.h"
+#include "logs/BetelineyLogAnalyzer.h"
 #include "ui/pages/BasePage.h"
 
 namespace Ui {
@@ -91,10 +92,20 @@ class LogPage : public QWidget, public BasePage {
 
     void onInstanceLaunchTaskChanged(LaunchTask* proc);
 
+    // BetelineyLogAnalyzer — slots del panel de diagnóstico
+    void onLaunchTaskFinished();
+    void on_diagnosisActionBtn_clicked();
+    void on_diagnosisNextBtn_clicked();
+    void on_diagnosisDismissBtn_clicked();
+
    private:
     void modelStateToUI();
     void UIToModelState();
     void setInstanceLaunchTaskChanged(LaunchTask* proc, bool initial);
+
+    // BetelineyLogAnalyzer — métodos del panel de diagnóstico
+    void showDiagnosis(int index);
+    void hideDiagnosis();
 
    private:
     Ui::LogPage* ui;
@@ -103,4 +114,8 @@ class LogPage : public QWidget, public BasePage {
 
     LogFormatProxyModel* m_proxy;
     shared_qobject_ptr<LogModel> m_model;
+
+    // BetelineyLogAnalyzer — estado del diagnóstico
+    QList<Beteliney::Diagnosis> m_diagnoses;
+    int m_diagnosisIndex = 0;
 };

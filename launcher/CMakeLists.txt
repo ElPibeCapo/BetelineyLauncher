@@ -183,6 +183,8 @@ set(LAUNCH_SOURCES
     launch/TaskStepWrapper.h
     logs/LogParser.cpp
     logs/LogParser.h
+    logs/BetelineyLogAnalyzer.cpp
+    logs/BetelineyLogAnalyzer.h
 )
 
 # Old update system
