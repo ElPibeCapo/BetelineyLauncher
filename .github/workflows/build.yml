@@ -78,6 +78,8 @@ jobs:
           PYEOF
 
       - name: Configurar CMake
+        env:
+          CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
         run: |
           cmake -B build -S . \
             -DCMAKE_BUILD_TYPE=Release \
@@ -86,6 +88,7 @@ jobs:
             -DLauncher_QT_VERSION_MAJOR=6 \
             -DENABLE_LTO=ON \
             -DBUILD_TESTING=OFF \
+            -DLauncher_BUILD_ARTIFACT="Linux-x86_64" \
             -G Ninja
 
       - name: Compilar
@@ -151,12 +154,15 @@ jobs:
             mingw-w64-x86_64-extra-cmake-modules
 
       - name: Configurar CMake
+        env:
+          CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
         run: |
           cmake -B build -S . \
             -DCMAKE_BUILD_TYPE=Release \
             -DLauncher_QT_VERSION_MAJOR=6 \
             -DENABLE_LTO=OFF \
             -DBUILD_TESTING=OFF \
+            -DLauncher_BUILD_ARTIFACT="Windows-x64" \
             -G Ninja
 
       - name: Compilar
