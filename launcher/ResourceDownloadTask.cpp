@@ -23,6 +23,7 @@
 #include "Application.h"
 
 #include "FileSystem.h"
+#include "minecraft/mod/MalwareScanner.h"
 #include "minecraft/mod/ResourceFolderModel.h"
 
 #include "minecraft/mod/ShaderPackFolderModel.h"
@@ -80,6 +81,33 @@ ResourceDownloadTask::ResourceDownloadTask(ModPlatform::IndexedPack::Ptr pack,
 void ResourceDownloadTask::downloadSucceeded()
 {
     m_filesNetJob.reset();
+
+    // Beteliney 4.2 — verificar hash contra lista negra de malware
+    auto* scanner = MalwareScanner::instance();
+    if (scanner->isLoaded() && !m_pack_version.hash.isEmpty()) {
+        const QString& ht    = m_pack_version.hash_type;
+        const QString& hash  = m_pack_version.hash;
+        bool isMalware = false;
+
+        if (ht == "sha512")
+            isMalware = scanner->isMaliciousSha512(hash);
+        else if (ht == "sha256")
+            isMalware = scanner->isMaliciousSha256(hash);
+
+        if (isMalware) {
+            // Borrar el archivo ya descargado
+            QString filePath = m_pack_model->dir().absoluteFilePath(getFilename());
+            QFile::remove(filePath);
+
+            emitFailed(
+                tr("⚠ ALERTA DE SEGURIDAD — Beteliney bloqueó la descarga de \"%1\"\n\n"
+                   "El hash del archivo coincide con malware conocido (%2).\n"
+                   "El archivo ha sido eliminado automáticamente.\n\n"
+                   "Fuente del hash: lista negra de BetelineyLauncher.").arg(getFilename(), hash));
+            return;
+        }
+    }
+
     auto oldName = std::get<0>(to_delete);
     auto oldFilename = std::get<1>(to_delete);
 
