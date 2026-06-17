@@ -515,6 +515,13 @@ set(API_SOURCES
 
     modplatform/CheckUpdateTask.h
 
+    modplatform/beteliney/BetelineyPack.h
+    modplatform/beteliney/BetelineyPresets.h
+    modplatform/beteliney/BetelineyPackListModel.h
+    modplatform/beteliney/BetelineyPackListModel.cpp
+    modplatform/beteliney/BetelineyPackInstallTask.h
+    modplatform/beteliney/BetelineyPackInstallTask.cpp
+
     modplatform/flame/FlameAPI.h
     modplatform/flame/FlameAPI.cpp
     modplatform/modrinth/ModrinthAPI.h
@@ -1015,6 +1022,9 @@ SET(LAUNCHER_SOURCES
     ui/pages/modplatform/atlauncher/AtlListModel.h
     ui/pages/modplatform/atlauncher/AtlOptionalModDialog.cpp
     ui/pages/modplatform/atlauncher/AtlOptionalModDialog.h
+    ui/pages/modplatform/beteliney/BetelineyPackPage.h
+    ui/pages/modplatform/beteliney/BetelineyPackPage.cpp
+
     ui/pages/modplatform/atlauncher/AtlPage.cpp
     ui/pages/modplatform/atlauncher/AtlPage.h
     ui/pages/modplatform/atlauncher/AtlUserInteractionSupportImpl.cpp
@@ -1249,6 +1259,7 @@ qt_wrap_ui(LAUNCHER_UI
     ui/pages/instance/ScreenshotsPage.ui
     ui/pages/modplatform/atlauncher/AtlOptionalModDialog.ui
     ui/pages/modplatform/atlauncher/AtlPage.ui
+    ui/pages/modplatform/beteliney/BetelineyPackPage.ui
     ui/pages/modplatform/CustomPage.ui
     ui/pages/modplatform/ResourcePage.ui
     ui/pages/modplatform/flame/FlamePage.ui

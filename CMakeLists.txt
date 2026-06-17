@@ -168,7 +168,7 @@ endif()
 ##################################### Set Application options #####################################
 
 ######## Set URLs ########
-set(Launcher_NEWS_RSS_URL "https://github.com/ElPibeCapo/BetelineyLauncher/releases.atom" CACHE STRING "RSS feed de releases de BetelineyLauncher")
+set(Launcher_NEWS_RSS_URL "https://ElPibeCapo.github.io/meta/v1/news/feed.atom" CACHE STRING "Feed Atom de noticias de BetelineyLauncher (Fase 3.2)")
 set(Launcher_NEWS_OPEN_URL "https://github.com/ElPibeCapo/BetelineyLauncher/releases" CACHE STRING "URL que abre el botón 'Más noticias'")
 set(Launcher_WIKI_URL "https://github.com/ElPibeCapo/BetelineyLauncher/wiki" CACHE STRING "URL del wiki/ayuda del launcher")
 set(Launcher_HELP_URL "https://github.com/ElPibeCapo/BetelineyLauncher/issues" CACHE STRING "URL de ayuda con arg %1 para página específica")
@@ -211,6 +211,7 @@ set(Launcher_BUILD_ARTIFACT "" CACHE STRING "Artifact name to help the updater i
 # El servidor de metadatos — fork propio en https://github.com/ElPibeCapo/meta
 # GitHub Actions genera los JSON cada 6hs y los sirve via GitHub Pages
 set(Launcher_META_URL "https://ElPibeCapo.github.io/meta/v1/" CACHE STRING "URL del servidor de metadatos de BetelineyLauncher")
+set(Launcher_BETELINEY_PACKS_URL "https://ElPibeCapo.github.io/meta/v1/beteliney-packs/" CACHE STRING "URL base de BetelineyPacks")
 
 # Imgur API Client ID
 # TODO: registrar en https://api.imgur.com/oauth2/addclient y reemplazar con tu propio ID
