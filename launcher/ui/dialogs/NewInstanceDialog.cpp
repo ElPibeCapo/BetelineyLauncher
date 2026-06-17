@@ -58,6 +58,7 @@
 #include <QValidator>
 #include <utility>
 
+#include "ui/pages/modplatform/beteliney/BetelineyPackPage.h"
 #include "ui/pages/modplatform/CustomPage.h"
 #include "ui/pages/modplatform/ImportPage.h"
 #include "ui/pages/modplatform/atlauncher/AtlPage.h"
@@ -174,6 +175,7 @@ QList<BasePage*> NewInstanceDialog::getPages()
 
     importPage = new ImportPage(this);
 
+    pages.append(new Beteliney::PackPage(this)); // primera pestaña: packs propios
     pages.append(new CustomPage(this));
     pages.append(importPage);
     pages.append(new AtlPage(this));
