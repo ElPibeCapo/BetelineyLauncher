@@ -166,6 +166,12 @@ class Config {
      */
     QString META_URL;
 
+    /**
+     * URL base del índice de BetelineyPacks
+     * Apunta a gh-pages/v1/beteliney-packs/index.json
+     */
+    QString BETELINEY_PACKS_URL;
+
     QString GLFW_LIBRARY_NAME;
     QString OPENAL_LIBRARY_NAME;
 
