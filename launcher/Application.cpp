@@ -156,6 +156,7 @@
 #endif
 #else
 #include "updater/BetelineyExternalUpdater.h"
+#include "minecraft/mod/MalwareScanner.h"
 #endif
 
 #if defined Q_OS_WIN32
@@ -1735,6 +1736,9 @@ MainWindow* Application::showMainWindow(bool minimized)
         connect(this, &Application::updateAllowedChanged, m_mainWindow, &MainWindow::updatesAllowedChanged);
         connect(m_mainWindow, &MainWindow::isClosing, this, &Application::on_windowClose);
         m_openWindows++;
+
+        // Beteliney 4.2: cargar lista negra de malware en background al iniciar
+        MalwareScanner::instance()->loadIfNeeded();
     }
     return m_mainWindow;
 }

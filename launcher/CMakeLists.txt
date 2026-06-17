@@ -161,6 +161,8 @@ set(NET_SOURCES
 set(LAUNCH_SOURCES
     launch/steps/CheckJava.cpp
     launch/steps/CheckJava.h
+    launch/steps/CheckModConflicts.cpp
+    launch/steps/CheckModConflicts.h
     launch/steps/LookupServerAddress.cpp
     launch/steps/LookupServerAddress.h
     launch/steps/PostLaunchCommand.cpp
@@ -335,6 +337,8 @@ set(MINECRAFT_SOURCES
     minecraft/WorldList.h
     minecraft/WorldList.cpp
 
+    minecraft/mod/MalwareScanner.h
+    minecraft/mod/MalwareScanner.cpp
     minecraft/mod/MetadataHandler.h
     minecraft/mod/Mod.h
     minecraft/mod/Mod.cpp

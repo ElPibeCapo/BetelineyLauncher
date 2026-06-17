@@ -52,6 +52,7 @@
 #include "launch/LaunchTask.h"
 #include "launch/TaskStepWrapper.h"
 #include "launch/steps/CheckJava.h"
+#include "launch/steps/CheckModConflicts.h"
 #include "launch/steps/LookupServerAddress.h"
 #include "launch/steps/PostLaunchCommand.h"
 #include "launch/steps/PreLaunchCommand.h"
@@ -1189,6 +1190,11 @@ LaunchTask* MinecraftInstance::createLaunchTask(AuthSessionPtr session, Minecraf
     // Scan mods folders for mods
     {
         process->appendStep(makeShared<ScanModFolders>(pptr));
+    }
+
+    // Beteliney: detectar mods duplicados/conflictivos antes de lanzar
+    {
+        process->appendStep(makeShared<CheckModConflicts>(pptr));
     }
 
     // Verificar RAM disponible antes de lanzar
