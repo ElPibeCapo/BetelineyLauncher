@@ -20,6 +20,20 @@ OutFile "../@Launcher_CommonName@-Setup.exe"
 
 ; Pages
 
+; Mensaje en la pantalla de bienvenida explicando SmartScreen
+; (sin firma EV el ejecutable es bloqueado por SmartScreen en Win10/11)
+!define MUI_WELCOMEPAGE_TEXT "Bienvenido a BetelineyLauncher $\r$\n$\r$\n\
+Si Windows Defender SmartScreen mostró un aviso al ejecutar este instalador:$\r$\n\
+$\r$\n\
+  1. Haz clic en 'Más información'$\r$\n\
+  2. Haz clic en 'Ejecutar de todas formas'$\r$\n\
+$\r$\n\
+Esto ocurre porque BetelineyLauncher es un proyecto independiente sin firma \
+de código comercial. El instalador es seguro — el código fuente completo está \
+disponible en github.com/ElPibeCapo/BetelineyLauncher$\r$\n\
+$\r$\n\
+Este asistente te guiará durante la instalación."
+
 !insertmacro MUI_PAGE_WELCOME
 !define MUI_COMPONENTSPAGE_NODESC
 !insertmacro MUI_PAGE_COMPONENTS
