@@ -134,6 +134,7 @@
 #include "Json.h"
 
 #include "BetelineyTime.h"
+#include "ui/dialogs/GDLauncherMigrateDialog.h"
 
 namespace {
 QString profileInUseFilter(const QString& profile, bool used)
@@ -260,6 +261,22 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWi
         // you can't set QKeySequence::StandardKey shortcuts in qt designer >:(
         ui->actionAddInstance->setShortcut(QKeySequence::New);
         ui->actionSettings->setShortcut(QKeySequence::Preferences);
+
+        // Beteliney 4.4: Importar desde GDLauncher Carbon
+        auto* actionImportGDL = new QAction(tr("Importar desde &GDLauncher Carbon..."), this);
+        actionImportGDL->setToolTip(tr("Importa instancias desde GDLauncher Carbon"));
+        connect(actionImportGDL, &QAction::triggered, this, [this] {
+            QString instDir = APPLICATION->instances()->instDir();
+            Beteliney::GDLauncherMigrateDialog dlg(instDir, this);
+            dlg.exec();
+            // Refrescar la lista de instancias si el import fue exitoso
+            APPLICATION->instances()->loadList();
+        });
+        // Insertar después de actionAddInstance en el fileMenu
+        QAction* sep = new QAction(this);
+        sep->setSeparator(true);
+        ui->fileMenu->insertAction(ui->actionSettings, sep);
+        ui->fileMenu->insertAction(sep, actionImportGDL);
         ui->actionUndoTrashInstance->setShortcut(QKeySequence::Undo);
         ui->actionDeleteInstance->setShortcuts({ QKeySequence(tr("Backspace")), QKeySequence::Delete });
         ui->actionCloseWindow->setShortcut(QKeySequence::Close);

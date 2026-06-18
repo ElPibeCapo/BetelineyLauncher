@@ -1105,6 +1105,11 @@ SET(LAUNCHER_SOURCES
     ui/dialogs/IconPickerDialog.h
     ui/dialogs/ImportResourceDialog.cpp
     ui/dialogs/ImportResourceDialog.h
+    ui/dialogs/GDLauncherMigrateDialog.cpp
+    ui/dialogs/GDLauncherMigrateDialog.h
+
+    migration/GDLauncherMigrator.h
+    migration/GDLauncherMigrator.cpp
     ui/dialogs/MSALoginDialog.cpp
     ui/dialogs/MSALoginDialog.h
     ui/dialogs/NewComponentDialog.cpp
@@ -1411,6 +1416,7 @@ target_link_libraries(Launcher_logic
     Qt${QT_VERSION_MAJOR}::Widgets
     Qt${QT_VERSION_MAJOR}::NetworkAuth
     Qt${QT_VERSION_MAJOR}::OpenGL
+    Qt${QT_VERSION_MAJOR}::Sql
     ${Launcher_QT_DBUS}
     ${Launcher_QT_LIBS}
 )
