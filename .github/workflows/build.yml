@@ -241,4 +241,15 @@ jobs:
             | **Linux 64-bit** | `.tar.gz` | Extraer → ejecutar `bash run.sh` |
 
             Java es gestionado automáticamente por el launcher.
+
+            ---
+
+            ### ⚠️ Windows Defender SmartScreen
+
+            Si Windows muestra "Windows protegió tu PC" al ejecutar el instalador:
+            1. Haz clic en **"Más información"**
+            2. Haz clic en **"Ejecutar de todas formas"**
+
+            Esto ocurre porque BetelineyLauncher es un proyecto independiente sin firma de código comercial.
+            El código fuente completo está disponible en este repositorio.
           files: artifacts/*
