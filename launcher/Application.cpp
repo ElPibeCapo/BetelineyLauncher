@@ -150,13 +150,15 @@
 #include <sys/types.h>
 #endif
 
+#include "crash/BetelineyPanicHandler.h"
+#include "minecraft/mod/MalwareScanner.h"
+
 #if defined(Q_OS_MAC)
 #if defined(SPARKLE_ENABLED)
 #include "updater/MacSparkleUpdater.h"
 #endif
 #else
 #include "updater/BetelineyExternalUpdater.h"
-#include "minecraft/mod/MalwareScanner.h"
 #endif
 
 #if defined Q_OS_WIN32
@@ -1739,6 +1741,9 @@ MainWindow* Application::showMainWindow(bool minimized)
 
         // Beteliney 4.2: cargar lista negra de malware en background al iniciar
         MalwareScanner::instance()->loadIfNeeded();
+
+        // Beteliney 4.3: verificar si hay crash de la sesión anterior
+        Beteliney::checkAndShowCrashReport(BuildConfig.printableVersionString());
     }
     return m_mainWindow;
 }

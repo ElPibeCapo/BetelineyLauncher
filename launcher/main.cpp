@@ -37,6 +37,7 @@
 #include <iostream>
 
 #include "Application.h"
+#include "crash/BetelineyPanicHandler.h"
 
 #if defined Q_OS_WIN32
 #include "console/WindowsConsole.h"
@@ -44,6 +45,9 @@
 
 int main(int argc, char* argv[])
 {
+    // Beteliney 4.3: instalar crash reporter antes de todo
+    Beteliney::installPanicHandler();
+
 #if defined Q_OS_WIN32
     // used on Windows to attach the standard IO streams
     console::WindowsConsoleGuard _consoleGuard;
