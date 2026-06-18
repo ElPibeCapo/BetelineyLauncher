@@ -159,6 +159,9 @@ set(NET_SOURCES
 
 # Game launch logic
 set(LAUNCH_SOURCES
+    crash/BetelineyPanicHandler.h
+    crash/BetelineyPanicHandler.cpp
+
     launch/steps/CheckJava.cpp
     launch/steps/CheckJava.h
     launch/steps/CheckModConflicts.cpp
@@ -1416,6 +1419,11 @@ target_link_libraries(Launcher_logic
     LocalPeer
     Launcher_rainbow
 )
+
+# Beteliney 4.3: crash reporter
+if(WIN32)
+    target_link_libraries(Launcher_logic dbghelp)
+endif()
 if (TARGET ${Launcher_QT_DBUS})
     add_compile_definitions(WITH_QTDBUS)
 endif()

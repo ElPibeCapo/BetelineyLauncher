@@ -42,12 +42,14 @@
 #include "Application.h"
 
 #include <QAbstractItemModel>
+#include <QDir>
 #include <QEvent>
 #include <QKeyEvent>
 #include <QLabel>
 #include <QListView>
 #include <QMenu>
 #include <QMessageBox>
+#include <QProgressDialog>
 #include <QString>
 #include <QUrl>
 #include <algorithm>
@@ -55,6 +57,10 @@
 #include "QObjectPtr.h"
 #include "VersionPage.h"
 #include "meta/JsonFormat.h"
+#include "modplatform/ModIndex.h"
+#include "modplatform/beteliney/BetelineyPresets.h"
+#include "net/Download.h"
+#include "net/NetJob.h"
 #include "tasks/SequentialTask.h"
 #include "ui/dialogs/InstallLoaderDialog.h"
 #include "ui_VersionPage.h"
@@ -147,6 +153,16 @@ VersionPage::VersionPage(MinecraftInstance* inst, QWidget* parent) : QMainWindow
 
     ui->toolBar->insertSpacer(ui->actionReload);
 
+    // Beteliney 4.5: botón Optimizar (solo visible en instancias Fabric/Quilt)
+    m_actionOptimize = new QAction(QIcon::fromTheme("run-build-configure"),
+                                   tr("Optimizar (rendimiento)"), this);
+    m_actionOptimize->setToolTip(
+        tr("Instala Sodium, Lithium, Iris y ModernFix para Fabric 1.21.1.\n"
+           "Solo disponible cuando el loader es Fabric o Quilt."));
+    m_actionOptimize->setEnabled(false);
+    connect(m_actionOptimize, &QAction::triggered, this, &VersionPage::optimizeWithPerformanceMods);
+    ui->toolBar->addAction(m_actionOptimize);
+
     m_profile = m_inst->getPackProfile();
 
     reloadPackProfile();
@@ -231,6 +247,15 @@ void VersionPage::packageCurrent(const QModelIndex& current, [[maybe_unused]] co
 void VersionPage::updateVersionControls()
 {
     updateButtons();
+
+    // Beteliney 4.5: habilitar botón Optimizar solo en Fabric/Quilt
+    if (m_actionOptimize) {
+        auto loaders = m_profile->getModLoaders();
+        bool isFabric = loaders.has_value() &&
+                        (loaders.value() & (ModPlatform::Fabric | ModPlatform::Quilt |
+                                            ModPlatform::LegacyFabric));
+        m_actionOptimize->setEnabled(isFabric);
+    }
 }
 
 void VersionPage::updateButtons(int row)
@@ -591,6 +616,78 @@ void VersionPage::on_actionRevert_triggered()
 void VersionPage::onFilterTextChanged(const QString& newContents)
 {
     m_filterModel->setFilterFixedString(newContents);
+}
+
+void VersionPage::optimizeWithPerformanceMods()
+{
+    // Obtener el preset Vanilla Optimizado (primero de la lista built-in)
+    auto presets = Beteliney::builtinPresets();
+    if (presets.isEmpty())
+        return;
+    const auto& preset = presets[0]; // builtin-vanilla-optimized
+
+    QDir modsDir(m_inst->modsRoot());
+    modsDir.mkpath(".");
+
+    // Determinar qué mods faltan
+    QList<Beteliney::PackMod> toDownload;
+    for (const auto& mod : preset.mods) {
+        if (!mod.filename.isEmpty() && !modsDir.exists(mod.filename))
+            toDownload << mod;
+    }
+
+    if (toDownload.isEmpty()) {
+        QMessageBox::information(this, tr("Optimizar"),
+            tr("Todos los mods de rendimiento ya están instalados en esta instancia."));
+        return;
+    }
+
+    // Confirmar con el usuario
+    QStringList names;
+    for (const auto& mod : toDownload)
+        names << QFileInfo(mod.filename).completeBaseName();
+
+    auto reply = QMessageBox::question(
+        this, tr("Optimizar instancia Fabric"),
+        tr("Se descargarán e instalarán %1 mods de rendimiento en la carpeta mods de esta instancia:\n\n%2\n\n"
+           "¿Continuar?")
+            .arg(toDownload.size())
+            .arg(names.join(", ")),
+        QMessageBox::Yes | QMessageBox::No);
+
+    if (reply != QMessageBox::Yes)
+        return;
+
+    // Descargar los mods con NetJob
+    auto job = makeShared<NetJob>(tr("Beteliney: optimización"), APPLICATION->network());
+    for (const auto& mod : toDownload) {
+        QString destPath = modsDir.absoluteFilePath(mod.filename);
+        job->addNetAction(Net::Download::makeFile(QUrl(mod.url), destPath));
+    }
+
+    auto* progress = new QProgressDialog(
+        tr("Descargando mods de rendimiento..."), tr("Cancelar"), 0, 100, this);
+    progress->setWindowModality(Qt::WindowModal);
+    progress->setMinimumDuration(500);
+
+    connect(job.get(), &NetJob::progress, progress,
+            [progress](qint64 cur, qint64 total) {
+                if (total > 0)
+                    progress->setValue(static_cast<int>(cur * 100 / total));
+            });
+    connect(job.get(), &NetJob::succeeded, this, [this, progress] {
+        progress->close();
+        QMessageBox::information(this, tr("Optimizar"),
+            tr("✔ Mods de rendimiento instalados. Relanza la instancia para aplicarlos."));
+    });
+    connect(job.get(), &NetJob::failed, this, [this, progress](const QString& reason) {
+        progress->close();
+        QMessageBox::warning(this, tr("Optimizar"),
+            tr("Error al descargar los mods: %1").arg(reason));
+    });
+    connect(progress, &QProgressDialog::canceled, job.get(), &NetJob::abort);
+
+    job->start();
 }
 
 #include "VersionPage.moc"
