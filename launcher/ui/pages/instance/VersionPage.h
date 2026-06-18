@@ -88,6 +88,9 @@ class VersionPage : public QMainWindow, public BasePage {
     void on_actionMinecraftFolder_triggered();
     void on_actionLibrariesFolder_triggered();
 
+    // Beteliney 4.5: instalar mods de rendimiento
+    void optimizeWithPerformanceMods();
+
     void updateVersionControls();
 
    private:
@@ -108,6 +111,7 @@ class VersionPage : public QMainWindow, public BasePage {
     QSortFilterProxyModel* m_filterModel;
     PackProfile* m_profile;
     MinecraftInstance* m_inst;
+    QAction* m_actionOptimize = nullptr;  // Beteliney 4.5
     int currentIdx = 0;
 
     std::shared_ptr<Setting> m_wide_bar_setting = nullptr;
