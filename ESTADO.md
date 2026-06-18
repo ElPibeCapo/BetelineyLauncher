@@ -1,227 +1,402 @@
 # ESTADO — BetelineyLauncher
-> Documento único, autocontenido. Cualquier chat nuevo lee SOLO esto y continúa.
-> Última actualización: sesión 5 (Fase 4 completa, Fase 5 en progreso).
+> Documento único y autocontenido. Cualquier chat nuevo lee SOLO esto y puede continuar.
+> Última actualización: sesión 5 — todas las fases completadas.
 
 ---
 
-## IDENTIDAD
+## IDENTIDAD DEL PROYECTO
 
 | | |
 |---|---|
 | **Nombre** | BetelineyLauncher |
-| **Versión actual** | v8.2.0 (próxima: v8.3.0) |
+| **Versión actual en código** | v8.2.0 |
+| **Próxima release** | v8.3.0 — tagear cuando se quiera publicar |
 | **Base** | Prism Launcher (GPL-3.0), fork extensamente modificado |
 | **Autor** | El_PibeCapo — `elpibecapoofficial@gmail.com` |
 | **Repo launcher** | https://github.com/ElPibeCapo/BetelineyLauncher |
 | **Repo meta** | https://github.com/ElPibeCapo/meta |
+| **Rama principal** | `main` |
+| **META server** | https://ElPibeCapo.github.io/meta/v1/ |
 | **Código fuente local** | `/home/pibe/Descargas/Beteliney Launcher [Minecraft]/BetelineyLauncher/source/` |
-| **META server URL** | https://ElPibeCapo.github.io/meta/v1/ |
 
 ---
 
-## STACK
+## STACK TÉCNICO
 
-C++20 · Qt 6 Widgets+QSS · CMake 3.25+ · Ninja · GitHub Actions
-Linux CI: Ubuntu 24.04 · Windows CI: MSYS2/MinGW64
-`-O3 -march=znver1 -mtune=znver1` en Release
-Auth: MSA Device Code Flow → Xbox Live → XSTS → Minecraft token
-SQLite: Qt QSQLITE driver (Qt::Sql, usado en GDLauncherMigrator)
-Hashing: MD4/MD5/SHA1/SHA256/SHA512/Murmur2 async
+| Capa | Tecnología |
+|---|---|
+| Lenguaje | C++20 |
+| UI framework | Qt 6 — Widgets + QSS (no QML, no Tauri) |
+| Build | CMake 3.25+ + Ninja |
+| CI Linux | Ubuntu 24.04, `apt` Qt6, `ninja -j$(nproc)` |
+| CI Windows | MSYS2 MinGW64, Qt6 via MSYS2 repos (sin aqtinstall) |
+| Optimización | `-O3 -march=znver1 -mtune=znver1` Release |
+| Auth Minecraft | MSA Device Code Flow → Xbox Live → XSTS → token Minecraft |
+| Hashing | MD4/MD5/SHA1/SHA256/SHA512/Murmur2 async (Murmur2=CurseForge, SHA512=Modrinth) |
+| SQLite | Qt QSQLITE driver — usado en GDLauncherMigrator |
+| Crash Linux | `sigaction` + `backtrace_symbols_fd()` |
+| Crash Windows | `SetUnhandledExceptionFilter` + `MiniDumpWriteDump` (dbghelp) |
 
 ---
 
-## COMMITS
+## HISTORIAL DE COMMITS
 
 ```
+012d4b1  feat+docs: Fase 5 — Flatpak + AppImage + SmartScreen + ESTADO v5
 c9d13d8  feat: Fase 4.4 — GDLauncher Carbon importer
 11bfe87  feat: Fase 4.3+4.5 — CrashReporter + Optimizar botón VersionPage
 b5f0c3b  feat: Fase 4.1+4.2 — CheckModConflicts + MalwareScanner
 c01b787  feat: Fase 3 completa — BetelineyPacks + presets + RSS
-5a70db3  docs: ESTADO.md v2
-4174c4d  feat: BetelineyLogAnalyzer — 18 checks
+4174c4d  feat: BetelineyLogAnalyzer — motor de diagnóstico de logs v1.0
 ae1ddd6  fix: Q_INIT_RESOURCE dup, BUILD_TESTING OFF, CurseForge env, BUILD_ARTIFACT CI
 2915f18  BetelineyLauncher v8.2.0 — commit inicial
+[+ 16 commits de iteraciones CI anteriores]
 ```
 
 ---
 
-## RELEASE
+## CÓMO HACER UNA RELEASE
 
 ```bash
 cd "/home/pibe/Descargas/Beteliney Launcher [Minecraft]/BetelineyLauncher/source"
-git add -A && git commit -m "descripción"
-git tag v8.X.Y && git push && git push --tags
-# CI compila Linux + Windows y publica Release en ~15 min
+git add -A
+git commit -m "descripción del cambio"
+git tag v8.3.0
+git push && git push --tags
+# El CI compila Linux + Windows y publica la Release en ~15 min automáticamente
+```
+
+Artefactos que genera el CI:
+- `BetelineyLauncher-{VER}-Linux-x86_64.tar.gz` — Linux
+- `BetelineyLauncher-{VER}-Windows-x64.zip` — Windows
+
+Para AppImage manual (después de compilar localmente):
+```bash
+bash EMPAQUETAR_APPIMAGE.sh
+# Genera dist/BetelineyLauncher-{VER}-Linux-x86_64.AppImage
 ```
 
 ---
 
-## API KEYS
+## API KEYS Y SERVICIOS
 
-| | Estado | Valor |
+| Servicio | Estado | Detalle |
 |---|---|---|
-| CurseForge | ✅ | `***CURSEFORGE_KEY_ROTADA_PURGADA***` — CI via `CURSEFORGE_API_KEY` secret |
-| Microsoft Azure | ✅ | App ID: `4b945c78-d30b-489e-915f-b361bf9c933b` |
-| Imgur | ⚠️ | Key vacía — registrar si se activa screenshots |
+| **CurseForge** | ✅ | `***CURSEFORGE_KEY_ROTADA_PURGADA***` — CI usa secret `CURSEFORGE_API_KEY`. Local: `export CURSEFORGE_API_KEY="..."` antes de cmake. |
+| **Microsoft Azure** | ✅ | App ID: `4b945c78-d30b-489e-915f-b361bf9c933b` |
+| **Imgur** | ⚠️ | Key vacía. El código de upload existe. Registrar en `api.imgur.com/oauth2/addclient` si se activa. |
+| **META server** | ✅ | Rama `gh-pages` del repo meta tiene todos los JSONs generados. CI corre cada 6h. |
 
 ---
 
-## ACCIONES MANUALES PENDIENTES
+## ACCIONES MANUALES PENDIENTES (requieren navegador con sesión GitHub)
 
-**#1** — Secret CurseForge en CI:
-`github.com/ElPibeCapo/BetelineyLauncher/settings/secrets/actions` → `CURSEFORGE_API_KEY`
+**#1 — Secret CurseForge en CI** (sin esto el build de CI no tiene la key):
+```
+https://github.com/ElPibeCapo/BetelineyLauncher/settings/secrets/actions
+→ New repository secret
+→ Nombre:  CURSEFORGE_API_KEY
+→ Valor:   ***CURSEFORGE_KEY_ROTADA_PURGADA***
+```
 
-**#2** — GitHub Pages del META server:
-`github.com/ElPibeCapo/meta/settings/pages` → Deploy from branch → `gh-pages` → `/(root)`
+**#2 — GitHub Pages del META server** (el contenido ya existe, falta activarlo):
+```
+https://github.com/ElPibeCapo/meta/settings/pages
+→ Source: "Deploy from a branch"
+→ Branch: gh-pages → / (root) → Save
+→ URL resultante: https://elpibecapo.github.io/meta/v1/
+```
 
-**#3** — Crear feed de noticias (opcional, cuando haya noticias que publicar):
-Crear `gh-pages/v1/news/feed.atom` en repo meta. El NewsChecker ya lo consume.
+**#3 — Crear feed de noticias** (cuando haya algo que anunciar):
+Crear `gh-pages/v1/news/feed.atom` en el repo meta con formato Atom estándar.
+El `NewsChecker.h` ya lo consume automáticamente.
 
-**#4** — Crear archivos de BetelineyPacks en repo meta (cuando haya packs):
-Crear `gh-pages/v1/beteliney-packs/index.json` y `{id}.json` por cada pack.
+**#4 — Crear packs de BetelineyPacks** (cuando haya packs para publicar):
+- `gh-pages/v1/beteliney-packs/index.json` → `{"formatVersion":1,"ids":["id1","id2"]}`
+- `gh-pages/v1/beteliney-packs/{id}.json` → ver formato en sección Fase 3
 
-**#5** — Crear lista negra de malware:
-Crear `gh-pages/v1/malware/known-hashes.json` en repo meta. El MalwareScanner ya la consume.
+**#5 — Crear lista negra de malware** (para que MalwareScanner funcione en producción):
+Crear `gh-pages/v1/malware/known-hashes.json`:
+```json
+{
+  "formatVersion": 1,
+  "updated": "2026-06-17",
+  "hashes": { "sha256": [], "sha512": [] },
+  "sources": ["fractureiser"]
+}
+```
 
 ---
 
-## FASES
+## TODOS LOS ARCHIVOS BETELINEY-ESPECÍFICOS
 
-### ✅ FASE 0 — Estabilización
-`Q_INIT_RESOURCE` dup · `BUILD_TESTING=OFF` · CurseForge key en env · `BUILD_ARTIFACT` en CI.
+### Código nuevo creado desde cero (no heredado de Prism)
+
+| Archivo | Líneas | Qué hace |
+|---|---|---|
+| `launcher/BetelineyCode.h` | 23 | Easter egg: escribir B-E-T-E en MainWindow dispara señal `triggered()` |
+| `launcher/BetelineyProfiles.h` | ~120 | 7 perfiles JVM con flags Aikar's calibrados, struct `BetelineyJVMProfile` |
+| `launcher/BetelineyTime.h/cpp` | ~60 | Utilidades de fecha/hora con formato Beteliney |
+| `launcher/BetelineyZip.h/cpp` | ~80 | Wrapper ZIP con soporte de progreso y cancelación |
+| `launcher/crash/BetelineyPanicHandler.h/cpp` | 28+219 | Crash reporter: Linux sigaction + Windows MiniDump, muestra el backtrace al siguiente inicio con botón "Reportar en GitHub" |
+| `launcher/logs/BetelineyLogAnalyzer.h/cpp` | 92+639 | Motor de diagnóstico: 18 checks, panel visual integrado en LogPage |
+| `launcher/minecraft/mod/MalwareScanner.h/cpp` | 64+86 | Singleton que descarga lista negra de hashes de malware, hook en ResourceDownloadTask |
+| `launcher/launch/steps/CheckModConflicts.h/cpp` | 31+91 | LaunchStep pre-lanzamiento: detecta mod IDs duplicados con ModUtils, loguea warnings |
+| `launcher/migration/GDLauncherMigrator.h/cpp` | 54+309 | Importador GDLauncher Carbon: abre data.sqlite, convierte instancias a formato Prism |
+| `launcher/ui/dialogs/GDLauncherMigrateDialog.h/cpp` | 45+170 | UI del importador: lista con selección múltiple, QProgressDialog, acceso en File → menú |
+| `launcher/modplatform/beteliney/BetelineyPack.h` | 49 | Structs: Pack, PackMod, PackIndex, enum PackProvider |
+| `launcher/modplatform/beteliney/BetelineyPackListModel.h/cpp` | 52+177 | Descarga index.json + packs individuales, ordena featured primero, emite señales async |
+| `launcher/modplatform/beteliney/BetelineyPackInstallTask.h/cpp` | 42+164 | InstanceCreationTask: crea instancia con loader correcto, descarga mods, verifica SHA-512 |
+| `launcher/modplatform/beteliney/BetelineyPresets.h` | 144 | 3 presets built-in sin red: Vanilla Optimizado, PvP Competitivo, Modpack Pesado NeoForge |
+| `launcher/ui/pages/modplatform/beteliney/BetelineyPackPage.h/cpp/.ui` | 59+217+98 | UI completa de BetelineyPacks: lista izquierda, panel derecho, búsqueda, iconos async |
+| `launcher/icons/BetelineyIcon.h/cpp` | ~60 | Gestión del ícono personalizado del launcher |
+| `launcher/ui/themes/BetelineyTheme.h/cpp` | ~20+810 | Tema visual completo: deep-space `#080912`, neón `#39FF14`, cyan `#00D4FF`, JetBrains Mono |
+| `launcher/ui/widgets/JavaSettingsWidget.h/cpp/.ui` | ~50+541+~150 | Widget completo de settings Java: perfiles JVM, auto-detección iGPU, badge GraalVM, warnings RAM |
+| `launcher/updater/BetelineyExternalUpdater.h/cpp` | ~40+~100 | Integración del updater en la UI: timer auto-check, canal beta |
+| `launcher/updater/betelineyupdater/BetelineyUpdater.h/cpp` | ~80+~200 | Motor del updater: GitHub Releases API, semver, pre-releases, backup, AppImage |
+| `dist/com.beteliney.BetelineyLauncher.json` | 88 | Manifest Flatpak: runtime KDE 6.6, permisos Wayland+X11+audio+filesystem, módulos |
+| `EMPAQUETAR_APPIMAGE.sh` | 103 | Script AppImage: auto-descarga herramientas, prepara AppDir, genera AppImage |
+
+### Archivos heredados de Prism con modificaciones significativas
+
+| Archivo | Modificación |
+|---|---|
+| `launcher/ui/themes/BetelineyTheme.cpp` | 810 líneas de QSS custom (reemplaza completamente el tema Prism) |
+| `launcher/ui/pages/instance/LogPage.h/cpp/.ui` | Panel `diagnosisPanel` integrado, `onLaunchTaskFinished()`, `showDiagnosis()` |
+| `launcher/ui/pages/instance/VersionPage.h/cpp` | Botón "Optimizar (rendimiento)" para Fabric/Quilt con presets built-in |
+| `launcher/minecraft/MinecraftInstance.cpp` | Hook `CheckModConflicts` después de `ScanModFolders` |
+| `launcher/Application.cpp` | Hook `MalwareScanner::loadIfNeeded()` + `checkAndShowCrashReport()` en showMainWindow |
+| `launcher/main.cpp` | Hook `installPanicHandler()` antes de `Application` |
+| `launcher/ui/dialogs/NewInstanceDialog.cpp` | `BetelineyPackPage` como primera pestaña |
+| `launcher/ui/MainWindow.cpp` | Acción "Importar desde GDLauncher Carbon..." en File menú |
+| `launcher/ResourceDownloadTask.cpp` | Hook `MalwareScanner::isMaliciousSha256/512()` después de cada descarga |
+| `program_info/win_install.nsi.in` | `MUI_WELCOMEPAGE_TEXT` con instrucciones bypass SmartScreen |
+| `.github/workflows/build.yml` | CurseForge key desde secret, `BUILD_ARTIFACT`, body Release con aviso SmartScreen |
+| `CMakeLists.txt` | URLs propias, `BETELINEY_PACKS_URL`, CurseForge key desde env, `BUILD_TESTING=OFF` |
+| `buildconfig/BuildConfig.h/cpp.in` | Campo `BETELINEY_PACKS_URL` |
+
+---
+
+## FASES DE DESARROLLO — ESTADO COMPLETO
+
+### ✅ FASE 0 — Estabilización (commits ae1ddd6, b844c53)
+- `Q_INIT_RESOURCE(beteliney_icons)` duplicado eliminado de `main.cpp`
+- `BUILD_TESTING=OFF` por defecto en `CMakeLists.txt`
+- CurseForge API key eliminada del código → lee `$ENV{CURSEFORGE_API_KEY}`
+- CI inyecta key desde `secrets.CURSEFORGE_API_KEY`
+- `Launcher_BUILD_ARTIFACT` configurado en CI → auto-updater activo en builds de CI
+- META server verificado: rama `gh-pages` tiene net.minecraft, Forge, NeoForge, Fabric, Quilt, Java (Adoptium/Azul/IBM)
 
 ### ✅ FASE 1 — Motor de diagnóstico de logs (commit 4174c4d)
-18 checks, panel visual integrado en LogPage. Ver sección AUDITORÍA.
 
-### ✅ FASE 2 — Selector de perfiles JVM (commit inicial 2915f18)
-7 perfiles, auto-detección iGPU, badge GraalVM, warnings RAM. En `JavaSettingsWidget.cpp`.
+**Archivos:** `launcher/logs/BetelineyLogAnalyzer.h` (92 líneas) + `.cpp` (639 líneas)
+
+**18 checks implementados:**
+
+| Check | Detecta | Sev. | ActionTarget |
+|---|---|---|---|
+| `checkOutOfMemory` | `java.lang.OutOfMemoryError` — heap / GC overhead / Metaspace | Critical | `"java"` |
+| `checkHeapReservation` | `Could not reserve enough space` / `Unable to create native thread` | Critical | `"java"` |
+| `checkDuplicateMod` | `Duplicate mod id` (Fabric) / `Found duplicate mod` (Forge) | Critical | `"mods-folder"` |
+| `checkMissingDependency` | `requires mod X to be loaded` / `Missing Mods:` — extrae nombre | Critical | `"search-modrinth:X"` |
+| `checkIncompatibleMods` | `Incompatible mods found` / `conflicts with mod` | Error | — |
+| `checkMixinConflict` | `Mixin transformation failed` / `MixinApplyError` | Error | — |
+| `checkFabricIncompatible` | Versiones incompatibles de Fabric loader | Error | — |
+| `checkJavaNotFound` | `Failed to start the minecraft runtime` | Critical | `"java"` |
+| `checkUnsupportedJavaVersion` | `UnsupportedClassVersionError` | Critical | `"java"` |
+| `checkForgeJavaRequirement` | `Forge requires Java` | Critical | `"java"` |
+| `checkOpenGLNotAccelerated` | `Pixel format not accelerated` — GPU sin aceleración | Error | — |
+| `checkOpenGLError` | Errores genéricos de OpenGL | Warning | — |
+| `checkNativesCrash` | Exit code -1073741819 (Windows AV) / SIGSEGV | Error | — |
+| `checkWindowsLoadLibrary` | `LoadLibrary failed` — DLL faltante | Error | — |
+| `checkNetworkError` | Timeout / SSL / connection refused durante auth | Warning | — |
+| `checkFractureiser` | Hashes y firmas conocidos del malware Fractureiser | Critical | — |
+| `checkForgeEarlyWindow` | `Failed to create early progress window` | Error | — |
+| `checkForgeCoremods` | Error de Coremod durante init de Forge | Error | — |
+
+**Panel de diagnóstico en LogPage:**
+- Se activa cuando `Task::finished` y `gameExitCode != 0`
+- Severidad visual: Critical=rojo `#FF4444`, Error=naranja `#FF8C00`, Warning=amarillo `#FFD700`, Info=cyan `#00D4FF`
+- Múltiples diagnósticos navegables con contador "1/3", botón "Siguiente ▶"
+- ActionTargets: `"java"` → abre Settings Java, `"mods-folder"` → abre carpeta mods en explorador, `"search-modrinth:X"` → abre Modrinth en navegador
+- Botón ✕ para descartar, se reinicia al lanzar nueva sesión
+
+### ✅ FASE 2 — Selector de perfiles JVM en UI (commit inicial 2915f18)
+
+**Archivo:** `launcher/ui/widgets/JavaSettingsWidget.h/cpp/.ui` (541 líneas)
+
+**7 perfiles en `BetelineyProfiles.h`:**
+
+| Idx | Nombre | Xmx sugerido | Notas clave |
+|---|---|---|---|
+| 0 | Personalizado (sin flags) | manual | Limpia todo para config manual |
+| 1 | iGPU / RAM compartida | 384–1536 MB | G1HeapRegionSize=1M, sin UseTransparentHugePages, MaxGCPauseMillis=100 |
+| 2 | Ligero Vanilla | 512–2048 MB | G1HeapRegionSize=1M, sin UseStringDeduplication |
+| 3 | Balanceado | 2048–4096 MB | G1HeapRegionSize=2M, UseStringDeduplication=ON |
+| 4 | Pesado 100–300 mods | 2048–6144 MB | G1HeapRegionSize=8M, AlwaysPreTouch=ON |
+| 5 | Extremo ≥300 mods | 6144–12288 MB | G1HeapRegionSize=16M, MaxGCPauseMillis=200 |
+| 6 | iGPU ZGC Java21+ | 384–1536 MB | UseZGC + ZGenerational, pausas <1ms, SoftMaxHeapSize=1280m |
+
+**JavaSettingsWidget funcionalidades:**
+- Auto-detección iGPU: Linux via `lspci -mm` (keywords: Vega, Picasso, Renoir, UHD Graphics, Iris...), Windows via `wmic Win32_VideoController`
+- Auto-sugerencia de perfil según RAM total + iGPU detectada
+- Badge GraalVM: ejecuta `java -version` en background al cambiar ruta Java, muestra borde neón si es GraalVM
+- Warnings: rojo si Xmx ≥ RAM total, amarillo si > 90%, naranja si iGPU y > 50%
+- Botón "Aplicar": confirma si hay -Xmx/-Xms conflictivos en args, auto-rellena spinboxes + jvmArgsTextBox
+
+**INI keys:**
+`MinMemAlloc`, `MaxMemAlloc`, `JvmArgs`, `OverrideMemory`, `OverrideJavaArgs`, `OverrideJavaLocation`, `JavaPath`, `IgnoreJavaCompatibility`, `AutomaticJavaSwitch`, `AutomaticJavaDownload`
+
+**Arquitectura:**
+```
+InstanceSettingsPage → MinecraftSettingsWidget → JavaSettingsWidget
+JavaPage (global) → JavaSettingsWidget
+```
 
 ### ✅ FASE 3 — Ecosistema Beteliney (commit c01b787)
 
-**BetelineyPacks** (`modplatform/beteliney/`):
-- `BetelineyPack.h` — structs Pack, PackMod, PackIndex, enum PackProvider
-- `BetelineyPackListModel.h/cpp` — descarga index.json + cada pack.json, async, ordena featured primero
-- `BetelineyPackInstallTask.h/cpp` — InstanceCreationTask: crea instancia con loader correcto, descarga mods, verifica SHA-512
-- `BetelineyPresets.h` — 3 presets built-in sin red: Vanilla Optimizado (Sodium+Lithium+Iris+ModernFix Fabric 1.21.1), PvP Competitivo (Sodium+Lithium+FerriteCore), Modpack Pesado NeoForge
-- `BetelineyPackPage.h/cpp/.ui` — UI: lista izquierda, panel derecho, búsqueda, iconos async
-- Registrado en NewInstanceDialog como primera pestaña
+**BetelineyPacks** — plataforma propia de modpacks servida desde GitHub Pages:
+- `modplatform/beteliney/BetelineyPack.h` — structs Pack, PackMod, PackIndex
+- `modplatform/beteliney/BetelineyPackListModel.h/cpp` — descarga `index.json` + cada pack, async, featured primero
+- `modplatform/beteliney/BetelineyPackInstallTask.h/cpp` — crea instancia (loader+versión), descarga mods, verifica SHA-512
+- `modplatform/beteliney/BetelineyPresets.h` — 3 presets built-in disponibles sin internet:
+  - `builtin-vanilla-optimized`: Fabric 1.21.1 + Sodium + Lithium + Iris + ModernFix
+  - `builtin-pvp-competitive`: Fabric 1.21.1 + Sodium + Lithium + FerriteCore
+  - `builtin-heavy-modpack`: NeoForge 1.21.1 base (sin mods)
+- `ui/pages/modplatform/beteliney/BetelineyPackPage.h/cpp/.ui` — primera pestaña en NewInstanceDialog
 
-**RSS propio**: `NEWS_RSS_URL` apunta a `gh-pages/v1/news/feed.atom` (acción manual #3)
-`BETELINEY_PACKS_URL` = `https://ElPibeCapo.github.io/meta/v1/beteliney-packs/`
+**Formato del índice** (`gh-pages/v1/beteliney-packs/index.json`):
+```json
+{ "formatVersion": 1, "ids": ["beteliney-survival-1"] }
+```
+
+**Formato de cada pack** (`gh-pages/v1/beteliney-packs/{id}.json`):
+```json
+{
+  "formatVersion": 1, "id": "beteliney-survival-1", "name": "Beteliney Survival",
+  "description": "...", "version": "1.0.0", "minecraft": "1.21.1",
+  "loader": "fabric", "loaderVersion": "0.16.9", "featured": true,
+  "icon": "https://elpibecapo.github.io/meta/v1/beteliney-packs/icons/survival.png",
+  "screenshots": [], "tags": ["survival"],
+  "mods": [
+    { "provider": "modrinth", "projectId": "AANobbMI",
+      "url": "https://cdn.modrinth.com/...",
+      "sha512": "abc123...", "filename": "sodium-fabric-0.6.4.jar" }
+  ]
+}
+```
+
+**RSS propio:** `NEWS_RSS_URL` → `https://ElPibeCapo.github.io/meta/v1/news/feed.atom`
+`BETELINEY_PACKS_URL` → `https://ElPibeCapo.github.io/meta/v1/beteliney-packs/`
 
 ### ✅ FASE 4 — Features avanzados (commits b5f0c3b, 11bfe87, c9d13d8)
 
-**4.1 CheckModConflicts** (`launch/steps/CheckModConflicts.h/cpp`):
-- LaunchStep que corre ANTES de que Minecraft inicie, después de ScanModFolders
-- Lee todos los .jar con `ModUtils::process(BasicInfoOnly)`, extrae `mod_id`
-- Detecta IDs duplicados, los imprime como warnings en el log de lanzamiento
-- No bloquea — avisa y continúa
+**4.1 CheckModConflicts** (`launch/steps/CheckModConflicts.h/cpp` — 31+91 líneas):
+- `LaunchStep` que corre después de `ScanModFolders`, antes de lanzar Minecraft
+- Lee todos los `.jar` con `ModUtils::process(mod, BasicInfoOnly)`, extrae `mod_id`
+- Detecta IDs duplicados → los registra como warnings en el log de lanzamiento con cuadro ASCII
+- No bloquea el lanzamiento — advierte y continúa
 
-**4.2 MalwareScanner** (`minecraft/mod/MalwareScanner.h/cpp`):
-- Singleton, descarga `gh-pages/v1/malware/known-hashes.json` al inicio
-- Cachea hashes SHA-256 y SHA-512 en `QSet<QString>`, búsqueda O(1)
-- Hook en `ResourceDownloadTask::downloadSucceeded()`: si hash en lista negra → borra archivo y emite error
-- Fallo silencioso si no hay red
-- `loadIfNeeded()` llamado en `Application::showMainWindow()`
+**4.2 MalwareScanner** (`minecraft/mod/MalwareScanner.h/cpp` — 64+86 líneas):
+- Singleton global, descarga `gh-pages/v1/malware/known-hashes.json` al iniciar el launcher
+- Cachea en `QSet<QString>` SHA-256 y SHA-512 → búsqueda O(1)
+- Hook en `ResourceDownloadTask::downloadSucceeded()`: hash → lista negra → borra archivo + emite error
+- Fallo silencioso si no hay red (no bloquea funcionalidad normal)
+- `MalwareScanner::instance()->loadIfNeeded()` en `Application::showMainWindow()`
 
-**4.3 BetelineyPanicHandler** (`crash/BetelineyPanicHandler.h/cpp`):
+**4.3 BetelineyPanicHandler** (`crash/BetelineyPanicHandler.h/cpp` — 28+219 líneas):
 - Linux: `sigaction` para SIGSEGV/SIGABRT/SIGFPE/SIGILL → escribe `/tmp/beteliney_crash_<pid>.txt` con `backtrace_symbols_fd()`
-- Windows: `SetUnhandledExceptionFilter` + `MiniDumpWriteDump` (dbghelp, ya en CMakeLists)
-- `checkAndShowCrashReport()`: al siguiente inicio busca crashfiles de sesiones anteriores, muestra QDialog con backtrace + botón "Reportar en GitHub" (URL con template pre-llenado), borra el archivo después
-- Hook en `main()`: `installPanicHandler()` antes de `Application`
-- Hook en `Application::showMainWindow()`: `checkAndShowCrashReport()`
+- Windows: `SetUnhandledExceptionFilter` + `MiniDumpWriteDump` (dbghelp ya en CMakeLists)
+- Al siguiente inicio: `checkAndShowCrashReport()` busca crashfiles → QDialog con backtrace + botón "Reportar en GitHub" (URL con template pre-llenado) → borra el archivo
+- `installPanicHandler()` en `main()` antes de `Application()`
+- `checkAndShowCrashReport()` en `Application::showMainWindow()`
 
-**4.4 GDLauncherMigrator** (`migration/GDLauncherMigrator.h/cpp`) + `GDLauncherMigrateDialog`:
-- Detecta `~/.local/share/gdlauncher_next/` (Linux) o `%APPDATA%/gdlauncher_next/` (Windows), 4 rutas candidatas
+**4.4 GDLauncherMigrator** (`migration/GDLauncherMigrator.h/cpp` — 54+309 líneas):
+- Detecta `~/.local/share/gdlauncher_next/` (Linux) o `%APPDATA%/gdlauncher_next/` (Windows), prueba 4 rutas candidatas
 - Abre `data.sqlite` con Qt QSQLITE, usa `PRAGMA table_info` para detectar schema automáticamente
-- Lee id/name/mc_version/modloader/modloader_version/shortpath de la tabla instances
-- Importa: crea `instance.cfg` + `mmc-pack.json` en formato Prism, copia `.minecraft/` buscando 3 subrutas posibles
-- `GDLauncherMigrateDialog`: lista con selección múltiple, QProgressDialog con cancelación
-- Acceso: File → "Importar desde GDLauncher Carbon..."
+- Lee: id, name, mc_version, modloader, modloader_version, shortpath
+- Exporta: crea `instance.cfg` + `mmc-pack.json` en formato Prism, copia `.minecraft/` buscando 3 subrutas posibles, genera `AVISO_MIGRACIÓN.txt` si los archivos no se encontraron
+- `GDLauncherMigrateDialog.h/cpp` (45+170 líneas): lista selección múltiple, QProgressDialog con cancelación, acceso en **File → "Importar desde GDLauncher Carbon..."**
 
-**4.5 Botón "Optimizar (rendimiento)"** en `VersionPage`:
-- Visible solo cuando loader es Fabric/Quilt/LegacyFabric
-- Lee preset `builtin-vanilla-optimized` de `BetelineyPresets.h`
-- Detecta qué mods del preset faltan en `modsRoot()`
-- Pide confirmación, descarga mods faltantes via NetJob + QProgressDialog
+**4.5 Botón "Optimizar" en VersionPage** (97 líneas añadidas):
+- Visible solo cuando loader es Fabric, Quilt o LegacyFabric (método `updateVersionControls`)
+- Al pulsar: lee preset `builtin-vanilla-optimized` de `BetelineyPresets.h`, detecta mods faltantes en `modsRoot()`, pide confirmación, descarga via NetJob + QProgressDialog
 - No reinstala mods ya presentes (check por nombre de archivo)
+- Ícono: `QIcon::fromTheme("run-build-configure")`
 
-### 🔄 FASE 5 — Distribución profesional (EN PROGRESO)
+### ✅ FASE 5 — Distribución profesional (commit 012d4b1)
 
-**5.1 Flatpak** — `dist/com.beteliney.BetelineyLauncher.json`
-- Manifest para Flatpak Builder, runtime `org.kde.Platform//6.6`
-- CI job `build-flatpak` en `build.yml` (solo en tags)
-- Distribuir como `.flatpakref` desde GitHub Pages hasta tener Flathub aprobado
+**5.1 Flatpak** (`dist/com.beteliney.BetelineyLauncher.json` — 88 líneas):
+- App ID: `com.beteliney.BetelineyLauncher`
+- Runtime: `org.kde.Platform//6.6`
+- Finish-args: `--share=network --share=ipc --socket=wayland --socket=x11 --socket=pulseaudio --device=all --filesystem=home`
+- Módulos: libqrencode + cmark + BetelineyLauncher
+- Post-install: instala binario, iconos SVG/PNG, metainfo, desktop entry, JARs
 
-**5.2 SmartScreen Windows**
-- Sin firma: Windows bloquea el `.exe` con "Windows protegió tu PC"
-- Fix en el NSIS installer: mensaje en pantalla Welcome explicando el bypass
-- Fix en el CI: añadir advertencia en el body del GitHub Release
+**5.2 SmartScreen Windows:**
+- `win_install.nsi.in`: `MUI_WELCOMEPAGE_TEXT` con instrucciones exactas (Más información → Ejecutar de todas formas)
+- `build.yml` Release body: sección `⚠️ Windows Defender SmartScreen` con pasos numerados
+- Solución ideal futura: certificado EV code signing (~$200-400/año)
 
-**5.3 AppImage Linux**
-- `dist/beteliney.AppDir/` estructura, `appimagetool`
-- CI job `build-appimage` en `build.yml`
+**5.3 AppImage** (`EMPAQUETAR_APPIMAGE.sh` — 103 líneas):
+- Auto-descarga linuxdeploy + plugin-qt + appimagetool si no están en `dist/tools/`
+- Prepara AppDir completo: binario + JARs + iconos + desktop entry + metainfo (con sed para vars)
+- Usa linuxdeploy-plugin-qt para deployar Qt automáticamente
+- Output: `dist/BetelineyLauncher-{VER}-Linux-{ARCH}.AppImage`
 
 ---
 
-## AUDITORÍA COMPLETA DEL CÓDIGO
+## CÓDIGO HEREDADO DE PRISM (funcional, sin cambios significativos)
 
-### BetelineyLogAnalyzer — 18 checks
+- **Auth MSA completa**: MSAStep → MSADeviceCodeStep → XboxUserStep → XboxAuthorizationStep → XboxProfileStep → EntitlementsStep → MinecraftProfileStep → GetSkinStep
+- **AccountType {MSA, Offline}** — ambas funcionales
+- **Symlinks entre instancias** — 50 instancias comparten assets, solo sus mods ocupan espacio extra
+- **Forge processors** — `install_profile.json` con processors ejecutados en cadena (1.20+)
+- **Modrinth** — API + CheckUpdate + InstanceCreation + PackExport
+- **CurseForge/Flame** — API + CheckUpdate + InstanceCreation + FileResolving
+- **ATLauncher, FTB, LegacyFTB, Technic, PackWiz** — todos funcionales
+- **Java auto-descarga** — ON en Windows, OFF en Linux por defecto (compatibilidad distros)
+- **McClient/McResolver** — ping TCP de servidores Minecraft (MOTD, versión, jugadores, SRV)
+- **HashUtils** — SHA1/SHA256/SHA512/MD4/MD5/Murmur2 async
+- **Setup wizard** — AutoJava, Java, Language, Login, Theme, Paste
+- **NSIS installer** — 60+ idiomas, URL handlers, asociaciones de archivo, desinstalador
+- **BetelineyUpdater** — GitHub Releases API, semver, pre-releases, AppImage update
+- **AnonymizeLog** — elimina tokens, UUIDs, IPs antes de compartir logs
+- **Imgur upload** — código existe, key vacía
 
-| Check | Detecta | Severidad | ActionTarget |
-|---|---|---|---|
-| checkOutOfMemory | `java.lang.OutOfMemoryError` (heap/GC/Metaspace) | Critical | `"java"` |
-| checkHeapReservation | `Could not reserve enough space` | Critical | `"java"` |
-| checkDuplicateMod | Duplicate mod Fabric/Forge | Critical | `"mods-folder"` |
-| checkMissingDependency | requires mod X / Missing Mods | Critical | `"search-modrinth:X"` |
-| checkIncompatibleMods | Incompatible mods | Error | — |
-| checkMixinConflict | Mixin transformation failed | Error | — |
-| checkFabricIncompatible | versiones incompatibles Fabric | Error | — |
-| checkJavaNotFound | Failed to start runtime | Critical | `"java"` |
-| checkUnsupportedJavaVersion | UnsupportedClassVersionError | Critical | `"java"` |
-| checkForgeJavaRequirement | Forge requires Java | Critical | `"java"` |
-| checkOpenGLNotAccelerated | Pixel format not accelerated | Error | — |
-| checkOpenGLError | OpenGL errors genéricos | Warning | — |
-| checkNativesCrash | exit -1073741819 / SIGSEGV | Error | — |
-| checkWindowsLoadLibrary | LoadLibrary failed | Error | — |
-| checkNetworkError | Timeout/SSL/connection refused | Warning | — |
-| checkFractureiser | Malware Fractureiser | Critical | — |
-| checkForgeEarlyWindow | Failed to create early window | Error | — |
-| checkForgeCoremods | Coremod error init | Error | — |
+---
 
-### BetelineyProfiles — 7 perfiles JVM
+## DECISIONES TÉCNICAS FIJAS
 
-| Idx | Nombre | RAM |
+| Decisión | Alternativa rechazada | Razón |
 |---|---|---|
-| 0 | Personalizado | 0/0 |
-| 1 | iGPU/RAM compartida | 384–1536 MB |
-| 2 | Ligero Vanilla | 512–2048 MB |
-| 3 | Balanceado | 2048–4096 MB |
-| 4 | Pesado 100–300 mods | 2048–6144 MB |
-| 5 | Extremo ≥300 mods | 6144–12288 MB |
-| 6 | iGPU ZGC Java21+ | 384–1536 MB |
-
-En `JavaSettingsWidget.cpp`: auto-detección iGPU via lspci/wmic, badge GraalVM, warnings RAM.
-INI keys: `MinMemAlloc`, `MaxMemAlloc`, `JvmArgs`, `OverrideMemory`, `OverrideJavaArgs`.
-
-### Resto del código heredado (todo funcional)
-Auth MSA completa · Cuentas offline · Symlinks entre instancias · Modrinth+CurseForge+ATLauncher+FTB+Technic+PackWiz · Java auto-descarga · McClient/McResolver · NSIS installer · BetelineyUpdater · Easter egg B-E-T-E · AnonymizeLog · Imgur (key vacía)
-
----
-
-## DECISIONES FIJAS
-
-| Decisión | Razón |
-|---|---|
-| Fork Prism, no reescritura | Auth MSA + Forge processors + plataformas = meses reimplementando. 90% ya existe. |
-| Qt Widgets + QSS, no QML | Migrar 100+ vistas = reescribir UI entera. QSS es production-quality. |
-| GitHub Pages para META | Gratis, cero mantenimiento. Migrar a Cloudflare Pages si supera 100GB/mes. |
-| MSYS2/MinGW64 Windows CI | aqtinstall falló en todos los mirrors. |
-| INI + SQLite donde aplica | INI para settings simples. SQLite para GDLauncher migration. |
+| Fork Prism, no reescritura | Rust + Tauri desde cero | Auth MSA + Forge processors + todas las plataformas de mods = meses reimplementando. 90% ya existe y funciona. |
+| Qt Widgets + QSS, no QML | Migrar a Qt Quick | Migrar 100+ vistas = reescribir la UI entera. QSS produce resultados excelentes. |
+| GitHub Pages para META | VPS propio | Gratis, cero mantenimiento. Migrar a Cloudflare Pages si supera 100 GB/mes. |
+| MSYS2/MinGW64 Windows CI | aqtinstall | aqtinstall falló en todos los mirrors durante el setup del CI. |
+| INI + SQLite donde aplica | Solo SQLite | INI es suficiente para settings. SQLite solo donde hay datos relacionales (GDLauncher). |
+| `BUILD_TESTING=OFF` default | Tests en todo build | ECMAddTests.cmake falla en CMake 4.x en este entorno. |
 
 ---
 
 ## VERSIONES
 
-Actual: **v8.2.0** · Próxima: **v8.3.0** cuando Fase 5 esté lista.
-Patch: bugfixes · Minor: feature completo · Major: cambio arquitectural.
+| Tipo | Criterio |
+|---|---|
+| **Patch** x.x.+1 | Bugfixes, cambios menores |
+| **Minor** x.+1.0 | Feature completo, fase completa |
+| **Major** +1.0.0 | Cambio arquitectural, reescritura de subsistema |
+
+**Actual en código:** v8.2.0
+**Para publicar como v8.3.0:** `git tag v8.3.0 && git push --tags`
+
+---
+
+## QUÉ SIGUE (IDEAS FUTURAS, NO PLANIFICADAS)
+
+- **Flathub** — submitear el manifest Flatpak para revisión oficial
+- **macOS** — el código heredado existe (Sparkle updater, entitlements), sin CI activo
+- **Sincronización en nube de instancias** — GDLauncher Carbon lo tiene, requiere backend propio
+- **Verificación de mods en instancias existentes** — escanear mods ya instalados con MalwareScanner
+- **Soporte ARM64** — cambiar `-march=znver1` por detección automática en CI
+- **i18n propio** — el sistema de traducciones de Prism existe, conectar a Weblate o similar
