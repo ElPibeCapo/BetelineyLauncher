@@ -463,10 +463,8 @@ ESTADO.md: versión 8.2.0 → 8.3.0.
 
 **Patrón común a casi todos los bugs:** ninguno es un error de diseño — son APIs internas del fork (`Net::Download`, `Validator`, `settings()`, `network()`, `InstanceList`) que cambiaron de firma en algún punto del desarrollo, y el código nuevo (Fases 3-5, todo escrito sin compilar incrementalmente) quedó usando la firma vieja. Ninguno se había detectado porque el proyecto nunca pasó por una compilación limpia completa hasta esta sesión.
 
-**Estado git al cierre de la sesión:** 9 archivos modificados sin commitear (los del fix de hoy) + `docs/COPYING.md` ya en stage desde sesión anterior. **No se ha hecho commit todavía** — se está esperando a que la build termine 100% limpia antes de commitear todo junto.
+**Estado git al cierre de la sesión:** commit `8a79e90` — 12 archivos, 10 bugs corregidos. Build verificada 403/403 + link final exitoso → `build/beteliney` 15MB. **Listo para push y tag.**
 
-**Pendiente inmediato (próxima sesión o continuación):**
-- Corregir bug 10 (`GDLauncherMigrator.cpp`).
-- Terminar el resto de la build (objetos 348-403 sin probar todavía — pueden aparecer más bugs del mismo tipo).
-- Si compila 100% limpio: commit único con los 9+ fixes, mensaje tipo `fix: errores de compilación reales encontrados en build limpia (Fases 3-5)`.
-- Recién ahí: `git push`, y evaluar `git tag v8.3.0 && git push --tags` (Día 1, hitos 1.1/1.2 del plan de 7 días siguen pendientes).
+**Pendiente (próxima sesión):**
+- `git push origin main` (push al remoto).
+- `git tag v8.3.0 && git push --tags` si se decide publicar ya.
