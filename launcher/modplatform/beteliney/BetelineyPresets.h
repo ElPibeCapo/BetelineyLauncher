@@ -6,6 +6,7 @@
 #pragma once
 
 #include "BetelineyPack.h"
+#include <QCoreApplication>
 #include <QList>
 
 namespace Beteliney {
@@ -26,10 +27,10 @@ inline QList<Pack> builtinPresets()
     {
         Pack p;
         p.id              = "builtin-vanilla-optimized";
-        p.name            = tr("Vanilla Optimizado");
-        p.description     = tr("Fabric 1.21.1 con Sodium, Lithium, Iris y ModernFix.\n"
+        p.name            = QObject::tr("Vanilla Optimizado");
+        p.description     = QObject::tr("Fabric 1.21.1 con Sodium, Lithium, Iris y ModernFix.\n"
                                "Más FPS, menos lag, mismo gameplay.");
-        p.longDescription = tr("**Vanilla Optimizado** instala los mods de rendimiento "
+        p.longDescription = QObject::tr("**Vanilla Optimizado** instala los mods de rendimiento "
                                "más probados para Fabric:\n\n"
                                "- **Sodium** — renderizado optimizado (5-10× más FPS)\n"
                                "- **Lithium** — optimiza game logic, IA de mobs, chunks\n"
@@ -86,9 +87,9 @@ inline QList<Pack> builtinPresets()
     {
         Pack p;
         p.id              = "builtin-pvp-competitive";
-        p.name            = tr("PvP Competitivo");
-        p.description     = tr("Fabric 1.21.1 con mods de PvP esenciales: FPS alto, hitboxes precisas.");
-        p.longDescription = tr("**PvP Competitivo** incluye:\n\n"
+        p.name            = QObject::tr("PvP Competitivo");
+        p.description     = QObject::tr("Fabric 1.21.1 con mods de PvP esenciales: FPS alto, hitboxes precisas.");
+        p.longDescription = QObject::tr("**PvP Competitivo** incluye:\n\n"
                                "- **Sodium** — máximo FPS\n"
                                "- **Lithium** — menor latencia de tick\n"
                                "- **Ksyxis** — carga de spawn más rápida\n"
@@ -121,9 +122,9 @@ inline QList<Pack> builtinPresets()
     {
         Pack p;
         p.id              = "builtin-heavy-modpack";
-        p.name            = tr("Modpack Pesado (NeoForge)");
-        p.description     = tr("Base NeoForge 1.21.1 sin mods — optimizada para instalar 100+ mods manualmente.");
-        p.longDescription = tr("**Modpack Pesado** es una instancia NeoForge 1.21.1 limpia "
+        p.name            = QObject::tr("Modpack Pesado (NeoForge)");
+        p.description     = QObject::tr("Base NeoForge 1.21.1 sin mods — optimizada para instalar 100+ mods manualmente.");
+        p.longDescription = QObject::tr("**Modpack Pesado** es una instancia NeoForge 1.21.1 limpia "
                                "con el perfil JVM **Pesado (100–300 mods)** preconfigurado.\n\n"
                                "No incluye mods — añade los tuyos. El perfil JVM asigna "
                                "2048–6144 MB y usa `AlwaysPreTouch` para evitar pauses.\n\n"

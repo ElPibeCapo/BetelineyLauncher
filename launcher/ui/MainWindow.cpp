@@ -266,7 +266,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWi
         auto* actionImportGDL = new QAction(tr("Importar desde &GDLauncher Carbon..."), this);
         actionImportGDL->setToolTip(tr("Importa instancias desde GDLauncher Carbon"));
         connect(actionImportGDL, &QAction::triggered, this, [this] {
-            QString instDir = APPLICATION->instances()->instDir();
+            QString instDir = APPLICATION->settings()->get("InstanceDir").toString();
             Beteliney::GDLauncherMigrateDialog dlg(instDir, this);
             dlg.exec();
             // Refrescar la lista de instancias si el import fue exitoso
