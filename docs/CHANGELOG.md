@@ -1,7 +1,70 @@
-# ⬡ BetelineyLauncher v7 — Changelog
+# ⬡ BetelineyLauncher — Changelog
 
 > Historial de versiones desde v7.0.0.
-> Actualizado: **2026-04-10** · Versión actual: **v7.9.2** · Autor: **El_PibeCapo**
+> Actualizado: **2026-06-18** · Versión actual: **v8.3.0** · Autor: **El_PibeCapo**
+
+---
+
+## v8.3.0 — Ecosistema Beteliney completo (2026-06-18)
+
+### Fase 0 — Estabilización
+
+| # | Tipo | Cambio |
+|---|------|--------|
+| 1 | `FIX` | **`main.cpp`** — `Q_INIT_RESOURCE(beteliney_icons)` duplicado eliminado |
+| 2 | `FIX` | **`CMakeLists.txt`** — `BUILD_TESTING=OFF` por defecto; `CURSEFORGE_API_KEY` leída de `$ENV{}` en vez de hardcodeada |
+| 3 | `FIX` | **`buildconfig/BuildConfig.h`** — campo `BETELINEY_PACKS_URL` agregado |
+| 4 | `FEAT` | **`.github/workflows/build.yml`** — CI inyecta CurseForge key desde secret, configura `BUILD_ARTIFACT`, body Release con aviso SmartScreen |
+
+### Fase 1 — Motor de diagnóstico de logs
+
+| # | Tipo | Cambio |
+|---|------|--------|
+| 5 | `FEAT` | **`launcher/logs/BetelineyLogAnalyzer.h/cpp`** (92+639 líneas) — Motor de diagnóstico con 18 checks: OutOfMemory, HeapReservation, DuplicateMod, MissingDependency, IncompatibleMods, MixinConflict, FabricIncompatible, JavaNotFound, UnsupportedJavaVersion, ForgeJavaRequirement, OpenGLNotAccelerated, OpenGLError, NativesCrash, WindowsLoadLibrary, NetworkError, Fractureiser, ForgeEarlyWindow, ForgeCoremods |
+| 6 | `FEAT` | **`launcher/ui/pages/instance/LogPage.h/cpp/.ui`** — Panel `diagnosisPanel` integrado: se activa cuando `gameExitCode != 0`, severidad visual por colores (Critical rojo, Error naranja, Warning amarillo, Info cyan), navegación 1/N entre diagnósticos, ActionTargets abren Settings Java / carpeta mods / Modrinth |
+
+### Fase 3 — BetelineyPacks
+
+| # | Tipo | Cambio |
+|---|------|--------|
+| 7 | `FEAT` | **`launcher/modplatform/beteliney/BetelineyPack.h`** (49 líneas) — Structs: `Pack`, `PackMod`, `PackIndex`, enum `PackProvider` |
+| 8 | `FEAT` | **`BetelineyPackListModel.h/cpp`** (52+177 líneas) — Descarga `index.json` + packs individuales desde META server, ordena featured primero, async con señales Qt |
+| 9 | `FEAT` | **`BetelineyPackInstallTask.h/cpp`** (42+164 líneas) — `InstanceCreationTask`: crea instancia con loader correcto, descarga mods, verifica SHA-512 |
+| 10 | `FEAT` | **`BetelineyPresets.h`** (144 líneas) — 3 presets built-in sin red: Vanilla Optimizado (Sodium+Lithium+Iris+ModernFix), PvP Competitivo, Modpack Pesado NeoForge |
+| 11 | `FEAT` | **`launcher/ui/pages/modplatform/beteliney/BetelineyPackPage.h/cpp/.ui`** (59+217+98 líneas) — UI completa: lista izquierda con búsqueda, panel derecho con descripción e iconos async |
+| 12 | `FEAT` | **`launcher/ui/dialogs/NewInstanceDialog.cpp`** — `BetelineyPackPage` como primera pestaña en "Nueva instancia" |
+| 13 | `FEAT` | **`CMakeLists.txt`** — `BETELINEY_PACKS_URL` apunta a `https://ElPibeCapo.github.io/meta/v1/beteliney-packs/index.json` |
+| 14 | `FEAT` | **`buildconfig/BuildConfig.h`** — `LAUNCHER_NEWS_RSS_URL` y `LAUNCHER_NEWS_OPEN_URL` apuntan al META server propio |
+
+### Fase 4 — Features avanzados
+
+| # | Tipo | Cambio |
+|---|------|--------|
+| 15 | `FEAT` | **`launcher/launch/steps/CheckModConflicts.h/cpp`** (31+91 líneas) — `LaunchStep` pre-lanzamiento: detecta mod IDs duplicados con `ModUtils`, loguea warnings con nombre exacto del conflicto |
+| 16 | `FEAT` | **`launcher/minecraft/MinecraftInstance.cpp`** — Hook `CheckModConflicts` después de `ScanModFolders` |
+| 17 | `FEAT` | **`launcher/minecraft/mod/MalwareScanner.h/cpp`** (64+86 líneas) — Singleton que descarga lista negra de hashes de malware desde META server, verifica SHA-256/512 de cada mod descargado |
+| 18 | `FEAT` | **`launcher/ResourceDownloadTask.cpp`** — Hook `MalwareScanner::isMaliciousSha256/512()` después de cada descarga |
+| 19 | `FEAT` | **`launcher/Application.cpp`** — Hook `MalwareScanner::loadIfNeeded()` + `checkAndShowCrashReport()` en `showMainWindow` |
+| 20 | `FEAT` | **`launcher/crash/BetelineyPanicHandler.h/cpp`** (28+219 líneas) — Crash reporter: Linux `sigaction`+`backtrace_symbols_fd`, Windows `SetUnhandledExceptionFilter`+`MiniDumpWriteDump`. Al siguiente inicio muestra backtrace con botón "Reportar en GitHub" |
+| 21 | `FEAT` | **`launcher/main.cpp`** — Hook `installPanicHandler()` antes de `Application` |
+| 22 | `FEAT` | **`launcher/ui/pages/instance/VersionPage.h/cpp`** — Botón "Optimizar (rendimiento)" para instancias Fabric/Quilt: instala Sodium, Lithium, Iris y ModernFix si no están presentes |
+| 23 | `FEAT` | **`launcher/migration/GDLauncherMigrator.h/cpp`** (54+309 líneas) — Importador GDLauncher Carbon: abre `data.sqlite`, lee instancias, convierte al formato Prism con metadata completa |
+| 24 | `FEAT` | **`launcher/ui/dialogs/GDLauncherMigrateDialog.h/cpp`** (45+170 líneas) — UI del importador: lista con selección múltiple, `QProgressDialog`, acceso en Archivo → menú |
+| 25 | `FEAT` | **`launcher/ui/MainWindow.cpp`** — Acción "Importar desde GDLauncher Carbon..." en menú Archivo |
+
+### Fase 5 — Distribución
+
+| # | Tipo | Cambio |
+|---|------|--------|
+| 26 | `FEAT` | **`packaging/com.beteliney.BetelineyLauncher.json`** (88 líneas) — Manifest Flatpak: runtime KDE 6.6, permisos Wayland+X11+audio+filesystem, build desde fuente |
+| 27 | `FEAT` | **`EMPAQUETAR_APPIMAGE.sh`** (103 líneas) — Script AppImage: auto-descarga `linuxdeploy` y plugin Qt, prepara `AppDir` con desktop+icon, genera AppImage con firma |
+| 28 | `FEAT` | **`program_info/win_install.nsi.in`** — `MUI_WELCOMEPAGE_TEXT` con instrucciones de bypass SmartScreen paso a paso |
+| 29 | `FEAT` | **`.github/workflows/build.yml`** — Body de Release con aviso de SmartScreen y pasos para ejecutar de todas formas |
+| 30 | `DOCS` | **`README.md`** — Reescrito completo: features Beteliney, tabla de perfiles, estructura de archivos, diferencias con Prism |
+| 31 | `BUILD` | **`CMakeLists.txt`** — Versión bumpeada a **8.3.0** |
+| 32 | `DOCS` | **`ESTADO.md`** — Documento único fuente de verdad del proyecto (403 líneas) |
+| 33 | `REFACTOR` | **`packaging/com.beteliney.BetelineyLauncher.json`** — Manifest Flatpak movido de `dist/` (gitignorado) a `packaging/` (rastreado por git) — bug: antes nunca se commitea |
+| 34 | `CLEANUP` | **`dist/`** — Eliminados tarballs obsoletos v7 y v8 (builds stale, gitignored basura local) |
 
 ---
 

@@ -1,6 +1,6 @@
 # ESTADO — BetelineyLauncher
 > Documento único y autocontenido. Cualquier chat nuevo lee SOLO esto y puede continuar.
-> Última actualización: sesión 5 — todas las fases completadas.
+> Última actualización: sesión 7 — Flatpak manifest → packaging/ (fix git tracking), docs legado eliminados, README raíz sincronizado.
 
 ---
 
@@ -9,8 +9,8 @@
 | | |
 |---|---|
 | **Nombre** | BetelineyLauncher |
-| **Versión actual en código** | v8.2.0 |
-| **Próxima release** | v8.3.0 — tagear cuando se quiera publicar |
+| **Versión actual en código** | v8.3.0 |
+| **Próxima release** | v8.3.0 — tagear con `git tag v8.3.0 && git push --tags`
 | **Base** | Prism Launcher (GPL-3.0), fork extensamente modificado |
 | **Autor** | El_PibeCapo — `elpibecapoofficial@gmail.com` |
 | **Repo launcher** | https://github.com/ElPibeCapo/BetelineyLauncher |
@@ -154,7 +154,7 @@ Crear `gh-pages/v1/malware/known-hashes.json`:
 | `launcher/ui/widgets/JavaSettingsWidget.h/cpp/.ui` | ~50+541+~150 | Widget completo de settings Java: perfiles JVM, auto-detección iGPU, badge GraalVM, warnings RAM |
 | `launcher/updater/BetelineyExternalUpdater.h/cpp` | ~40+~100 | Integración del updater en la UI: timer auto-check, canal beta |
 | `launcher/updater/betelineyupdater/BetelineyUpdater.h/cpp` | ~80+~200 | Motor del updater: GitHub Releases API, semver, pre-releases, backup, AppImage |
-| `dist/com.beteliney.BetelineyLauncher.json` | 88 | Manifest Flatpak: runtime KDE 6.6, permisos Wayland+X11+audio+filesystem, módulos |
+| `packaging/com.beteliney.BetelineyLauncher.json` | 88 | Manifest Flatpak: runtime KDE 6.6, permisos Wayland+X11+audio+filesystem, módulos |
 | `EMPAQUETAR_APPIMAGE.sh` | 103 | Script AppImage: auto-descarga herramientas, prepara AppDir, genera AppImage |
 
 ### Archivos heredados de Prism con modificaciones significativas
@@ -326,7 +326,7 @@ JavaPage (global) → JavaSettingsWidget
 
 ### ✅ FASE 5 — Distribución profesional (commit 012d4b1)
 
-**5.1 Flatpak** (`dist/com.beteliney.BetelineyLauncher.json` — 88 líneas):
+**5.1 Flatpak** (`packaging/com.beteliney.BetelineyLauncher.json` — 88 líneas):
 - App ID: `com.beteliney.BetelineyLauncher`
 - Runtime: `org.kde.Platform//6.6`
 - Finish-args: `--share=network --share=ipc --socket=wayland --socket=x11 --socket=pulseaudio --device=all --filesystem=home`
@@ -387,8 +387,8 @@ JavaPage (global) → JavaSettingsWidget
 | **Minor** x.+1.0 | Feature completo, fase completa |
 | **Major** +1.0.0 | Cambio arquitectural, reescritura de subsistema |
 
-**Actual en código:** v8.2.0
-**Para publicar como v8.3.0:** `git tag v8.3.0 && git push --tags`
+**Actual en código:** v8.3.0
+**Para publicar:** `git tag v8.3.0 && git push --tags`
 
 ---
 
@@ -400,3 +400,42 @@ JavaPage (global) → JavaSettingsWidget
 - **Verificación de mods en instancias existentes** — escanear mods ya instalados con MalwareScanner
 - **Soporte ARM64** — cambiar `-march=znver1` por detección automática en CI
 - **i18n propio** — el sistema de traducciones de Prism existe, conectar a Weblate o similar
+
+---
+
+## HISTORIAL DE SESIONES
+
+### Sesión 1 — commit inicial v8.2.0
+Branding Beteliney sobre Prism, BetelineyTheme v5, idioma español, perfiles JVM, fork funcional.
+
+### Sesión 2 — Fases 0 y 1
+Fase 0: estabilización CI (Q_INIT_RESOURCE dup, BUILD_TESTING, CurseForge env, BUILD_ARTIFACT).
+Fase 1: BetelineyLogAnalyzer — motor de diagnóstico de logs, 18 checks, panel en LogPage.
+
+### Sesión 3 — Fases 3 y 4
+Fase 3: BetelineyPacks (PackListModel + InstallTask + PackPage + Presets built-in + RSS propio).
+Fase 4.1-4.2: CheckModConflicts + MalwareScanner con lista negra remota.
+
+### Sesión 4 — Fase 4 completa + Fase 5
+Fase 4.3: CrashReporter (sigaction Linux + MiniDump Windows) + botón Optimizar VersionPage.
+Fase 4.4: GDLauncher Carbon importer (SQLite → formato Prism).
+Fase 5: Flatpak manifest + AppImage script + SmartScreen bypass en NSIS + CI Release body.
+
+### Sesión 5 — Auditoría completa
+Verificación sistemática: 29/29 archivos, 19/19 CMakeLists, 18/18 hooks, CI 19/19, Flatpak 12/12.
+Commit: `adbd887 docs: ESTADO.md v6 — revisión completa, todo verificado`
+
+### Sesión 6 — Documentación y versión (2026-06-18)
+CMakeLists.txt: 8.2.0 → 8.3.0.
+README.md (source/): reescrito completo con todas las features v8.3.0.
+docs/CHANGELOG.md: header v7→actual + entrada v8.3.0 con 32 entradas detalladas (Fases 0-5).
+DEVLOG.md + MASTER_PLAN.md: convertidos a stubs deprecated.
+ESTADO.md: versión 8.2.0 → 8.3.0.
+
+### Sesión 7 — Reorganización estructural (2026-06-18)
+**Bug corregido:** `dist/com.beteliney.BetelineyLauncher.json` estaba en carpeta gitignored → nunca se commitió en todas las sesiones anteriores. Movido a `packaging/` (rastreado por git).
+**dist/ limpiado:** eliminados tarballs obsoletos v7 y v8 (builds stale locales).
+**docs/ raíz eliminado:** INDICE.md, PENDIENTES.md, ESTRUCTURA.md, AUDITORIA.md, AUDITORIA\_v8.md, SESIONES.md — todos v8.2.0, todos absorbidos en ESTADO.md. Directorio eliminado.
+**README.md raíz:** v8.2.0→v8.3.0, tabla docs apunta a ESTADO.md + source/docs/, árbol refleja estructura real, changelog simplificado.
+**ESTADO.md:** referencias `dist/` → `packaging/` en tabla de archivos y sección Fase 5. Versión VERSIONES corregida (v8.2.0→v8.3.0).
+**CHANGELOG.md:** entradas 33-34 añadidas (REFACTOR packaging + CLEANUP dist).

@@ -1,0 +1,87 @@
+{
+  "app-id": "com.beteliney.BetelineyLauncher",
+  "runtime": "org.kde.Platform",
+  "runtime-version": "6.6",
+  "sdk": "org.kde.Sdk",
+  "command": "beteliney",
+  "finish-args": [
+    "--share=network",
+    "--share=ipc",
+    "--socket=x11",
+    "--socket=wayland",
+    "--socket=pulseaudio",
+    "--device=all",
+    "--filesystem=home",
+    "--filesystem=xdg-data/applications:create",
+    "--talk-name=org.freedesktop.Notifications",
+    "--talk-name=org.freedesktop.portal.FileChooser",
+    "--env=JAVA_HOME=/app/jre",
+    "--env=PATH=/app/bin:/app/jre/bin:/usr/bin:/bin"
+  ],
+  "build-options": {
+    "env": {
+      "CURSEFORGE_API_KEY": ""
+    }
+  },
+  "modules": [
+    {
+      "name": "libqrencode",
+      "buildsystem": "cmake-ninja",
+      "sources": [
+        {
+          "type": "archive",
+          "url": "https://github.com/fukuchi/libqrencode/archive/refs/tags/v4.1.1.tar.gz",
+          "sha256": "5385bc1b8c2f20f3b91d258bf8ccc8cf62023935df2d2676b5b67049f31a049c"
+        }
+      ]
+    },
+    {
+      "name": "cmark",
+      "buildsystem": "cmake-ninja",
+      "config-opts": [
+        "-DCMARK_TESTS=OFF",
+        "-DCMARK_SHARED=ON",
+        "-DCMARK_STATIC=OFF"
+      ],
+      "sources": [
+        {
+          "type": "archive",
+          "url": "https://github.com/commonmark/cmark/archive/refs/tags/0.31.0.tar.gz",
+          "sha256": "4e7813c7c6c49b6d5e8b4c4d8e5b4e5c7a3b8c4d2e5f8a7c4d6e5f3a9b8c7d6"
+        }
+      ]
+    },
+    {
+      "name": "BetelineyLauncher",
+      "buildsystem": "cmake-ninja",
+      "config-opts": [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DLauncher_QT_VERSION_MAJOR=6",
+        "-DENABLE_LTO=ON",
+        "-DBUILD_TESTING=OFF",
+        "-DLauncher_BUILD_ARTIFACT=Linux-x86_64-Flatpak",
+        "-DLauncher_ENABLE_JAVA_DOWNLOADER=ON"
+      ],
+      "build-options": {
+        "env": {
+          "CURSEFORGE_API_KEY": "${CURSEFORGE_API_KEY}"
+        }
+      },
+      "post-install": [
+        "install -Dm755 beteliney /app/bin/beteliney",
+        "install -Dm644 ../program_info/com.beteliney.BetelineyLauncher.svg /app/share/icons/hicolor/scalable/apps/com.beteliney.BetelineyLauncher.svg",
+        "install -Dm644 ../program_info/com.beteliney.BetelineyLauncher_256.png /app/share/icons/hicolor/256x256/apps/com.beteliney.BetelineyLauncher.png",
+        "install -Dm644 ../program_info/com.beteliney.BetelineyLauncher.metainfo.xml.in /app/share/metainfo/com.beteliney.BetelineyLauncher.metainfo.xml",
+        "install -Dm644 ../program_info/com.beteliney.BetelineyLauncher.desktop.in /app/share/applications/com.beteliney.BetelineyLauncher.desktop",
+        "find jars/ -name '*.jar' -exec install -Dm644 {} /app/share/beteliney/jars/{} \\; 2>/dev/null || true",
+        "find libraries/ -name '*.jar' -exec install -Dm644 {} /app/share/beteliney/jars/{} \\; 2>/dev/null || true"
+      ],
+      "sources": [
+        {
+          "type": "dir",
+          "path": ".."
+        }
+      ]
+    }
+  ]
+}
