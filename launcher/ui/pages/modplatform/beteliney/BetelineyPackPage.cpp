@@ -150,7 +150,7 @@ void PackPage::suggestCurrent()
     // via setStagingPath() / setParentSettings() antes de ejecutar el task
     auto* task = new PackInstallTask(pack,
                                      {},                       // stagingPath: se sobreescribe
-                                     APPLICATION->settings().get(),
+                                     APPLICATION->settings(),
                                      this);
     m_dialog->setSuggestedPack(pack.name, pack.version, task);
 }
@@ -192,7 +192,7 @@ void PackPage::loadIcon(const Pack& pack, QListWidgetItem* item)
     if (pack.iconUrl.isEmpty())
         return;
 
-    auto* nam = APPLICATION->network().get();
+    auto* nam = APPLICATION->network();
     auto* reply = nam->get(QNetworkRequest(QUrl(pack.iconUrl)));
 
     connect(reply, &QNetworkReply::finished, this, [this, reply, item, packId = pack.id] {

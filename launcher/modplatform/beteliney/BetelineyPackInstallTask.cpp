@@ -29,7 +29,7 @@ PackInstallTask::PackInstallTask(const Pack& pack,
 {
     setStagingPath(stagingPath);
     setParentSettings(globalSettings);
-    setName(pack.name, pack.version);
+    setName(pack.name);
 }
 
 bool PackInstallTask::abort()
@@ -101,7 +101,7 @@ std::unique_ptr<MinecraftInstance> PackInstallTask::createInstance()
 
         auto dl = Net::Download::makeFile(QUrl(mod.url), destPath);
         if (!mod.sha512.isEmpty()) {
-            dl->addValidator(std::make_shared<Net::ChecksumValidator>(
+            dl->addValidator(new Net::ChecksumValidator(
                 QCryptographicHash::Sha512,
                 QByteArray::fromHex(mod.sha512.toUtf8())));
         }
