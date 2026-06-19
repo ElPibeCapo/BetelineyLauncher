@@ -14,6 +14,8 @@
 #include "ui/pages/BasePage.h"
 #include "ui/dialogs/NewInstanceDialog.h"
 
+class QListWidgetItem;
+
 namespace Ui {
 class BetelineyPackPage;
 }

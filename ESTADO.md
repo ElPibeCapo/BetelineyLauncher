@@ -439,3 +439,34 @@ ESTADO.md: versión 8.2.0 → 8.3.0.
 **README.md raíz:** v8.2.0→v8.3.0, tabla docs apunta a ESTADO.md + source/docs/, árbol refleja estructura real, changelog simplificado.
 **ESTADO.md:** referencias `dist/` → `packaging/` en tabla de archivos y sección Fase 5. Versión VERSIONES corregida (v8.2.0→v8.3.0).
 **CHANGELOG.md:** entradas 33-34 añadidas (REFACTOR packaging + CLEANUP dist).
+
+
+### Sesión 8 — Validación de compilación real v8.3.0 (2026-06-19)
+**Objetivo:** antes de `git tag v8.3.0`, compilar de verdad con `ninja -C build` (GCC 15, `-Werror`, LTO) para confirmar que el código de las Fases 4-5 (nunca compilado completo en una sola pasada) no tiene regresiones. Resultado: **9 bugs reales encontrados**, todos preexistentes de sesiones anteriores, ninguno introducido hoy. Todos corregidos salvo el último (en progreso).
+
+**Bugs corregidos (9):**
+
+1. `launcher/minecraft/mod/MalwareScanner.cpp` — `Net::Download::makeByteArray(url, response)` con firma vieja (la API real devuelve `pair<Download::Ptr, QByteArray*>`, no acepta puntero propio). Corregido a `auto [dl, response] = Net::Download::makeByteArray(url)`.
+2. `launcher/modplatform/beteliney/BetelineyPackListModel.cpp` — mismo bug de API en `fetchIndex()` y `fetchPack()` (2 ocurrencias).
+3. `launcher/modplatform/beteliney/BetelineyPackInstallTask.cpp` — `setName(pack.name, pack.version)` con 2 argumentos; `setName()` solo acepta `QString`. Corregido a `setName(pack.name)`.
+4. `launcher/modplatform/beteliney/BetelineyPackInstallTask.cpp` — `addValidator(std::make_shared<Net::ChecksumValidator>(...))`; la API espera puntero crudo `Validator*`, no `shared_ptr`. Corregido a `new Net::ChecksumValidator(...)`.
+5. `launcher/ui/MainWindow.cpp:269` — `APPLICATION->instances()->instDir()` (método inexistente, `m_instDir` es privado sin getter). Corregido al patrón real del codebase: `APPLICATION->settings()->get("InstanceDir").toString()`.
+6. `launcher/modplatform/beteliney/BetelineyPresets.h` — `tr("...")` usado en función libre `builtinPresets()` (no es método de clase `QObject`, `tr()` no existe en ese contexto). Corregido a `QObject::tr(...)` + `#include <QCoreApplication>` (8 ocurrencias).
+7. `launcher/ui/pages/instance/LogPage.ui` — `<property name="contentsMargins">` con 4 `<number>8</number>` repetidos (formato XML inválido, `uic` lo interpreta como un solo argumento → `setContentsMargins(8)` no compila contra `QLayout` Qt6, que exige 4 args o `QMargins`). Corregido al formato real de Qt Designer: 4 propiedades separadas `leftMargin`/`topMargin`/`rightMargin`/`bottomMargin` (mismo patrón ya usado en el resto del archivo).
+8. `launcher/ui/pages/modplatform/beteliney/BetelineyPackPage.h/.cpp` — `QListWidgetItem*` usado sin forward-declare ni include (el compilador lo confundía con `int*` en cascada). Añadido `class QListWidgetItem;` antes del namespace `Ui`.
+9. `launcher/ui/pages/modplatform/beteliney/BetelineyPackPage.cpp` — `APPLICATION->settings().get()` y `APPLICATION->network().get()`: ambos métodos ya devuelven puntero crudo (`SettingsObject*` / `QNetworkAccessManager*`), no `shared_ptr`; el `.get()` sobraba y rompía la compilación (más los errores en cascada de captura de lambda que generaba sobre `reply`).
+
+**Progreso del build:** de 0/403 a **347/403 objetos** compilados sin error (LTO + `-Werror` activos). Limpio hasta justo antes del bug 10.
+
+**Bug 10 — pendiente, diagnosticado, sin corregir aún:**
+`launcher/migration/GDLauncherMigrator.cpp:107` — `selectSql = QString(...)` sin declaración previa de `selectSql`. Falta `QString selectSql;` (o cambiar a `QString selectSql = QString(...)`) antes de la asignación, dentro de `readGDInstances()`. Causa más probable: corte accidental de una línea en una edición previa de la Fase 4.4 (importador GDLauncher Carbon).
+
+**Patrón común a casi todos los bugs:** ninguno es un error de diseño — son APIs internas del fork (`Net::Download`, `Validator`, `settings()`, `network()`, `InstanceList`) que cambiaron de firma en algún punto del desarrollo, y el código nuevo (Fases 3-5, todo escrito sin compilar incrementalmente) quedó usando la firma vieja. Ninguno se había detectado porque el proyecto nunca pasó por una compilación limpia completa hasta esta sesión.
+
+**Estado git al cierre de la sesión:** 9 archivos modificados sin commitear (los del fix de hoy) + `docs/COPYING.md` ya en stage desde sesión anterior. **No se ha hecho commit todavía** — se está esperando a que la build termine 100% limpia antes de commitear todo junto.
+
+**Pendiente inmediato (próxima sesión o continuación):**
+- Corregir bug 10 (`GDLauncherMigrator.cpp`).
+- Terminar el resto de la build (objetos 348-403 sin probar todavía — pueden aparecer más bugs del mismo tipo).
+- Si compila 100% limpio: commit único con los 9+ fixes, mensaje tipo `fix: errores de compilación reales encontrados en build limpia (Fases 3-5)`.
+- Recién ahí: `git push`, y evaluar `git tag v8.3.0 && git push --tags` (Día 1, hitos 1.1/1.2 del plan de 7 días siguen pendientes).

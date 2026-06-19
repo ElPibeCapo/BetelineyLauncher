@@ -32,10 +32,16 @@
       <enum>QFrame::Raised</enum>
      </property>
      <layout class="QVBoxLayout" name="diagnosisLayout">
-      <property name="contentsMargins">
+      <property name="leftMargin">
        <number>8</number>
+      </property>
+      <property name="topMargin">
        <number>8</number>
+      </property>
+      <property name="rightMargin">
        <number>8</number>
+      </property>
+      <property name="bottomMargin">
        <number>8</number>
       </property>
       <item>
