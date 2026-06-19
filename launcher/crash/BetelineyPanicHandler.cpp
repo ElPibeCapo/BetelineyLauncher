@@ -36,7 +36,11 @@ static const char CRASH_PREFIX[] = "/tmp/beteliney_crash_";
 // Escribe una cadena C en un fd usando write() (async-signal-safe)
 static void safeWrite(int fd, const char* s)
 {
-    write(fd, s, strlen(s));
+    // El resultado se ignora intencionalmente: estamos dentro de un signal
+    // handler, no hay nada razonable que hacer si write() falla aquí (no se
+    // pueden lanzar excepciones ni loguear con printf, que no es async-signal-safe).
+    ssize_t written = write(fd, s, strlen(s));
+    (void)written;
 }
 
 static void panicHandler(int sig)

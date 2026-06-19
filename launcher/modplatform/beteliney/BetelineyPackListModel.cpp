@@ -39,9 +39,9 @@ void PackListModel::fetchIndex()
 {
     QString indexUrl = BuildConfig.BETELINEY_PACKS_URL + "index.json";
 
-    auto* response = new QByteArray();
     auto job = makeShared<NetJob>("BetelineyPacks::Index", APPLICATION->network());
-    job->addNetAction(Net::Download::makeByteArray(QUrl(indexUrl), response));
+    auto [dl, response] = Net::Download::makeByteArray(QUrl(indexUrl));
+    job->addNetAction(dl);
 
     connect(job.get(), &NetJob::succeeded, this, [this, response] {
         onIndexDownloaded(*response);
@@ -87,9 +87,9 @@ void PackListModel::fetchPack(const QString& id)
 {
     QString url = BuildConfig.BETELINEY_PACKS_URL + id + ".json";
 
-    auto* response = new QByteArray();
     auto job = makeShared<NetJob>(QString("BetelineyPacks::Pack::%1").arg(id), APPLICATION->network());
-    job->addNetAction(Net::Download::makeByteArray(QUrl(url), response));
+    auto [dl, response] = Net::Download::makeByteArray(QUrl(url));
+    job->addNetAction(dl);
 
     connect(job.get(), &NetJob::succeeded, this, [this, response, id] {
         onPackDownloaded(*response, id);

@@ -104,7 +104,7 @@ QList<GDInstance> readGDInstances(const QString& dataDir, QString* errorOut)
             return "NULL";
         };
 
-        selectSql = QString("SELECT %1 AS id, %2 AS name, %3 AS mc_version, "
+        QString selectSql = QString("SELECT %1 AS id, %2 AS name, %3 AS mc_version, "
                             "       %4 AS loader, %5 AS loader_version, %6 AS shortpath "
                             "FROM %7")
             .arg(bestCol({"id"}))
