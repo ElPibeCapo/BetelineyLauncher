@@ -1,6 +1,6 @@
 # ESTADO — BetelineyLauncher
 > Documento único y autocontenido. Cualquier chat nuevo lee SOLO esto y puede continuar.
-> Última actualización: sesión 7 — Flatpak manifest → packaging/ (fix git tracking), docs legado eliminados, README raíz sincronizado.
+> Última actualización: sesión 8 (2026-06-19) — build limpia 403/403 verificada, 10 bugs reales corregidos, listo para push + tag.
 
 ---
 
@@ -42,6 +42,10 @@
 ## HISTORIAL DE COMMITS
 
 ```
+42bc5ed  docs: ESTADO.md Sesión 8 — build 100% limpia, commit cerrado
+8a79e90  fix: 10 errores de compilación reales (build limpia Fases 3-5)
+e389cd2  docs+build+refactor: v8.3.0 — README, CHANGELOG, Flatpak→packaging/, limpieza final
+adbd887  docs: ESTADO.md v6 — revisión completa, todo verificado
 012d4b1  feat+docs: Fase 5 — Flatpak + AppImage + SmartScreen + ESTADO v5
 c9d13d8  feat: Fase 4.4 — GDLauncher Carbon importer
 11bfe87  feat: Fase 4.3+4.5 — CrashReporter + Optimizar botón VersionPage
@@ -50,7 +54,6 @@ c01b787  feat: Fase 3 completa — BetelineyPacks + presets + RSS
 4174c4d  feat: BetelineyLogAnalyzer — motor de diagnóstico de logs v1.0
 ae1ddd6  fix: Q_INIT_RESOURCE dup, BUILD_TESTING OFF, CurseForge env, BUILD_ARTIFACT CI
 2915f18  BetelineyLauncher v8.2.0 — commit inicial
-[+ 16 commits de iteraciones CI anteriores]
 ```
 
 ---
@@ -441,30 +444,29 @@ ESTADO.md: versión 8.2.0 → 8.3.0.
 **CHANGELOG.md:** entradas 33-34 añadidas (REFACTOR packaging + CLEANUP dist).
 
 
-### Sesión 8 — Validación de compilación real v8.3.0 (2026-06-19)
-**Objetivo:** antes de `git tag v8.3.0`, compilar de verdad con `ninja -C build` (GCC 15, `-Werror`, LTO) para confirmar que el código de las Fases 4-5 (nunca compilado completo en una sola pasada) no tiene regresiones. Resultado: **9 bugs reales encontrados**, todos preexistentes de sesiones anteriores, ninguno introducido hoy. Todos corregidos salvo el último (en progreso).
+### Sesión 8 — Build limpia completa v8.3.0 (2026-06-19)
+**Objetivo:** primera compilación real de punta a punta con `ninja -j$(nproc)` (GCC 15, `-Werror`, `-flto=auto`, `-O3 -march=znver1`) para validar el código de las Fases 3-5 antes de tagear. **10 bugs reales encontrados y corregidos.** Build terminó limpia: 403/403 objetos + link final → ejecutable `build/beteliney` (15 MB).
 
-**Bugs corregidos (9):**
+**Por qué no se detectaron antes:** ningún bug es error de diseño — son APIs internas del fork (`Net::Download`, `Task::setName`, `Net::ChecksumValidator`, `InstanceList`, `SettingsObject`, `QNetworkAccessManager`) que cambiaron de firma en algún punto del desarrollo. El código de Fases 3-5 fue escrito sin compilar incrementalmente, quedando con firmas viejas. Esta sesión fue la primera compilación limpia completa del proyecto.
 
-1. `launcher/minecraft/mod/MalwareScanner.cpp` — `Net::Download::makeByteArray(url, response)` con firma vieja (la API real devuelve `pair<Download::Ptr, QByteArray*>`, no acepta puntero propio). Corregido a `auto [dl, response] = Net::Download::makeByteArray(url)`.
-2. `launcher/modplatform/beteliney/BetelineyPackListModel.cpp` — mismo bug de API en `fetchIndex()` y `fetchPack()` (2 ocurrencias).
-3. `launcher/modplatform/beteliney/BetelineyPackInstallTask.cpp` — `setName(pack.name, pack.version)` con 2 argumentos; `setName()` solo acepta `QString`. Corregido a `setName(pack.name)`.
-4. `launcher/modplatform/beteliney/BetelineyPackInstallTask.cpp` — `addValidator(std::make_shared<Net::ChecksumValidator>(...))`; la API espera puntero crudo `Validator*`, no `shared_ptr`. Corregido a `new Net::ChecksumValidator(...)`.
-5. `launcher/ui/MainWindow.cpp:269` — `APPLICATION->instances()->instDir()` (método inexistente, `m_instDir` es privado sin getter). Corregido al patrón real del codebase: `APPLICATION->settings()->get("InstanceDir").toString()`.
-6. `launcher/modplatform/beteliney/BetelineyPresets.h` — `tr("...")` usado en función libre `builtinPresets()` (no es método de clase `QObject`, `tr()` no existe en ese contexto). Corregido a `QObject::tr(...)` + `#include <QCoreApplication>` (8 ocurrencias).
-7. `launcher/ui/pages/instance/LogPage.ui` — `<property name="contentsMargins">` con 4 `<number>8</number>` repetidos (formato XML inválido, `uic` lo interpreta como un solo argumento → `setContentsMargins(8)` no compila contra `QLayout` Qt6, que exige 4 args o `QMargins`). Corregido al formato real de Qt Designer: 4 propiedades separadas `leftMargin`/`topMargin`/`rightMargin`/`bottomMargin` (mismo patrón ya usado en el resto del archivo).
-8. `launcher/ui/pages/modplatform/beteliney/BetelineyPackPage.h/.cpp` — `QListWidgetItem*` usado sin forward-declare ni include (el compilador lo confundía con `int*` en cascada). Añadido `class QListWidgetItem;` antes del namespace `Ui`.
-9. `launcher/ui/pages/modplatform/beteliney/BetelineyPackPage.cpp` — `APPLICATION->settings().get()` y `APPLICATION->network().get()`: ambos métodos ya devuelven puntero crudo (`SettingsObject*` / `QNetworkAccessManager*`), no `shared_ptr`; el `.get()` sobraba y rompía la compilación (más los errores en cascada de captura de lambda que generaba sobre `reply`).
+**Bugs corregidos — 10 en total, 12 archivos:**
 
-**Progreso del build:** de 0/403 a **347/403 objetos** compilados sin error (LTO + `-Werror` activos). Limpio hasta justo antes del bug 10.
+| # | Archivo | Error | Fix |
+|---|---|---|---|
+| 1 | `minecraft/mod/MalwareScanner.cpp` | `makeByteArray(url, &buf)` — firma vieja (2 args) | `auto [dl, buf] = Net::Download::makeByteArray(url)` |
+| 2-3 | `modplatform/beteliney/BetelineyPackListModel.cpp` | mismo en `fetchIndex()` y `fetchPack()` | ídem (2 ocurrencias) |
+| 4 | `modplatform/beteliney/BetelineyPackInstallTask.cpp` | `setName(name, version)` — `setName()` acepta 1 arg | `setName(pack.name)` |
+| 5 | `modplatform/beteliney/BetelineyPackInstallTask.cpp` | `addValidator(make_shared<ChecksumValidator>(...))` — espera puntero crudo | `new Net::ChecksumValidator(...)` |
+| 6 | `ui/MainWindow.cpp:269` | `APPLICATION->instances()->instDir()` — método inexistente | `APPLICATION->settings()->get("InstanceDir").toString()` |
+| 7 | `modplatform/beteliney/BetelineyPresets.h` | `tr("...")` en función libre (no clase QObject) | `QObject::tr(...)` + `#include <QCoreApplication>` (8 ocurrencias) |
+| 8 | `ui/pages/instance/LogPage.ui` | `<property name="contentsMargins">` con 4 `<number>` repetidos — `uic` lo convierte a `setContentsMargins(8)` que no existe en Qt6 | 4 propiedades separadas: `leftMargin`/`topMargin`/`rightMargin`/`bottomMargin` |
+| 9 | `ui/pages/modplatform/beteliney/BetelineyPackPage.h` | `QListWidgetItem*` sin forward-declare — compilador lo lee como `int*` en cascada | `class QListWidgetItem;` antes del namespace Ui |
+| 10a | `ui/pages/modplatform/beteliney/BetelineyPackPage.cpp` | `APPLICATION->settings().get()` — `.get()` sobrante en puntero crudo | `APPLICATION->settings()` directo |
+| 10b | ídem | `APPLICATION->network().get()` — ídem, errores de lambda en cascada | `APPLICATION->network()` directo |
+| 11 | `migration/GDLauncherMigrator.cpp:107` | `selectSql = QString(...)` sin declarar — variable usada antes de existir | `QString selectSql = QString(...)` |
 
-**Bug 10 — pendiente, diagnosticado, sin corregir aún:**
-`launcher/migration/GDLauncherMigrator.cpp:107` — `selectSql = QString(...)` sin declaración previa de `selectSql`. Falta `QString selectSql;` (o cambiar a `QString selectSql = QString(...)`) antes de la asignación, dentro de `readGDInstances()`. Causa más probable: corte accidental de una línea en una edición previa de la Fase 4.4 (importador GDLauncher Carbon).
+**Commits de la sesión:**
+- `8a79e90` — fix: 10 errores de compilación reales (build limpia Fases 3-5) — 12 archivos, 489 ins / 23 del
+- `42bc5ed` — docs: ESTADO.md Sesión 8
 
-**Patrón común a casi todos los bugs:** ninguno es un error de diseño — son APIs internas del fork (`Net::Download`, `Validator`, `settings()`, `network()`, `InstanceList`) que cambiaron de firma en algún punto del desarrollo, y el código nuevo (Fases 3-5, todo escrito sin compilar incrementalmente) quedó usando la firma vieja. Ninguno se había detectado porque el proyecto nunca pasó por una compilación limpia completa hasta esta sesión.
-
-**Estado git al cierre de la sesión:** commit `8a79e90` — 12 archivos, 10 bugs corregidos. Build verificada 403/403 + link final exitoso → `build/beteliney` 15MB. **Listo para push y tag.**
-
-**Pendiente (próxima sesión):**
-- `git push origin main` (push al remoto).
-- `git tag v8.3.0 && git push --tags` si se decide publicar ya.
+**Estado:** build 100% limpia verificada localmente. **Pendiente: `git push` + `git tag v8.3.0`.**
