@@ -13,6 +13,10 @@
   Basado en <a href="https://github.com/PrismLauncher/PrismLauncher">Prism Launcher</a> (GPL-3.0).
 </p>
 
+<p align="center">
+  <a href="https://discord.gg/2JdB7pvBq3"><img alt="Discord" src="https://img.shields.io/badge/Discord-Únete-5865F2?style=for-the-badge&logo=discord&logoColor=white"></a>
+</p>
+
 ---
 
 ## Features Beteliney
