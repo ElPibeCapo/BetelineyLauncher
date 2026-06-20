@@ -43,12 +43,8 @@ void PackListModel::fetchIndex()
     auto [dl, response] = Net::Download::makeByteArray(QUrl(indexUrl));
     job->addNetAction(dl);
 
-    connect(job.get(), &NetJob::succeeded, this, [this, response] {
-        onIndexDownloaded(*response);
-        delete response;
-    });
-    connect(job.get(), &NetJob::failed, this, [this, response](const QString& reason) {
-        delete response;
+    connect(job.get(), &NetJob::succeeded, this, [this, response] { onIndexDownloaded(*response); });
+    connect(job.get(), &NetJob::failed, this, [this](const QString& reason) {
         m_loading = false;
         emit loadingFailed(tr("No se pudo descargar el índice de BetelineyPacks: %1").arg(reason));
     });
@@ -91,12 +87,8 @@ void PackListModel::fetchPack(const QString& id)
     auto [dl, response] = Net::Download::makeByteArray(QUrl(url));
     job->addNetAction(dl);
 
-    connect(job.get(), &NetJob::succeeded, this, [this, response, id] {
-        onPackDownloaded(*response, id);
-        delete response;
-    });
-    connect(job.get(), &NetJob::failed, this, [this, response, id](const QString&) {
-        delete response;
+    connect(job.get(), &NetJob::succeeded, this, [this, response, id] { onPackDownloaded(*response, id); });
+    connect(job.get(), &NetJob::failed, this, [this, id](const QString&) {
         // No falla todo — simplemente se salta el pack con error
         m_loadedCount++;
         checkAllLoaded();
