@@ -470,3 +470,23 @@ ESTADO.md: versión 8.2.0 → 8.3.0.
 - `42bc5ed` — docs: ESTADO.md Sesión 8
 
 **Estado:** build 100% limpia verificada localmente. **Pendiente: `git push` + `git tag v8.3.0`.**
+
+### Sesión 9 — Push, tag v8.3.0 y Discord (2026-06-19)
+`git push origin main` (78adefe) + `git tag v8.3.0 && git push origin v8.3.0` → CI dispara build Linux+Windows y publica la Release automáticamente (`.github/workflows/build.yml`, job `release`, trigger `tags: [v*.*.*]`).
+
+Servidor Discord: https://discord.gg/2JdB7pvBq3 — badge añadido al README (commit `6346499`).
+
+**Plan de lanzamiento (Día 1 — cerrado):**
+| Hito | Estado |
+|---|---|
+| 1.1 — push código v8.3.0 | ✅ |
+| 1.2 — Release v8.3.0 vía CI + tag | ✅ |
+| 1.3 — Discord creado | ✅ |
+| 1.4 — enlace Discord en README | ✅ |
+
+**Pendiente (Días 2-7 del plan):**
+- Día 2: capturas de pantalla de las 5 features clave → `screenshots/` + enlazar en README, sección Roadmap.
+- Día 3: `known-hashes.json` real (Fractureiser y similares) en repo meta; 3 packs base en BetelineyPacks.
+- Día 4: revisar tests de traducción (posible falso-vacío si `BETELINEY_SRCDIR` no está definido).
+- Día 6: publicar en r/feedthebeast, r/Minecraft, Discord de Prism Launcher.
+- Día 7: formulario claude.com/contact-sales/claude-for-oss.
