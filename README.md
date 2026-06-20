@@ -17,6 +17,11 @@
   <a href="https://discord.gg/2JdB7pvBq3"><img alt="Discord" src="https://img.shields.io/badge/Discord-Únete-5865F2?style=for-the-badge&logo=discord&logoColor=white"></a>
 </p>
 
+<p align="center">
+  <img src="screenshots/ventana-principal.png" alt="Ventana principal de Beteliney Launcher" width="85%">
+</p>
+<p align="center"><i>⚠️ Captura pendiente de revisión — más capturas (BetelineyPacks, perfiles JVM, diagnóstico de logs) en camino.</i></p>
+
 ---
 
 ## Features Beteliney
@@ -129,7 +134,7 @@ launcher/
 ├── ui/widgets/JavaSettingsWidget.cpp  Selector de perfiles JVM
 └── ui/pages/modplatform/beteliney/    BetelineyPackPage (UI)
 
-dist/
+packaging/
 └── com.beteliney.BetelineyLauncher.json  Manifest Flatpak
 
 docs/
@@ -161,6 +166,19 @@ EMPAQUETAR_APPIMAGE.sh Script para generar AppImage
 - SmartScreen bypass documentado en el instalador Windows
 - Manifest Flatpak y script AppImage incluidos
 - Build optimizado: `-O3 -march=znver1`, LTO, sin Prism en ningún string
+
+---
+
+## Roadmap
+
+- [ ] Activar GitHub Pages en el repo `meta` (lista de malware, BetelineyPacks, feed de noticias)
+- [ ] `known-hashes.json` real con firmas de Fractureiser y variantes conocidas
+- [ ] 3 BetelineyPacks publicados (Survival, PvP, Modpack pesado)
+- [ ] Más capturas de pantalla: BetelineyPacks, perfiles JVM, diagnóstico de logs
+- [ ] Flathub — submitear el manifest Flatpak para revisión oficial
+- [ ] macOS — activar CI (el código heredado de Prism ya soporta Sparkle updater + entitlements)
+- [ ] Certificado de firma de código Windows (elimina el aviso de SmartScreen)
+- [ ] i18n propio conectado a Weblate o similar
 
 ---
 
