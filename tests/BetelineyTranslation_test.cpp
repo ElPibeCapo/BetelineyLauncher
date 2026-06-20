@@ -51,7 +51,7 @@ static QByteArray readFile(const QString& relPath)
 {
     QString base = QString(BETELINEY_SRCDIR);
     if (base.isEmpty())
-        base = QString(QFINDTESTDATA("../launcher"));  // fallback
+        base = QString(QFINDTESTDATA(".."));  // fallback: raíz del proyecto (tests/.. = source/)
     QFile f(base + "/" + relPath);
     if (!f.open(QIODevice::ReadOnly | QIODevice::Text))
         return {};
