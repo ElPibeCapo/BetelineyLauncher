@@ -529,8 +529,28 @@ Commits: `19f8f22` (Roadmap + placeholder) → `8cf6afc` (captura real, placehol
 | 2 | Resto de capturas (BetelineyPacks, perfiles JVM, diagnóstico de logs) | ⏳ pendiente |
 | 3 | `known-hashes.json` real en repo `meta` (depende de activar GitHub Pages, pendiente #2 más arriba) | ⏳ |
 | 3 | 3 BetelineyPacks publicados | ⏳ |
-| 4 | Verificar test de traducción con `BUILD_TESTING=ON` (código fuente ya se ve correcto) | ⏳ |
+| 4 | Verificar test de traducción con `BUILD_TESTING=ON` — fix BUG-2 + traducción `ModFolderPage.cpp` | ✅ |
 | 6 | Publicar en r/feedthebeast, r/Minecraft, Discord de Prism Launcher | ⏳ |
 | 7 | Formulario claude.com/contact-sales/claude-for-oss (deadline 30/06/2026) | ⏳ |
 
 **Estado real del launcher a cierre de esta sesión:** compila limpio (403/403), arranca sin crashear, GUI funcional confirmada visualmente. Repo público al día (`8cf6afc`), release v8.3.0 publicada vía CI. El bloqueo principal para los Días 3-4 sigue siendo activar GitHub Pages en el repo `meta` (acción manual de navegador, pendiente #2 de la sección "Acciones manuales pendientes").
+
+### Sesión 12 — Auditoría completa del proyecto + fix real BUG-2 (2026-06-20)
+**Contexto:** revisión de cada archivo del proyecto (README raíz, ESTADO.md, plan Claude for Open Source, scripts, tests, CMakeLists) a pedido del usuario. Dos hallazgos:
+
+**1. BUG-1, BUG-3 y BUG-4 (del plan de postulación del 18/06) ya estaban arreglados en `lanzar.sh` / `beteliney-updater.sh`, sin documentar en ninguna sesión anterior:**
+- BUG-1 (lanzar.sh reenviaba `--debug`/`--no-jvm`/etc. al exe Qt, generando warnings) — ya filtrado vía array `LAUNCHER_ARGS`, marcado `# BUG-1 FIX` en el código.
+- BUG-3 (race condition iGPU: en el primer arranque, sin `.cfg`, `Application.cpp` aplicaba `suitableMaxMem()` ~8192 MB antes de que el perfil iGPU se aplicara) — ya arreglado: `lanzar.sh` crea el `.cfg` mínimo con perfil iGPU *antes* de lanzar el ejecutable si no existe, marcado `# BUG-3 FIX`.
+- BUG-4 (`--silent` del updater no llamaba `verify_build`) — verificado en el código: sí lo llama (`apply_update; recompile; verify_build`). Ya estaba bien.
+
+No se pudo determinar en qué sesión se hicieron estos fixes — no aparecen en el `git log` con mensaje propio ni en el historial de sesiones de este documento. Quedan documentados acá retroactivamente.
+
+**2. BUG-2 (tests de traducción) — confirmado bug real, no "posible falso-vacío" como decía la Sesión 11.** `BETELINEY_SRCDIR` sí estaba definido en `tests/CMakeLists.txt`, pero apuntaba a `${CMAKE_SOURCE_DIR}/launcher` en vez de `${CMAKE_SOURCE_DIR}`. El propio comentario del test (mismo commit inicial `2915f18`, nunca tocado después) decía explícitamente *"BETELINEY_SRCDIR que CMake define como CMAKE_SOURCE_DIR"* — la implementación nunca coincidió con su propia documentación. `BetelineyTranslation_test.cpp::readFile()` concatena `base + "/" + relPath`, y los 11 `relPath` ya incluyen el prefijo `launcher/...` → con el bug, la ruta resultante era `.../launcher/launcher/ui/...`, que no existe → `QFile::open()` falla → `QSKIP` → **los 11 tests de traducción al español pasaban en falso, sin verificar ningún string, desde el commit inicial del proyecto.** El fallback `QFINDTESTDATA("../launcher")` tenía el mismo error de raíz duplicada.
+
+**Fix** (2 líneas, no se tocaron los 11 `relPath` porque el comentario original define el contrato correcto):
+- `tests/CMakeLists.txt`: `BETELINEY_SRCDIR="${CMAKE_SOURCE_DIR}/launcher"` → `BETELINEY_SRCDIR="${CMAKE_SOURCE_DIR}"`
+- `tests/BetelineyTranslation_test.cpp`: fallback `QFINDTESTDATA("../launcher")` → `QFINDTESTDATA("..")`
+
+**Verificación:** reconfigurado con `cmake -DBUILD_TESTING=ON`, compilado el target `BetelineyTranslation` y corrido con `ctest`. Primera ejecución tras el fix de ruta: **15 passed, 1 failed** — el test encontró `tr("Download Mods")` sin traducir en `ModFolderPage.cpp::downloadDialogFinished()` (la función hermana `updateMods()` ya usaba `"Descargar Mods"` como string literal pero sin `tr()`, confirma que la traducción correcta es `tr("Descargar Mods")`). Corregida esa línea. Segunda ejecución: **16 passed, 0 failed, 0 skipped** — 100%.
+
+Cierra el Día 4 del plan de lanzamiento de verdad (antes solo estaba "revisado", el bug seguía vivo).
