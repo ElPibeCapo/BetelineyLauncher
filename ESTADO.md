@@ -490,3 +490,20 @@ Servidor Discord: https://discord.gg/2JdB7pvBq3 — badge añadido al README (co
 - Día 4: revisar tests de traducción (posible falso-vacío si `BETELINEY_SRCDIR` no está definido).
 - Día 6: publicar en r/feedthebeast, r/Minecraft, Discord de Prism Launcher.
 - Día 7: formulario claude.com/contact-sales/claude-for-oss.
+
+### Sesión 10 — Crash crítico en ejecución real: free(): invalid pointer (2026-06-19)
+**Contexto:** la Sesión 8 verificó que el proyecto *compilara* limpio (403/403) pero nunca se ejecutó el binario resultante. Esta sesión testeó el binario real (`lanzar.sh`) por primera vez desde el fix de compilación — **el launcher crasheaba el 100% de las veces al arrancar**, en menos de 3 segundos, siempre que `MalwareScanner` falla la descarga de `known-hashes.json` (lo cual ocurre siempre ahora mismo, porque GitHub Pages del repo `meta` sigue sin activarse → 404).
+
+**Causa raíz:** el fix de compilación de la Sesión 8 (bug #1, nueva firma de `Net::Download::makeByteArray`) introdujo `delete response;` sobre el puntero devuelto por esa función. Ese puntero **no es memoria propia** — apunta a `ByteArraySink::m_output` (`&m_output`, un `QByteArray` miembro normal de clase), cuyo ciclo de vida lo gestiona `Download::m_sink` (`unique_ptr`) dentro del propio `Download`/`NetJob` (`shared_ptr`). `delete` sobre la dirección de un miembro de objeto es UB garantizado: corrompe el heap, y glibc aborta con `free(): invalid pointer` en la siguiente `malloc`/`free`.
+
+Diagnóstico confirmado con `addr2line` sobre el binario (no stripped) — backtrace exacto: `ConcurrentTask::executeNextSubTask()` → `NetJob::emitFailed()` → `Task::emitFailed()` → lambda dentro de `MalwareScanner::loadIfNeeded()`.
+
+**Corregido en 6 sitios** (mismo patrón, mismo origen — la Sesión 8 ya había advertido "mismo bug en 2 ocurrencias" en `BetelineyPackListModel.cpp` sin notar que el fix aplicado introducía uno nuevo):
+- `minecraft/mod/MalwareScanner.cpp` — 2 (`succeeded` + `failed`)
+- `modplatform/beteliney/BetelineyPackListModel.cpp` — 4 (`fetchIndex` succeeded+failed, `fetchPack` succeeded+failed)
+
+Fix: eliminar todos los `delete response;`. El `QByteArray` sigue siendo válido durante el callback porque el `NetJob` (`m_job`, `shared_ptr`) sigue vivo en ese punto.
+
+**Verificación:** recompilado limpio (403/403) → lanzado dos veces reproduciendo el 404 real → antes crasheaba consistentemente en <3s, ahora corre estable 35+s sin generar crash dumps. Commit `8705aab`.
+
+**Lección operativa:** "compila limpio" ≠ "funciona". A partir de ahora, todo fix de compilación que toque gestión de memoria/punteros se valida ejecutando el binario, no solo `ninja`.
