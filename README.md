@@ -20,7 +20,7 @@
 <p align="center">
   <img src="screenshots/ventana-principal.png" alt="Ventana principal de Beteliney Launcher" width="85%">
 </p>
-<p align="center"><i>⚠️ Captura pendiente de revisión — más capturas (BetelineyPacks, perfiles JVM, diagnóstico de logs) en camino.</i></p>
+<p align="center"><i>Vista de la ventana principal — más capturas (BetelineyPacks, perfiles JVM, diagnóstico de logs) en camino.</i></p>
 
 ---
 
