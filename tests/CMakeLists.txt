@@ -76,7 +76,7 @@ ecm_add_test(BetelineyGPUDetect_test.cpp LINK_LIBRARIES Launcher_logic Qt${QT_VE
 
 ecm_add_test(BetelineyTranslation_test.cpp LINK_LIBRARIES Launcher_logic Qt${QT_VERSION_MAJOR}::Test
     TEST_NAME BetelineyTranslation
-    COMPILE_DEFINITIONS BETELINEY_SRCDIR="${CMAKE_SOURCE_DIR}/launcher")
+    COMPILE_DEFINITIONS BETELINEY_SRCDIR="${CMAKE_SOURCE_DIR}")
 
 ecm_add_test(StringUtils_test.cpp LINK_LIBRARIES Launcher_logic Qt${QT_VERSION_MAJOR}::Test
     TEST_NAME StringUtils)
