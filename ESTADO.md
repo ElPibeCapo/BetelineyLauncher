@@ -1,6 +1,6 @@
 # ESTADO — BetelineyLauncher
 > Documento único y autocontenido. Cualquier chat nuevo lee SOLO esto y puede continuar.
-> Última actualización: sesión 8 (2026-06-19) — build limpia 403/403 verificada, 10 bugs reales corregidos, listo para push + tag.
+> Última actualización: sesión 11 (2026-06-20) — crash crítico en ejecución real corregido y verificado, Día 1-2 del plan de lanzamiento cerrados, repo publicado en v8.3.0.
 
 ---
 
@@ -42,6 +42,13 @@
 ## HISTORIAL DE COMMITS
 
 ```
+8cf6afc  docs: captura real de la ventana principal verificada (Día 2 cerrado)
+19f8f22  docs: Día 2 del plan — capturas de pantalla + sección Roadmap en README
+047a2bb  docs: ESTADO.md — Sesión 10, crash crítico en ejecución real documentado
+8705aab  fix: crash crítico free(): invalid pointer en NetJob::makeByteArray (6 sitios)
+e1d1f48  docs: ESTADO.md — Sesión 9, Día 1 del plan cerrado
+6346499  docs: añadir enlace Discord al README (Hito 1.4)
+78adefe  docs: ESTADO.md v8 — Sesión 8 completa, tabla de bugs, commits actualizados
 42bc5ed  docs: ESTADO.md Sesión 8 — build 100% limpia, commit cerrado
 8a79e90  fix: 10 errores de compilación reales (build limpia Fases 3-5)
 e389cd2  docs+build+refactor: v8.3.0 — README, CHANGELOG, Flatpak→packaging/, limpieza final
@@ -507,3 +514,23 @@ Fix: eliminar todos los `delete response;`. El `QByteArray` sigue siendo válido
 **Verificación:** recompilado limpio (403/403) → lanzado dos veces reproduciendo el 404 real → antes crasheaba consistentemente en <3s, ahora corre estable 35+s sin generar crash dumps. Commit `8705aab`.
 
 **Lección operativa:** "compila limpio" ≠ "funciona". A partir de ahora, todo fix de compilación que toque gestión de memoria/punteros se valida ejecutando el binario, no solo `ninja`.
+
+### Sesión 11 — Día 2 del plan cerrado: capturas + Roadmap (2026-06-20)
+README: añadida sección **Roadmap** (pendientes reales del plan de 7 días + ideas futuras ya listadas en este documento, ahora visibles públicamente) y captura real de la ventana principal del launcher corriendo (`screenshots/ventana-principal.png`), tomada y verificada por el usuario directamente — confirma visualmente que el launcher arranca limpio con el fix de la Sesión 10: tema neón cargado, instancias reales con mods, sin crash. Corregida también una referencia obsoleta `dist/` → `packaging/` en la estructura de archivos del README (arrastrada desde la Sesión 7).
+
+Commits: `19f8f22` (Roadmap + placeholder) → `8cf6afc` (captura real, placeholder retirado).
+
+**Plan de lanzamiento — estado consolidado:**
+| Día | Hito | Estado |
+|---|---|---|
+| 1 | push + tag v8.3.0 + Release CI | ✅ |
+| 1 | Discord creado + enlazado en README | ✅ |
+| 2 | Captura de la ventana principal + Roadmap en README | ✅ |
+| 2 | Resto de capturas (BetelineyPacks, perfiles JVM, diagnóstico de logs) | ⏳ pendiente |
+| 3 | `known-hashes.json` real en repo `meta` (depende de activar GitHub Pages, pendiente #2 más arriba) | ⏳ |
+| 3 | 3 BetelineyPacks publicados | ⏳ |
+| 4 | Verificar test de traducción con `BUILD_TESTING=ON` (código fuente ya se ve correcto) | ⏳ |
+| 6 | Publicar en r/feedthebeast, r/Minecraft, Discord de Prism Launcher | ⏳ |
+| 7 | Formulario claude.com/contact-sales/claude-for-oss (deadline 30/06/2026) | ⏳ |
+
+**Estado real del launcher a cierre de esta sesión:** compila limpio (403/403), arranca sin crashear, GUI funcional confirmada visualmente. Repo público al día (`8cf6afc`), release v8.3.0 publicada vía CI. El bloqueo principal para los Días 3-4 sigue siendo activar GitHub Pages en el repo `meta` (acción manual de navegador, pendiente #2 de la sección "Acciones manuales pendientes").
