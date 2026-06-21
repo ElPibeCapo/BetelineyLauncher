@@ -1,6 +1,6 @@
 # ESTADO — BetelineyLauncher
 > Documento único y autocontenido. Cualquier chat nuevo lee SOLO esto y puede continuar.
-> Última actualización: sesión 14 (2026-06-21) — meta server poblado (packs, malware list, feed), GitHub Pages sigue pendiente de activación manual.
+> Última actualización: sesión 15 (2026-06-21) — fuga de API key corregida (rotación aun pendiente del usuario), causa raiz real de GitHub Pages encontrada y arreglada, bug critico de borrado automatico de contenido descubierto y corregido.
 
 ---
 
@@ -92,7 +92,7 @@ bash EMPAQUETAR_APPIMAGE.sh
 
 | Servicio | Estado | Detalle |
 |---|---|---|
-| **CurseForge** | ⚠️ | Key ROTADA tras fuga (ver Sesión 15) — REDACTED, ya no se documenta en texto plano. CI usa secret `CURSEFORGE_API_KEY`. Local: `export CURSEFORGE_API_KEY="..."` antes de cmake. |
+| **CurseForge** | 🔴 | Key EXPUESTA públicamente (commits viejos, repo público) — ROTACIÓN PENDIENTE, no hecha aún. Valor sacado de los archivos actuales (ver Sesión 15). El secret `CURSEFORGE_API_KEY` en GitHub Actions NO existe (`gh secret list` vacío) — CI no tiene la key hasta que se rote y se cargue la nueva. |
 | **Microsoft Azure** | ✅ | App ID: `4b945c78-d30b-489e-915f-b361bf9c933b` |
 | **Imgur** | ⚠️ | Key vacía. El código de upload existe. Registrar en `api.imgur.com/oauth2/addclient` si se activa. |
 | **META server** | ✅ | Rama `gh-pages` del repo meta tiene todos los JSONs generados. CI corre cada 6h. |
@@ -657,4 +657,58 @@ Tras el incidente de los hashes, antes de escribir los 3 packs verifiqué cada `
 | 3 | 3 BetelineyPacks publicados | ✅ creados y verificados — bloqueado por Pages |
 | 3 | feed de noticias | ✅ creado — bloqueado por Pages |
 | 2 | **Activar GitHub Pages en repo `meta`** | 🔴 sigue pendiente, bloquea Día 3 completo, acción manual única |
+
+### Sesión 15 — Fuga de credenciales corregida + causa raíz real de GitHub Pages + bug crítico de borrado automático (2026-06-21)
+
+**Contexto:** el usuario dio acceso vía `gh` CLI (ya autenticado localmente con scopes `repo`+`workflow`) para resolver pendientes que antes requerían acción manual en navegador. No se pidió ni se recibió ningún token/contraseña en el chat — se verificó que `gh auth status` ya estaba logueado en la máquina local antes de hacer nada.
+
+**1. Fuga de credenciales — CurseForge API key expuesta públicamente**
+
+Hallazgo (sesión 14, cerrado parcialmente en esa sesión por corte de mensajes): la key `$2a$10$wIJoeapbxkZ1tE8h2S/ojOLkDwqdEjAq9ZXqAUwFKlRUcZYx5iLsO` estaba en texto plano en `ESTADO.md`, commiteada y pusheada a `origin/main` del repo público `BetelineyLauncher`. Confirmado expuesta en vivo: `raw.githubusercontent.com` la servía con HTTP 200 sin autenticación.
+
+Hecho en esta sesión (commit `ae645db`):
+- Redactadas las 2 ocurrencias en `ESTADO.md` (tabla de API keys + instrucciones de secret de CI).
+- Verificado que `build/` (que también tenía la key en `CMakeCache.txt` y `BuildConfig.cpp` generados) **nunca estuvo trackeado** — está en `.gitignore`, cero exposición ahí.
+- Verificado que `CMakeLists.txt` actual (HEAD) ya usa `$ENV{CURSEFORGE_API_KEY}`, sin el valor hardcodeado.
+
+**Sin resolver, no resoluble por mí — acción exclusiva del usuario:** la key sigue viva en el historial de git (commits viejos de `ESTADO.md` y de `CMakeLists.txt` de antes de migrar a env var). Quien haya clonado/forkeado el repo, o cualquier bot que escanea GitHub público (lo hacen en minutos, no días), ya pudo haberla capturado. Redactar el HEAD no neutraliza nada retroactivamente. **La única acción que de verdad invalida el riesgo: rotar la key en el panel de CurseForge (revocar la actual, generar una nueva) y cargarla como secret nuevo en GitHub Actions.** Esto requiere login/MFA del usuario en `console.curseforge.com` — ningún acceso de GitHub lo sustituye. **No se ha hecho a la fecha de este commit.**
+
+Adicional: se verificó `gh secret list --repo ElPibeCapo/BetelineyLauncher` → **lista vacía**. El secret `CURSEFORGE_API_KEY` **no existe** en GitHub Actions pese a que la tabla de API keys (antes de esta sesión) decía "✅ CI usa secret". Esa documentación estaba desactualizada/incorrecta. CI actualmente no tiene la key — los builds que la requieran fallarán o se saltarán ese paso. Pendiente: cargar el secret **con la key nueva, después de rotar**, nunca con la vieja.
+
+**2. GitHub Pages del repo `meta` — causa raíz real (no era "falta activar")**
+
+La documentación de sesiones anteriores asumía que Pages simplemente no estaba activado (pendiente #2 original: "Settings → Pages → Source: branch gh-pages"). Investigación real vía `gh api repos/ElPibeCapo/meta/pages` mostró que Pages **ya estaba configurado y "activo"**, pero con `build_type: "workflow"` apuntando a `main` — es decir, GitHub esperaba un deploy vía Actions con artifact upload (`actions/deploy-pages`). El workflow real (`generate.yml`) despliega con `peaceiris/actions-gh-pages@v3`, que hace un simple `git push origin gh-pages` (mecanismo legacy de branch). Como el tipo de build configurado no coincidía con el mecanismo de deploy real, GitHub **nunca registraba esos pushes como un build de Pages** (`pages/builds` devolvía `[]`, sin deployments) — de ahí el 404 persistente incluso en contenido del launcher que el workflow llevaba meses desplegando exitosamente (runs en verde cada ~6h).
+
+Fix aplicado vía API (sin tocar el navegador):
+```
+gh api -X PUT repos/ElPibeCapo/meta/pages -f build_type=legacy -f 'source[branch]=gh-pages' -f 'source[path]=/'
+gh api -X POST repos/ElPibeCapo/meta/pages/builds   # forzar build manual
+```
+Resultado confirmado: build `status: built`, sin error, desde el commit `57c7764` (el que contenía los 3 BetelineyPacks + malware list + feed). Verificado con curl: `net.fabricmc.fabric-loader/`, `beteliney-packs/index.json`, `malware/known-hashes.json`, `news/feed.atom` → **los 4 en HTTP 200**.
+
+**3. Bug crítico descubierto (no estaba documentado, no lo reportó nadie antes) — el contenido Beteliney se borraba solo cada 6 horas**
+
+Al revisar `generate.yml` para diagnosticar lo anterior, se encontró que el step de deploy usa `peaceiris/actions-gh-pages@v3` con `keep_files: false`. Ese flag borra **todo** el contenido existente de la rama `gh-pages` antes de cada push y la reemplaza únicamente con lo que el script genera (`launcher/` → metadata de Mojang/Fabric/Forge/NeoForge/Quilt/Java). El workflow corre por cron cada 6 horas además de en cada push a `main`.
+
+Consecuencia real: `v1/beteliney-packs/`, `v1/malware/`, `v1/news/` — todo lo creado en la sesión 14 — sobrevivía únicamente porque ninguna corrida automática se había ejecutado todavía desde el push. La siguiente corrida programada los habría borrado sin que nadie lo notara, hasta que algún usuario reportara que el launcher no carga packs/noticias/malware list.
+
+Fix aplicado (commit `04bda93` en `main` del repo `meta`):
+- Creado `static/v1/` en `main`, versionado, con copia de `beteliney-packs/`, `malware/`, `news/` (la fuente de verdad para este contenido deja de ser solo la rama `gh-pages`).
+- Modificado el step "Preparar pages" de `generate.yml` para copiar `static/v1/.` → `pages/v1/` **después** de copiar `launcher/.`, de forma aditiva. Así el contenido Beteliney queda incluido en el artifact que se publica en cada corrida, automática o manual, indefinidamente.
+
+**Estado de verificación de este fix, exacto, sin redondear:** el push a `main` disparó la corrida `27908943553` (trigger `push`). A la hora de escribir esto, esa corrida seguía `in_progress` (>7 min, el historial muestra corridas de 8 a 54 min). La rama `gh-pages` en ese momento seguía en el commit `57c7764` (el deploy manual forzado en el paso 2, anterior al fix del paso 3) — **el fix todavía no se había probado en una corrida real del workflow**. Las 4 URLs seguían en HTTP 200 porque el deploy manual previo ya las tenía, no porque el fix nuevo se haya confirmado funcionando. Verificar en la próxima sesión: `gh run list --repo ElPibeCapo/meta --limit 1` (debe decir `completed success` para el run `27908943553` o posterior) y reconfirmar las 4 URLs con curl.
+
+**Tabla de pendientes — estado real actualizado:**
+
+| # | Ítem | Estado |
+|---|---|---|
+| 1 | Secret `CURSEFORGE_API_KEY` en CI | 🔴 No existe en GitHub Actions (confirmado con `gh secret list`, vacío). Bloqueado por la rotación de la key (ítem de seguridad arriba) — no cargar la key vieja. |
+| 2 | GitHub Pages del repo `meta` | ✅ Resuelto — causa raíz era `build_type` mal configurado, no falta de activación. Corregido vía API, build forzado, 4 URLs confirmadas en 200. |
+| 3 | Contenido Beteliney persistente en cada deploy | ✅ Corregido (commit `04bda93`) — pendiente de confirmar en una corrida automática real, ver arriba. |
+| — | **Rotar key de CurseForge expuesta** | 🔴 Crítico, exclusivo del usuario, sin sustituto posible. `console.curseforge.com` → revocar la actual → generar nueva → cargarla como secret nuevo en GitHub (no en archivos). |
+| — | Purgar key vieja del historial de git (`git filter-repo`) | ⏸️ Decisión pendiente del usuario — destructivo (fuerza push, rompe clones/forks existentes), y secundario: no sustituye la rotación. |
+| 4 | Capturas de pantalla restantes (BetelineyPacks, perfiles JVM, diagnóstico) | ⏳ Requiere la app corriendo, acción manual. |
+| 5 | Solicitud Anthropic Claude for OSS | ✅ Enviada (20/06, según documento maestro previo). |
+| 6 | Publicar en r/feedthebeast, r/Minecraft, Discord Prism | ⏳ Manual. |
+| 7 | Formulario OpenAI Codex for OSS | ⏳ Manual. |
 
