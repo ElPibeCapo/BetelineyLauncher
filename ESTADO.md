@@ -1,6 +1,6 @@
 # ESTADO — BetelineyLauncher
 > Documento único y autocontenido. Cualquier chat nuevo lee SOLO esto y puede continuar.
-> Última actualización: sesión 15 (2026-06-21) — fuga de API key corregida (rotación aun pendiente del usuario), causa raiz real de GitHub Pages encontrada y arreglada, bug critico de borrado automatico de contenido descubierto y corregido.
+> Última actualización: sesión 16 (2026-06-21) — CI llevaba 30 corridas fallando sin que nadie lo supiera: 2 bugs reales encontrados y corregidos (race condition en CMake + include roto de rename viejo). Verificación final en CI todavía en curso al cierre de esta sesión.
 
 ---
 
@@ -709,6 +709,48 @@ Fix aplicado (commit `04bda93` en `main` del repo `meta`):
 | — | Purgar key vieja del historial de git (`git filter-repo`) | ⏸️ Decisión pendiente del usuario — destructivo (fuerza push, rompe clones/forks existentes), y secundario: no sustituye la rotación. |
 | 4 | Capturas de pantalla restantes (BetelineyPacks, perfiles JVM, diagnóstico) | ⏳ Requiere la app corriendo, acción manual. |
 | 5 | Solicitud Anthropic Claude for OSS | ✅ Enviada (20/06, según documento maestro previo). |
+| 6 | Publicar en r/feedthebeast, r/Minecraft, Discord Prism | ⏳ Manual. |
+| 7 | Formulario OpenAI Codex for OSS | ⏳ Manual. |
+
+### Sesión 16 — Auditoría completa: CI llevaba roto desde el primer commit registrado (2026-06-21)
+
+**Contexto:** se pidió revisar todo en busca de errores, fugas o cosas mal hechas, sin asumir que lo reportado en sesiones anteriores era correcto. Resultado: **el CI del repo principal (`Build BetelineyLauncher`) lleva fallando en el 100% de sus corridas desde el primer run registrado (13/06)** — 30 de 30 corridas en rojo, incluida toda la ventana de las sesiones 8 a 15. Nadie lo había verificado hasta ahora; las sesiones previas documentaban features y fixes sin confirmar que el proyecto compilara en CI.
+
+**Bug #1 — condición de carrera real en CMake (commit `c18f7bf`)**
+
+`add_custom_target(CopyJars ...)` copia tres JARs (`JavaCheck.jar`, `NewLaunch.jar`, `NewLaunchLegacy.jar`) pero su `DEPENDS` solo listaba `JavaCheck NewLaunch` — **faltaba `NewLaunchLegacy`**. Con build paralelo (`-j`, el caso real tanto en CI como en desarrollo), ninja agendaba la copia antes de que `NewLaunchLegacy.jar` terminara de compilarse. Confirmado en el log real de CI: `[47/557] Copiando JARs` corría antes que `[49/557] Compilando NewLaunchLegacy.jar`. Fallaba en Linux con `Error copying file (if different)`; en Windows con `ninja: build stopped: cannot make progress due to previous errors` (mismo origen — el log de Windows no capturó el mensaje exacto del subproceso, pero es el mismo grafo de dependencias roto).
+
+Fix: agregar `NewLaunchLegacy` al `DEPENDS`. Verificado localmente antes de pushear — no solo en teoría: se forzó el escenario exacto (`rm -rf build/jars build/libraries/*/share`, rebuild con `-j8`) y se confirmó que ahora `NewLaunchLegacy.jar` (paso 4/5) termina antes de `CopyJars` (paso 5/5). Build completo local: 403/403 sin errores, 29/29 tests (`ctest`) pasando.
+
+**Bug #2 — include roto de un rename viejo, sin relación con el bug #1 (commit `718b158`)**
+
+El push del fix #1 disparó CI real — y **volvió a fallar**, por una causa completamente distinta: `BetelineyUpdater.cpp:59` incluye `"updater/prismupdater/UpdaterDialogs.h"`, un path que ya no existe. El directorio se renombró a `updater/betelineyupdater/` en algún momento de la migración del fork de PrismLauncher, pero ese include específico no se actualizó. `fatal error: ... No such file or directory` en el runner limpio de Linux.
+
+Esto no se detectó en ningún build local anterior porque el `.o` de ese archivo ya estaba compilado y cacheado de antes del rename — ninja, al no detectar cambios en el `.cpp`, nunca lo recompilaba, así que el include roto quedaba invisible en cualquier build incremental local. Solo un build verdaderamente limpio (o el runner de CI, que siempre parte de cero) lo expone. Lección concreta: **un build local "exitoso" sin partir de cero no es evidencia confiable de que el código compile**, esto incluye el primer build local de esta misma sesión, cuyo "403/403 sin errores" fue, en retrospectiva, una verificación incompleta (solo se habían borrado `jars/` y `share/`, no `build/` entero).
+
+Fix: corregido el path del include. Verificado con grep recursivo que no queda ninguna otra referencia a `prismupdater`/`prism_updater` en `.cpp`/`.h`/`.ui` del proyecto.
+
+**Intento de verificación 100% limpia local — bloqueado por el entorno, no por el código:** se intentó un `rm -rf build/` completo seguido de reconfigurar y recompilar desde cero para validar ambos fixes juntos antes de pushear el segundo. La reconfiguración de CMake falló con `Could NOT find Java (missing: Java_JAVAC_EXECUTABLE Java_JAR_EXECUTABLE Java_JAVADOC_EXECUTABLE Development)` pese a tener JDK 21 instalado — un problema de detección de entorno específico del proceso en segundo plano (probablemente diferencia de `PATH`/`JAVA_HOME` entre la sesión interactiva y el proceso `nohup`), no del repositorio. No se persiguió más — la verificación autoritativa la da CI (entorno reproducible de GitHub Actions), no esta máquina.
+
+**Estado de CI al cierre de esta sesión, sin redondear:** el push del fix #2 (`718b158`) disparó la corrida `27911380966`, que seguía `in_progress` (~1m38s) al momento de escribir esto. **No confirmado todavía que ambos fixes juntos hagan pasar CI en verde.** Verificar en la próxima sesión con `gh run list --repo ElPibeCapo/BetelineyLauncher --limit 1` — si sigue en rojo, revisar el log del paso que falle; dado que se descartaron ya 2 causas reales y distintas, es razonable pero no seguro que sea la última.
+
+**Otros hallazgos de la auditoría, sin acción requerida:**
+- El workflow `generate.yml` del repo `meta` tiene 2 fallas de 30 corridas (6.7%) en el step "Generar Forge" — el log corta sin error visible a mitad de iterar versiones de Forge, probablemente rate-limit del servidor de Forge o problema transitorio del runner. Es del workflow original de PrismLauncher (no nuestro código), se autorecupera en la siguiente corrida programada (cron cada 6h), y no bloquea nada porque tiene `continue-on-error: true`. No se investigó más a fondo — frecuencia baja, sin impacto.
+- Escaneo amplio de secretos en **todo** el historial de ambos repos (`BetelineyLauncher` y `meta`), no solo grep de la key conocida: sin hallazgos adicionales. El único hit fue un string de prueba (`supersecretvalue123abc`) en un test unitario que verifica el anonimizador de logs — no es una credencial real.
+- `.gitignore` cubre correctamente `build/`, sin archivos de credenciales sueltos fuera de control de versiones.
+- Schema de `BetelineyPackListModel.cpp` (parser de los packs) verificado campo por campo contra los JSON publicados — coincide exactamente, sin bug.
+- URL base `BETELINEY_PACKS_URL` (con mayúscula `ElPibeCapo` en el host) probada explícitamente — DNS no distingue mayúsculas, sin problema.
+- No se repite en ningún otro lado del CMake el patrón de `DEPENDS` incompleto del bug #1 (revisado cada `add_custom_target` con `DEPENDS` del proyecto).
+
+**Tabla de pendientes — estado real actualizado:**
+
+| # | Ítem | Estado |
+|---|---|---|
+| — | CI del repo principal pasando en verde | 🟡 2 bugs reales corregidos y pusheados, verificación final en curso, no confirmada al cierre de esta sesión |
+| 1 | Secret `CURSEFORGE_API_KEY` en CI | 🔴 Sigue sin existir (`gh secret list` vacío). Bloqueado por la rotación. |
+| — | **Rotar key de CurseForge expuesta** | 🔴 Crítico, exclusivo del usuario, sin sustituto posible vía ningún acceso de GitHub. `console.curseforge.com` → revocar → generar nueva → cargarla como secret (idealmente con `gh secret set` corrido por el usuario mismo, para que el valor nunca pase por este chat). |
+| — | Purgar key vieja del historial de git | ⏸️ Decisión del usuario, pendiente — destructivo, secundario a la rotación. |
+| 4 | Capturas de pantalla restantes | ⏳ Manual, requiere la app corriendo. |
 | 6 | Publicar en r/feedthebeast, r/Minecraft, Discord Prism | ⏳ Manual. |
 | 7 | Formulario OpenAI Codex for OSS | ⏳ Manual. |
 
