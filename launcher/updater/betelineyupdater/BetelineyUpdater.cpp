@@ -56,7 +56,7 @@ namespace fs = std::filesystem;
 
 #include "DesktopServices.h"
 
-#include "updater/prismupdater/UpdaterDialogs.h"
+#include "updater/betelineyupdater/UpdaterDialogs.h"
 
 #include "FileSystem.h"
 #include "Json.h"
