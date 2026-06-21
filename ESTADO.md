@@ -92,7 +92,7 @@ bash EMPAQUETAR_APPIMAGE.sh
 
 | Servicio | Estado | Detalle |
 |---|---|---|
-| **CurseForge** | ✅ | `$2a$10$wIJoeapbxkZ1tE8h2S/ojOLkDwqdEjAq9ZXqAUwFKlRUcZYx5iLsO` — CI usa secret `CURSEFORGE_API_KEY`. Local: `export CURSEFORGE_API_KEY="..."` antes de cmake. |
+| **CurseForge** | ⚠️ | Key ROTADA tras fuga (ver Sesión 15) — REDACTED, ya no se documenta en texto plano. CI usa secret `CURSEFORGE_API_KEY`. Local: `export CURSEFORGE_API_KEY="..."` antes de cmake. |
 | **Microsoft Azure** | ✅ | App ID: `4b945c78-d30b-489e-915f-b361bf9c933b` |
 | **Imgur** | ⚠️ | Key vacía. El código de upload existe. Registrar en `api.imgur.com/oauth2/addclient` si se activa. |
 | **META server** | ✅ | Rama `gh-pages` del repo meta tiene todos los JSONs generados. CI corre cada 6h. |
@@ -106,7 +106,7 @@ bash EMPAQUETAR_APPIMAGE.sh
 https://github.com/ElPibeCapo/BetelineyLauncher/settings/secrets/actions
 → New repository secret
 → Nombre:  CURSEFORGE_API_KEY
-→ Valor:   $2a$10$wIJoeapbxkZ1tE8h2S/ojOLkDwqdEjAq9ZXqAUwFKlRUcZYx5iLsO
+→ Valor:   (la key NUEVA tras rotar en CurseForge — NUNCA la antigua, fue expuesta públicamente, ver Sesión 15)
 ```
 
 **#2 — GitHub Pages del META server** (el contenido ya existe, falta activarlo):
