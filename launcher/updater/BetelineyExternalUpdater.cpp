@@ -121,7 +121,7 @@ void BetelineyExternalUpdater::checkForUpdates(bool triggeredByUser)
 
     // Mostrar diálogo de progreso con botón Cancel funcional
     priv->m_cancelRequested.store(false);
-    auto* progress = new QProgressDialog(tr("Checking for updates..."), tr("Cancel"), 0, 0, priv->parent);
+    auto* progress = new QProgressDialog(tr("Buscando actualizaciones..."), tr("Cancelar"), 0, 0, priv->parent);
     progress->setWindowModality(Qt::WindowModal);
     progress->setMinimumDuration(500);
     progress->adjustSize();
@@ -213,8 +213,8 @@ void BetelineyExternalUpdater::checkForUpdates(bool triggeredByUser)
 
         if (!result.started) {
             qDebug() << "Failed to start updater after 5 seconds. reason:" << result.errorString;
-            auto msgBox = QMessageBox(QMessageBox::Information, tr("Update Check Failed"),
-                                     tr("Failed to start after 5 seconds\nReason: %1.").arg(result.errorString),
+            auto msgBox = QMessageBox(QMessageBox::Information, tr("Error al buscar actualizaciones"),
+                                     tr("No se pudo iniciar después de 5 segundos\nMotivo: %1.").arg(result.errorString),
                                      QMessageBox::Ok, priv->parent);
             msgBox.setMinimumWidth(460);
             msgBox.adjustSize();
@@ -228,8 +228,8 @@ void BetelineyExternalUpdater::checkForUpdates(bool triggeredByUser)
 
         if (!result.finished) {
             qDebug() << "Updater failed to close after 60 seconds. reason:" << result.errorString;
-            auto msgBox = QMessageBox(QMessageBox::Information, tr("Update Check Failed"),
-                                     tr("Updater failed to close 60 seconds\nReason: %1.").arg(result.errorString),
+            auto msgBox = QMessageBox(QMessageBox::Information, tr("Error al buscar actualizaciones"),
+                                     tr("El actualizador no se cerró tras 60 segundos\nMotivo: %1.").arg(result.errorString),
                                      QMessageBox::Ok, priv->parent);
             msgBox.setDetailedText(result.stdOut);
             msgBox.setMinimumWidth(460);
@@ -249,8 +249,8 @@ void BetelineyExternalUpdater::checkForUpdates(bool triggeredByUser)
             case 0:
                 if (triggeredByUser) {
                     qDebug() << "No update available";
-                    auto msgBox = QMessageBox(QMessageBox::Information, tr("No Update Available"),
-                                             tr("You are running the latest version."),
+                    auto msgBox = QMessageBox(QMessageBox::Information, tr("No hay actualizaciones disponibles"),
+                                             tr("Ya tienes instalada la última versión."),
                                              QMessageBox::Ok, priv->parent);
                     msgBox.setMinimumWidth(460);
                     msgBox.adjustSize();
@@ -260,8 +260,8 @@ void BetelineyExternalUpdater::checkForUpdates(bool triggeredByUser)
             case 1:
                 {
                     qDebug() << "Updater subprocess error" << qPrintable(std_error);
-                    auto msgBox = QMessageBox(QMessageBox::Warning, tr("Update Check Error"),
-                                             tr("There was an error running the update check."),
+                    auto msgBox = QMessageBox(QMessageBox::Warning, tr("Error al verificar actualizaciones"),
+                                             tr("Ocurrió un error al ejecutar la verificación de actualizaciones."),
                                              QMessageBox::Ok, priv->parent);
                     msgBox.setDetailedText(QString(std_error));
                     msgBox.setMinimumWidth(460);
@@ -284,11 +284,11 @@ void BetelineyExternalUpdater::checkForUpdates(bool triggeredByUser)
             default:
                 {
                     qDebug() << "Updater exited with unknown code" << result.exitCode;
-                    auto msgBox = QMessageBox(QMessageBox::Information, tr("Unknown Update Error"),
-                                             tr("The updater exited with an unknown condition.\nExit Code: %1")
+                    auto msgBox = QMessageBox(QMessageBox::Information, tr("Error desconocido al actualizar"),
+                                             tr("El actualizador terminó con una condición desconocida.\nCódigo de salida: %1")
                                                  .arg(QString::number(result.exitCode)),
                                              QMessageBox::Ok, priv->parent);
-                    auto detail_txt = tr("StdOut: %1\nStdErr: %2").arg(QString(std_output)).arg(QString(std_error));
+                    auto detail_txt = tr("Salida estándar: %1\nError estándar: %2").arg(QString(std_output)).arg(QString(std_error));
                     msgBox.setDetailedText(detail_txt);
                     msgBox.setMinimumWidth(460);
                     msgBox.adjustSize();
@@ -388,7 +388,7 @@ void BetelineyExternalUpdater::offerUpdate(const QString& version_name, const QS
     priv->settings->endGroup();
 
     if (should_skip) {
-        auto msgBox = QMessageBox(QMessageBox::Information, tr("No Update Available"), tr("There are no new updates available."),
+        auto msgBox = QMessageBox(QMessageBox::Information, tr("No hay actualizaciones disponibles"), tr("No hay nuevas actualizaciones disponibles."),
                                   QMessageBox::Ok, priv->parent);
         msgBox.setMinimumWidth(460);
         msgBox.adjustSize();
@@ -440,8 +440,8 @@ void BetelineyExternalUpdater::performUpdate(const QString& version_tag)
     QString exeFullPath = priv->appDir.absoluteFilePath(exe_name);
     if (!QFileInfo::exists(exeFullPath)) {
         qCritical() << "performUpdate: updater exe not found:" << exeFullPath;
-        QMessageBox::critical(priv->parent, tr("Update Failed"),
-                              tr("The updater executable was not found:\n%1\n\nCannot apply update.").arg(exeFullPath));
+        QMessageBox::critical(priv->parent, tr("Error al actualizar"),
+                              tr("No se encontró el ejecutable del actualizador:\n%1\n\nNo se puede aplicar la actualización.").arg(exeFullPath));
         return;
     }
 

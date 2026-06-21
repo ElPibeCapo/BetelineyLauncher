@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Select Release to Install</string>
+   <string>Seleccionar versión a instalar</string>
   </property>
   <property name="sizeGripEnabled">
    <bool>true</bool>
@@ -20,7 +20,7 @@
    <item>
     <widget class="QLabel" name="eplainLabel">
      <property name="text">
-      <string>Please select the release you wish to update to.</string>
+      <string>Por favor selecciona la versión a la que deseas actualizar.</string>
      </property>
     </widget>
    </item>
