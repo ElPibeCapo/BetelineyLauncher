@@ -43,12 +43,12 @@ SelectReleaseDialog::SelectReleaseDialog(const Version& current_version, const Q
 
     ui->versionsTree->header()->setSectionResizeMode(0, QHeaderView::Stretch);
     ui->versionsTree->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
-    ui->versionsTree->setHeaderLabels({ tr("Version"), tr("Published Date") });
+    ui->versionsTree->setHeaderLabels({ tr("Versión"), tr("Fecha de publicación") });
     ui->versionsTree->header()->setStretchLastSection(false);
 
-    ui->eplainLabel->setText(tr("Select a version to install.\n"
+    ui->eplainLabel->setText(tr("Selecciona una versión para instalar.\n"
                                 "\n"
-                                "Currently installed version: %1")
+                                "Versión instalada actualmente: %1")
                                  .arg(m_currentVersion.toString()));
 
     loadReleases();
@@ -58,8 +58,8 @@ SelectReleaseDialog::SelectReleaseDialog(const Version& current_version, const Q
     connect(ui->buttonBox, &QDialogButtonBox::accepted, this, &SelectReleaseDialog::accept);
     connect(ui->buttonBox, &QDialogButtonBox::rejected, this, &SelectReleaseDialog::reject);
 
-    ui->buttonBox->button(QDialogButtonBox::Cancel)->setText(tr("Cancel"));
-    ui->buttonBox->button(QDialogButtonBox::Ok)->setText(tr("OK"));
+    ui->buttonBox->button(QDialogButtonBox::Cancel)->setText(tr("Cancelar"));
+    ui->buttonBox->button(QDialogButtonBox::Ok)->setText(tr("Aceptar"));
 }
 
 SelectReleaseDialog::~SelectReleaseDialog()
@@ -118,10 +118,10 @@ SelectReleaseAssetDialog::SelectReleaseAssetDialog(const QList<GitHubReleaseAsse
 
     ui->versionsTree->header()->setSectionResizeMode(0, QHeaderView::Stretch);
     ui->versionsTree->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
-    ui->versionsTree->setHeaderLabels({ tr("Version"), tr("Published Date") });
+    ui->versionsTree->setHeaderLabels({ tr("Versión"), tr("Fecha de publicación") });
     ui->versionsTree->header()->setStretchLastSection(false);
 
-    ui->eplainLabel->setText(tr("Select a version to install."));
+    ui->eplainLabel->setText(tr("Selecciona una versión para instalar."));
 
     ui->changelogTextBrowser->setHidden(true);
 
