@@ -664,7 +664,7 @@ Tras el incidente de los hashes, antes de escribir los 3 packs verifiqué cada `
 
 **1. Fuga de credenciales — CurseForge API key expuesta públicamente**
 
-Hallazgo (sesión 14, cerrado parcialmente en esa sesión por corte de mensajes): la key `$2a$10$wIJoeapbxkZ1tE8h2S/ojOLkDwqdEjAq9ZXqAUwFKlRUcZYx5iLsO` estaba en texto plano en `ESTADO.md`, commiteada y pusheada a `origin/main` del repo público `BetelineyLauncher`. Confirmado expuesta en vivo: `raw.githubusercontent.com` la servía con HTTP 200 sin autenticación.
+Hallazgo (sesión 14, cerrado parcialmente en esa sesión por corte de mensajes): la key (prefijo `$2a$10$wIJ...`, valor completo REDACTADO de esta documentación) estaba en texto plano en `ESTADO.md`, commiteada y pusheada a `origin/main` del repo público `BetelineyLauncher`. Confirmado expuesta en vivo: `raw.githubusercontent.com` la servía con HTTP 200 sin autenticación.
 
 Hecho en esta sesión (commit `ae645db`):
 - Redactadas las 2 ocurrencias en `ESTADO.md` (tabla de API keys + instrucciones de secret de CI).
