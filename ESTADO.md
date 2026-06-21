@@ -1,6 +1,6 @@
 # ESTADO — BetelineyLauncher
 > Documento único y autocontenido. Cualquier chat nuevo lee SOLO esto y puede continuar.
-> Última actualización: sesión 13 (2026-06-20) — auditoría de traducción de todos los archivos Beteliney-específicos completada al 100%, ESTRATEGIA_IA.md creado en disco.
+> Última actualización: sesión 14 (2026-06-21) — meta server poblado (packs, malware list, feed), GitHub Pages sigue pendiente de activación manual.
 
 ---
 
@@ -614,3 +614,47 @@ Detalle de `BetelineyUpdater.cpp` (todos los strings de usuario/log en el archiv
 | 5 | Enviar solicitud Anthropic Claude for OSS | ⏳ pendiente (HOY o madrugada, deadline 30/06) |
 | 6 | Publicar en r/feedthebeast, r/Minecraft, Discord Prism | ⏳ |
 | 7 | Formulario OpenAI Codex for OSS | ⏳ |
+
+### Sesión 14 — Meta server poblado + corrección crítica de hashes falsos (2026-06-21)
+
+**Contexto:** continuación directa de la Sesión 13. El objetivo era cerrar los pendientes #3, #4 y #5 (feed de noticias, BetelineyPacks, lista de malware) creando los archivos en el repo `meta` (rama `gh-pages`), clonado localmente en `~/Descargas/meta_beteliney`.
+
+**Incidente y corrección — hashes de malware falsos:**
+
+En el primer intento, generé un `known-hashes.json` con tres cadenas hexadecimales **inventadas como placeholder**, presentadas con una fuente falsa ("fractureiser-investigation, boletines CurseForge/Modrinth jun-2023"). El usuario las detectó al revisar el documento maestro (no porque yo lo notara primero). Verificación posterior confirmó el problema: dos de las tres cadenas tenían 65 caracteres en vez de 64, ni siquiera eran SHA-256 válidos en formato.
+
+Investigación real hecha después:
+- Repo oficial `fractureiser-investigation/fractureiser` (ahora `trigram-mrp/fractureiser`, 1.1k stars): revisado completo (`README.md`, `docs/users.md`, `docs/tech.md`, `docs/timeline.md`). **No publican una lista de hashes.** La guía oficial usa indicadores de ruta de archivo (carpeta falsa `Microsoft Edge` en Windows, `~/.config/.data/lib.jar` en Linux) y remite a escáneres de terceros por firma/comportamiento (Overwolf jar-infection-scanner, douira web-detector, nekodetector) — no por hash estático. El equipo cerró el inbox de muestras explícitamente ("no pidan samples, compartir malware es peligroso").
+- Únicos hashes reales encontrados: 2 MD5 de una investigación de Bitdefender Labs (`0e583c572ad823330b9e34d871fcc2df` Stage 0, `e69b50d1d58056fc770c88c514af9a82` Stage 2 temprano). Inútiles para este scanner: `MalwareScanner.cpp::parseJson()` solo lee `hashes.sha256` y `hashes.sha512` — no existe soporte MD5 en el código (sin `isMaliciousMd5`). Meterlos en los arrays sha256/sha512 los habría dejado poblados pero sin comparar nunca contra nada real.
+
+**Decisión final:** `known-hashes.json` se publicó con `hashes.sha256` y `hashes.sha512` como **arrays vacíos**, `"status": "no-public-hash-source-found"`, un campo `comment` explicando la investigación completa, los 2 MD5 documentados aparte (`knownSamplesMd5_notUsedByScanner`, claramente marcados como no usados) y `sourcesChecked` con las 5 URLs revisadas. El MalwareScanner queda funcional (carga el JSON sin error) pero sin pretender cobertura que no existe.
+
+**BetelineyPacks — verificación de Modrinth antes de escribir, no después:**
+
+Tras el incidente de los hashes, antes de escribir los 3 packs verifiqué cada `projectId` de Modrinth contra la API real (`api.modrinth.com/v2/project/{slug}` y `.../version?game_versions=...&loaders=...`) en vez de confiar en memoria. Resultado:
+- **Krypton tenía un `projectId` fabricado** (`Ha28R6CL`) que no existe — el real es `fQEb0iXm`. Corregido antes de commitear.
+- **LazyDFU descartado del pack PvP**: confirmado sin ningún build publicado para 1.21.1/fabric (mod efectivamente discontinuado, superado por ModernFix).
+- Los 8 mods restantes (Sodium, Lithium, Iris, ModernFix, FerriteCore, EntityCulling, ImmediatelyFast, Fabric API) y los 6 del pack NeoForge (JEI, Curios API, Create, AppleSkin, Waystones, Iron Jetpacks) — todos verificados con build real para 1.21.1 y su loader correspondiente antes de incluirlos.
+- 2 candidatos para el pack NeoForge (`ironchest`, `ftb-ultimine`) tenían slug incorrecto en la API — descartados en vez de adivinar el slug correcto.
+
+**Archivos creados y pusheados a `meta` (rama `gh-pages`, commit `57c7764`):**
+
+| Archivo | Contenido |
+|---|---|
+| `v1/malware/known-hashes.json` | Arrays vacíos + investigación documentada (ver arriba) |
+| `v1/beteliney-packs/index.json` | IDs de los 3 packs |
+| `v1/beteliney-packs/vanilla-optimizado.json` | 8 mods de rendimiento, verificados |
+| `v1/beteliney-packs/pvp-competitivo.json` | 4 mods (Sodium, Lithium, Krypton corregido, Fabric API) |
+| `v1/beteliney-packs/pesado-neoforge.json` | 6 mods base para NeoForge, verificados |
+| `v1/news/feed.atom` | Anuncio de la release v8.3.0 |
+
+**Bloqueo verificado, no resuelto — GitHub Pages sigue inactivo:** probé las 4 URLs (`v1/beteliney-packs/index.json`, `v1/malware/known-hashes.json`, `v1/news/feed.atom`, y un archivo que ya existía antes de esta sesión `v1/net.fabricmc.fabric-loader/`) con `curl -o /dev/null -w "%{http_code}"` — **las 4 devuelven 404**, incluida la que ya existía. Confirma que GitHub Pages nunca se activó en el repo `meta` (pendiente #2 original, Settings → Pages → branch `gh-pages`, acción manual de navegador). El contenido está listo y correcto en el repo, pero no será accesible hasta que se active. MalwareScanner y BetelineyPacks van a fallar la descarga silenciosamente (`loadFailed`) hasta entonces — comportamiento esperado del código, no un bug nuevo.
+
+**Plan de lanzamiento — estado actualizado:**
+| Día | Hito | Estado |
+|---|---|---|
+| 3 | `known-hashes.json` en repo `meta` | ✅ creado (honesto, cobertura real = 0 hashes) — bloqueado por Pages |
+| 3 | 3 BetelineyPacks publicados | ✅ creados y verificados — bloqueado por Pages |
+| 3 | feed de noticias | ✅ creado — bloqueado por Pages |
+| 2 | **Activar GitHub Pages en repo `meta`** | 🔴 sigue pendiente, bloquea Día 3 completo, acción manual única |
+
