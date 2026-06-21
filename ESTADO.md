@@ -1,6 +1,6 @@
 # ESTADO — BetelineyLauncher
 > Documento único y autocontenido. Cualquier chat nuevo lee SOLO esto y puede continuar.
-> Última actualización: sesión 11 (2026-06-20) — crash crítico en ejecución real corregido y verificado, Día 1-2 del plan de lanzamiento cerrados, repo publicado en v8.3.0.
+> Última actualización: sesión 13 (2026-06-20) — auditoría de traducción de todos los archivos Beteliney-específicos completada al 100%, ESTRATEGIA_IA.md creado en disco.
 
 ---
 
@@ -554,3 +554,63 @@ No se pudo determinar en qué sesión se hicieron estos fixes — no aparecen en
 **Verificación:** reconfigurado con `cmake -DBUILD_TESTING=ON`, compilado el target `BetelineyTranslation` y corrido con `ctest`. Primera ejecución tras el fix de ruta: **15 passed, 1 failed** — el test encontró `tr("Download Mods")` sin traducir en `ModFolderPage.cpp::downloadDialogFinished()` (la función hermana `updateMods()` ya usaba `"Descargar Mods"` como string literal pero sin `tr()`, confirma que la traducción correcta es `tr("Descargar Mods")`). Corregida esa línea. Segunda ejecución: **16 passed, 0 failed, 0 skipped** — 100%.
 
 Cierra el Día 4 del plan de lanzamiento de verdad (antes solo estaba "revisado", el bug seguía vivo).
+
+### Sesión 13 — Auditoría de traducción completa + ESTRATEGIA_IA.md (2026-06-20)
+
+**Dos bloques de trabajo en esta sesión:**
+
+**1. ESTRATEGIA_IA.md (documento maestro de estrategia IA v4.0)**
+Creado y guardado en `source/ESTRATEGIA_IA.md`. Consolida toda la información verificada sobre programas de patrocinio, configuración de modelos de IA y plan de acción. Puntos clave:
+- Anthropic Claude for Open Source: deadline real 30/06/2026, 10.000 cupos por orden de llegada. Acción: enviar HOY vía `claude.com/contact-sales/claude-for-oss`.
+- OpenAI Codex for Open Source: sin deadline fijo, URL `openai.com/form/codex-for-oss/`.
+- DeepSeek V4 Pro: $0.435/$0.87 por 1M tokens (precio permanente desde 22/05/2026). Con $11.72 disponibles → ~21.5M tokens (mix 3:1).
+- Claude Fable 5 / Mythos 5: no disponible (suspendido por control de exportación EE. UU.).
+- Datos sin verificar marcados explícitamente como `⚠️` (chances en %, tiempos de respuesta Anthropic).
+
+**2. Auditoría de traducción — archivos Beteliney-específicos: CERRADA AL 100%**
+
+La sesión anterior (12) tenía pendiente un batch de ediciones que falló completamente por un error en el 6º elemento. Esta sesión reaplicó todo de forma individual, más lo que se detectó en pasadas de verificación sucesivas.
+
+Archivos modificados y resultado:
+
+| Archivo | Strings corregidas | Notas |
+|---|---|---|
+| `launcher/updater/betelineyupdater/UpdaterDialogs.cpp` | 6 | Encabezados tabla (Versión/Fecha de publicación), label, botones Cancelar/Aceptar — ambos diálogos |
+| `launcher/updater/betelineyupdater/SelectReleaseDialog.ui` | 2 | `windowTitle` y `eplainLabel` placeholder |
+| `launcher/BetelineyTime.cpp` | 1 | `"days"` → `"d"` (consistencia con h/m/s/ms) |
+| `launcher/updater/betelineyupdater/BetelineyUpdater.cpp` | ~35 | Ver detalle abajo |
+
+Detalle de `BetelineyUpdater.cpp` (todos los strings de usuario/log en el archivo):
+- Líneas 496–507: `"No release for version!"`, `"Can not find..."`, `"No version selected."` (sin `tr()`, añadido `tr()` y traducidos)
+- Líneas 760–782: `"No Valid Release Assets"`, `"Github release %1 has no valid assets..."`, `"yes"/"no"`, `"No version selected."`, `"Failed to Download"`, `"Failed to download the selected asset."`
+- Líneas 884–916: bloque completo del lock file (`"Update already in progress"`, infoMsg de 10 líneas, `"Update Aborted"`)
+- Línea 924: `"Updating from %1 to %2"`
+- Líneas 927–930: `"Updating portable install at %1"`, `"Running installer file at %1"`
+- Línea 939: `"Process start result: %1"` + `"yes"/"no"`
+- Línea 946: `"Backing up install"`
+- Líneas 967–969: `"Starting new updater at '%1'"`, `"Failed to launch '%1' %2"`
+- Líneas 520–522: `"Finishing update process"`, `"Waiting 2 seconds for resources to free"` (sin `tr()`, añadido)
+- Líneas 533/986: `"Reading manifest from %1"` (2 ocurrencias en funciones gemelas, diferenciadas por contexto)
+- Línea 1017: `"manifest.txt empty or missing..."` (sin `tr()`, añadido)
+- Líneas 1019–1048: bloque backup completo (`"Backing up:\n  %1"`, progress dialog, logUpdate, lambda `copy` con 3 strings)
+- Líneas 1061: `"File doesn't exist, ignoring: %1"` (en `backupAppDir()`, diferente a la ya traducida en `moveAndFinishUpdate()`)
+- Líneas 1082–1086: `"Extracted the following to..."`, `"Failed to extract %1 to %2"` (×2), primer argumento de `showFatalErrorMessage` era string literal sin `tr()`
+- Líneas 1100–1104: `"Failed to Check Version"` (×2) + `"Failed to launch child process..."`, `"Child launcher process failed."`
+
+**Verificación final:** grep amplio sobre todos los archivos Beteliney-específicos → 0 strings en inglés visibles al usuario o en logs de usuario. Los falsos positivos del regex final (5 en BetelineyExternalUpdater, 3 en BetelineyUpdater, etc.) se revisaron manualmente y todos estaban en español.
+
+**Plan de lanzamiento — estado actualizado:**
+| Día | Hito | Estado |
+|---|---|---|
+| 1 | push + tag v8.3.0 + Release CI | ✅ |
+| 1 | Discord creado + enlazado en README | ✅ |
+| 2 | Captura ventana principal + Roadmap en README | ✅ |
+| 2 | Resto de capturas (BetelineyPacks, perfiles JVM, diagnóstico) | ⏳ |
+| 3 | `known-hashes.json` real en repo `meta` (depende GitHub Pages, pendiente #2) | ⏳ |
+| 3 | 3 BetelineyPacks publicados | ⏳ |
+| 4 | Tests de traducción 16/16 pasando | ✅ |
+| 4 | Auditoría traducción archivos Beteliney 100% | ✅ |
+| 5 | ESTRATEGIA_IA.md creado, planes de patrocinio claros | ✅ |
+| 5 | Enviar solicitud Anthropic Claude for OSS | ⏳ pendiente (HOY o madrugada, deadline 30/06) |
+| 6 | Publicar en r/feedthebeast, r/Minecraft, Discord Prism | ⏳ |
+| 7 | Formulario OpenAI Codex for OSS | ⏳ |

@@ -73,7 +73,7 @@ QString Time::humanReadableDuration(double duration, int precision)
         os << '-';
     }
     if (dc) {
-        os << dc << QObject::tr("days");
+        os << dc << QObject::tr("d");
     }
     if (hc) {
         if (dc)

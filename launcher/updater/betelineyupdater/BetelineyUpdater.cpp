@@ -100,23 +100,23 @@ BetelineyUpdaterApp::BetelineyUpdaterApp(int& argc, char** argv) : QApplication(
 
     // Command line parsing
     QCommandLineParser parser;
-    parser.setApplicationDescription(QObject::tr("An auto-updater for Beteliney Launcher"));
+    parser.setApplicationDescription(QObject::tr("Actualizador automático de Beteliney Launcher"));
 
     parser.addOptions(
-        { { { "d", "dir" }, tr("Use a custom path as application root (use '.' for current directory)."), tr("directory") },
+        { { { "d", "dir" }, tr("Usar una ruta personalizada como raíz de la aplicación (usa '.' para el directorio actual)."), tr("directorio") },
           { { "V", "beteliney-version" },
-            tr("Use this version as the installed launcher version. (provided because stdout can not be reliably captured on windows)"),
-            tr("installed launcher version") },
-          { { "I", "install-version" }, "Install a specific version.", tr("version name") },
-          { { "U", "update-url" }, tr("Update from the specified repo."), tr("github repo url") },
+            tr("Usar esta versión como la versión instalada del launcher. (necesario porque stdout no se puede capturar de forma confiable en windows)"),
+            tr("versión instalada del launcher") },
+          { { "I", "install-version" }, tr("Instalar una versión específica."), tr("nombre de versión") },
+          { { "U", "update-url" }, tr("Actualizar desde el repositorio especificado."), tr("url del repo de github") },
           { { "c", "check-only" },
-            tr("Only check if an update is needed. Exit status 100 if true, 0 if false (or non 0 if there was an error).") },
-          { { "p", "pre-release" }, tr("Allow updating to pre-release releases") },
-          { { "F", "force" }, tr("Force an update, even if one is not needed.") },
-          { { "l", "list" }, tr("List available releases.") },
-          { "debug", tr("Log debug to console.") },
-          { { "S", "select-ui" }, tr("Select the version to install with a GUI.") },
-          { { "D", "allow-downgrade" }, tr("Allow the updater to downgrade to previous versions.") } });
+            tr("Solo verificar si se necesita una actualización. Código de salida 100 si es necesario, 0 si no (o distinto de 0 si hubo un error).") },
+          { { "p", "pre-release" }, tr("Permitir actualizar a versiones pre-release") },
+          { { "F", "force" }, tr("Forzar una actualización, incluso si no es necesaria.") },
+          { { "l", "list" }, tr("Listar versiones disponibles.") },
+          { "debug", tr("Registrar depuración en la consola.") },
+          { { "S", "select-ui" }, tr("Seleccionar la versión a instalar con una interfaz gráfica.") },
+          { { "D", "allow-downgrade" }, tr("Permitir que el actualizador retroceda a versiones anteriores.") } });
 
     parser.addHelpOption();
     parser.addVersionOption();
@@ -200,13 +200,13 @@ BetelineyUpdaterApp::BetelineyUpdaterApp(int& argc, char** argv) : QApplication(
 
         logFile = std::unique_ptr<QFile>(new QFile(logBase.arg(0)));
         if (!logFile->open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate)) {
-            showFatalErrorMessage(tr("The launcher data folder is not writable!"),
-                                  tr("The updater couldn't create a log file - the data folder is not writable.\n"
+            showFatalErrorMessage(tr("¡La carpeta de datos del launcher no es escribible!"),
+                                  tr("El actualizador no pudo crear un archivo de log: la carpeta de datos no es escribible.\n"
                                      "\n"
-                                     "Make sure you have write permissions to the data folder.\n"
+                                     "Asegúrate de tener permisos de escritura en la carpeta de datos.\n"
                                      "(%1)\n"
                                      "\n"
-                                     "The updater cannot continue until you fix this problem.")
+                                     "El actualizador no puede continuar hasta que arregles este problema.")
                                       .arg(m_dataPath));
             return;
         }
@@ -301,15 +301,15 @@ BetelineyUpdaterApp::BetelineyUpdaterApp(int& argc, char** argv) : QApplication(
     }
 
 #ifdef Q_OS_MACOS
-    showFatalErrorMessage(tr("MacOS Not Supported"), tr("The updater does not support installations on MacOS"));
+    showFatalErrorMessage(tr("MacOS no soportado"), tr("El actualizador no soporta instalaciones en MacOS"));
 #endif
 
     if (binPath.startsWith("/tmp/.mount_")) {
         m_isAppimage = true;
         m_appimagePath = QProcessEnvironment::systemEnvironment().value(QStringLiteral("APPIMAGE"));
         if (m_appimagePath.isEmpty()) {
-            showFatalErrorMessage(tr("Unsupported Installation"),
-                                  tr("Updater is running as misconfigured AppImage? ($APPIMAGE environment variable is missing)"));
+            showFatalErrorMessage(tr("Instalación no soportada"),
+                                  tr("¿El actualizador se está ejecutando como un AppImage mal configurado? (falta la variable de entorno $APPIMAGE)"));
         }
     }
 
@@ -321,7 +321,7 @@ BetelineyUpdaterApp::BetelineyUpdaterApp(int& argc, char** argv) : QApplication(
 #endif
 
     if (!QFileInfo(beteliney_executable).isFile()) {
-        showFatalErrorMessage(tr("Unsupported Installation"), tr("The updater can not find the main executable."));
+        showFatalErrorMessage(tr("Instalación no soportada"), tr("El actualizador no puede encontrar el ejecutable principal."));
     }
 
     m_betelineyExecutable = beteliney_executable;
@@ -473,8 +473,8 @@ void BetelineyUpdaterApp::run()
     }
 
     if (m_isFlatpak) {
-        showFatalErrorMessage(tr("Updating flatpack not supported"), tr("Actions outside of checking if an update is available are not "
-                                                                        "supported when running the flatpak version of Beteliney Launcher."));
+        showFatalErrorMessage(tr("Actualización de flatpak no soportada"), tr("Las acciones más allá de verificar si hay una actualización disponible no "
+                                                                        "están soportadas en la versión flatpak de Beteliney Launcher."));
         return;
     }
     if (m_isAppimage) {
@@ -497,14 +497,14 @@ void BetelineyUpdaterApp::run()
             }
             if (!found) {
                 showFatalErrorMessage(
-                    "No release for version!",
-                    QString("Can not find a github release for specified version %1").arg(m_userSelectedVersion.toString()));
+                    tr("No hay release para esa versión"),
+                    tr("No se encontró un release de GitHub para la versión especificada %1").arg(m_userSelectedVersion.toString()));
                 return;
             }
         } else if (m_selectUI) {
             update_release = selectRelease();
             if (!update_release.isValid()) {
-                showFatalErrorMessage("No version selected.", "No version was selected.");
+                showFatalErrorMessage(tr("No se seleccionó versión."), tr("No se seleccionó ninguna versión."));
                 return;
             }
         }
@@ -517,9 +517,9 @@ void BetelineyUpdaterApp::run()
 
 void BetelineyUpdaterApp::moveAndFinishUpdate(QDir target)
 {
-    logUpdate("Finishing update process");
+    logUpdate(tr("Finalizando el proceso de actualización"));
 
-    logUpdate("Waiting 2 seconds for resources to free");
+    logUpdate(tr("Esperando 2 segundos para liberar recursos"));
     this->thread()->sleep(2);
 
     auto manifest_path = FS::PathCombine(m_rootPath, "manifest.txt");
@@ -530,7 +530,7 @@ void BetelineyUpdaterApp::moveAndFinishUpdate(QDir target)
     QStringList file_list;
     if (manifest.isFile()) {
         // load manifest from file
-        logUpdate(tr("Reading manifest from %1").arg(manifest.absoluteFilePath()));
+        logUpdate(tr("Leyendo manifiesto desde %1").arg(manifest.absoluteFilePath()));
         try {
             auto contents = QString::fromUtf8(FS::read(manifest.absoluteFilePath()));
             auto files = contents.split('\n');
@@ -542,33 +542,33 @@ void BetelineyUpdaterApp::moveAndFinishUpdate(QDir target)
     }
 
     if (file_list.isEmpty()) {
-        logUpdate(tr("Manifest empty, making best guess of the directory contents of %1").arg(m_rootPath));
+        logUpdate(tr("Manifiesto vacío, adivinando el contenido del directorio de %1").arg(m_rootPath));
         auto entries = target.entryInfoList(QDir::NoDotAndDotDot | QDir::Files | QDir::Dirs);
         for (auto entry : entries) {
             file_list.append(entry.fileName());
         }
     }
-    logUpdate(tr("Installing the following to %1 :\n %2").arg(target.absolutePath()).arg(file_list.join(",\n  ")));
+    logUpdate(tr("Instalando lo siguiente en %1 :\n %2").arg(target.absolutePath()).arg(file_list.join(",\n  ")));
 
     bool error = false;
 
-    QProgressDialog progress(tr("Installing from %1").arg(m_rootPath), "", 0, file_list.length());
+    QProgressDialog progress(tr("Instalando desde %1").arg(m_rootPath), "", 0, file_list.length());
     progress.setCancelButton(nullptr);
     progress.setMinimumWidth(400);
     progress.adjustSize();
     progress.show();
     QCoreApplication::processEvents();
 
-    logUpdate(tr("Installing from %1").arg(m_rootPath));
+    logUpdate(tr("Instalando desde %1").arg(m_rootPath));
 
     auto copy = [this, app_dir, target](QString to_install_file) {
         auto rel_path = app_dir.relativeFilePath(to_install_file);
         auto install_path = FS::PathCombine(target.absolutePath(), rel_path);
-        logUpdate(tr("Installing %1 from %2").arg(install_path).arg(to_install_file));
+        logUpdate(tr("Instalando %1 desde %2").arg(install_path).arg(to_install_file));
         FS::ensureFilePathExists(install_path);
         auto result = FS::copy(to_install_file, install_path).overwrite(true)();
         if (!result) {
-            logUpdate(tr("Failed copy %1 to %2").arg(to_install_file).arg(install_path));
+            logUpdate(tr("Falló la copia de %1 a %2").arg(to_install_file).arg(install_path));
             return true;
         }
         return false;
@@ -583,7 +583,7 @@ void BetelineyUpdaterApp::moveAndFinishUpdate(QDir target)
             if (auto file_info = QFileInfo(FS::PathCombine(m_rootPath, glob)); file_info.exists()) {
                 error |= copy(file_info.absoluteFilePath());
             } else {
-                logUpdate(tr("File doesn't exist, ignoring: %1").arg(FS::PathCombine(m_rootPath, glob)));
+                logUpdate(tr("El archivo no existe, ignorando: %1").arg(FS::PathCombine(m_rootPath, glob)));
             }
         } else {
             while (iter.hasNext()) {
@@ -596,11 +596,11 @@ void BetelineyUpdaterApp::moveAndFinishUpdate(QDir target)
     QCoreApplication::processEvents();
 
     if (error) {
-        logUpdate(tr("There were errors installing the update."));
+        logUpdate(tr("Hubo errores al instalar la actualización."));
         auto fail_marker = FS::PathCombine(m_dataPath, ".beteliney_update.fail");
         FS::copy(m_updateLogPath, fail_marker).overwrite(true)();
     } else {
-        logUpdate(tr("Update succeed."));
+        logUpdate(tr("Actualización exitosa."));
         auto success_marker = FS::PathCombine(m_dataPath, ".beteliney_update.success");
         FS::copy(m_updateLogPath, success_marker).overwrite(true)();
     }
@@ -761,10 +761,10 @@ void BetelineyUpdaterApp::performUpdate(const GitHubRelease& release)
     GitHubReleaseAsset selected_asset;
     if (valid_assets.isEmpty()) {
         return showFatalErrorMessage(
-            tr("No Valid Release Assets"),
-            tr("Github release %1 has no valid assets for this platform: %2")
+            tr("Sin assets de release válidos"),
+            tr("El release %1 de GitHub no tiene assets válidos para esta plataforma: %2")
                 .arg(release.tag_name)
-                .arg(tr("%1 portable: %2").arg(BuildConfig.BUILD_ARTIFACT).arg(m_isPortable ? tr("yes") : tr("no"))));
+                .arg(tr("%1 portable: %2").arg(BuildConfig.BUILD_ARTIFACT).arg(m_isPortable ? tr("sí") : tr("no"))));
     } else if (valid_assets.length() > 1) {
         selected_asset = selectAsset(valid_assets);
     } else {
@@ -772,14 +772,14 @@ void BetelineyUpdaterApp::performUpdate(const GitHubRelease& release)
     }
 
     if (!selected_asset.isValid()) {
-        return showFatalErrorMessage(tr("No version selected."), tr("No version was selected."));
+        return showFatalErrorMessage(tr("No se seleccionó versión."), tr("No se seleccionó ninguna versión."));
     }
 
     qDebug() << "will install" << selected_asset;
     auto file = downloadAsset(selected_asset);
 
     if (!file.exists()) {
-        return showFatalErrorMessage(tr("Failed to Download"), tr("Failed to download the selected asset."));
+        return showFatalErrorMessage(tr("Error al descargar"), tr("No se pudo descargar el asset seleccionado."));
     }
 
     performInstall(file);
@@ -881,22 +881,22 @@ void BetelineyUpdaterApp::performInstall(QFileInfo file)
     QFileInfo update_lock(update_lock_path);
     if (update_lock.exists()) {
         auto [timestamp, from, to, target, data_path] = read_lock_File(update_lock_path);
-        auto msg = tr("Update already in progress\n");
+        auto msg = tr("Ya hay una actualización en progreso\n");
         auto infoMsg =
-            tr("This installation has a update lock file present at: %1\n"
+            tr("Esta instalación tiene un archivo de bloqueo de actualización presente en: %1\n"
                "\n"
-               "Timestamp: %2\n"
-               "Updating from version %3 to %4\n"
-               "Target install path: %5\n"
-               "Data Path: %6"
+               "Marca de tiempo: %2\n"
+               "Actualizando de la versión %3 a %4\n"
+               "Ruta de instalación destino: %5\n"
+               "Ruta de datos: %6"
                "\n"
-               "This likely means that a previous update attempt failed. Please ensure your installation is in working order before "
-               "proceeding.\n"
-               "Check the Beteliney Launcher updater log at: \n"
+               "Esto probablemente significa que un intento de actualización anterior falló. Asegúrate de que tu instalación esté en buen estado antes de "
+               "continuar.\n"
+               "Revisa el log del actualizador de Beteliney Launcher en: \n"
                "%7\n"
-               "for details on the last update attempt.\n"
+               "para más detalles sobre el último intento de actualización.\n"
                "\n"
-               "To overwrite this lock and proceed with this update anyway, select \"Ignore\" below.")
+               "Para sobrescribir este bloqueo y continuar con esta actualización de todas formas, selecciona \"Ignorar\" abajo.")
                 .arg(update_lock_path)
                 .arg(timestamp.toString(Qt::ISODate), from, to, target, data_path)
                 .arg(m_updateLogPath);
@@ -913,7 +913,7 @@ void BetelineyUpdaterApp::performInstall(QFileInfo file)
             case QMessageBox::RejectRole:
                 [[fallthrough]];
             default:
-                return showFatalErrorMessage(tr("Update Aborted"), tr("The update attempt was aborted"));
+                return showFatalErrorMessage(tr("Actualización cancelada"), tr("El intento de actualización fue cancelado"));
         }
     }
     clearUpdateLog();
@@ -921,13 +921,13 @@ void BetelineyUpdaterApp::performInstall(QFileInfo file)
     auto changelog_path = FS::PathCombine(m_dataPath, ".beteliney_update.changelog");
     FS::write(changelog_path, m_install_release.body.toUtf8());
 
-    logUpdate(tr("Updating from %1 to %2").arg(m_betelineyVersion).arg(m_install_release.tag_name));
+    logUpdate(tr("Actualizando de %1 a %2").arg(m_betelineyVersion).arg(m_install_release.tag_name));
     if (m_isPortable || file.fileName().endsWith(".zip") || file.fileName().endsWith(".tar.gz")) {
         write_lock_file(update_lock_path, QDateTime::currentDateTime(), m_betelineyVersion, m_install_release.tag_name, m_rootPath, m_dataPath);
-        logUpdate(tr("Updating portable install at %1").arg(m_rootPath));
+        logUpdate(tr("Actualizando instalación portátil en %1").arg(m_rootPath));
         unpackAndInstall(file);
     } else {
-        logUpdate(tr("Running installer file at %1").arg(file.absoluteFilePath()));
+        logUpdate(tr("Ejecutando archivo instalador en %1").arg(file.absoluteFilePath()));
         QProcess proc = QProcess();
 #if defined Q_OS_WIN
         auto env = QProcessEnvironment::systemEnvironment();
@@ -936,14 +936,14 @@ void BetelineyUpdaterApp::performInstall(QFileInfo file)
 #endif
         proc.setProgram(file.absoluteFilePath());
         bool result = proc.startDetached();
-        logUpdate(tr("Process start result: %1").arg(result ? tr("yes") : tr("no")));
+        logUpdate(tr("Resultado del inicio del proceso: %1").arg(result ? tr("sí") : tr("no")));
         exit(result ? 0 : 1);
     }
 }
 
 void BetelineyUpdaterApp::unpackAndInstall(QFileInfo archive)
 {
-    logUpdate(tr("Backing up install"));
+    logUpdate(tr("Respaldando instalación"));
     backupAppDir();
 
     if (auto loc = unpackArchive(archive)) {
@@ -964,9 +964,9 @@ void BetelineyUpdaterApp::unpackAndInstall(QFileInfo archive)
 #endif
 
         auto new_updater_path = loc.value().absoluteFilePath(exe_name);
-        logUpdate(tr("Starting new updater at '%1'").arg(new_updater_path));
+        logUpdate(tr("Iniciando el nuevo actualizador en '%1'").arg(new_updater_path));
         if (!proc.startDetached(new_updater_path, { "-d", m_dataPath }, loc.value().absolutePath())) {
-            logUpdate(tr("Failed to launch '%1' %2").arg(new_updater_path).arg(proc.errorString()));
+            logUpdate(tr("No se pudo iniciar '%1' %2").arg(new_updater_path).arg(proc.errorString()));
             return exit(10);
         }
         return exit();  // up to the new updater now
@@ -983,7 +983,7 @@ void BetelineyUpdaterApp::backupAppDir()
     if (manifest.isFile()) {
         // load manifest from file
 
-        logUpdate(tr("Reading manifest from %1").arg(manifest.absoluteFilePath()));
+        logUpdate(tr("Leyendo manifiesto desde %1").arg(manifest.absoluteFilePath()));
         try {
             auto contents = QString::fromUtf8(FS::read(manifest.absoluteFilePath()));
             auto files = contents.split('\n');
@@ -1014,9 +1014,9 @@ void BetelineyUpdaterApp::backupAppDir()
                 "Qt*.dll",
             });
         }
-        logUpdate("manifest.txt empty or missing. making best guess at files to back up.");
+        logUpdate(tr("manifest.txt vacío o ausente. Adivinando los archivos a respaldar."));
     }
-    logUpdate(tr("Backing up:\n  %1").arg(file_list.join(",\n  ")));
+    logUpdate(tr("Respaldando:\n  %1").arg(file_list.join(",\n  ")));
     static const QRegularExpression s_replaceRegex("[" + QRegularExpression::escape("\\/:*?\"<>|") + "]");
     auto app_dir = QDir(m_rootPath);
     auto backup_dir =
@@ -1026,26 +1026,26 @@ void BetelineyUpdaterApp::backupAppDir()
     auto backup_marker_path = FS::PathCombine(m_dataPath, ".beteliney_update_backup_path.txt");
     FS::write(backup_marker_path, backup_dir.toUtf8());
 
-    QProgressDialog progress(tr("Backing up install at %1").arg(m_rootPath), "", 0, file_list.length());
+    QProgressDialog progress(tr("Respaldando instalación en %1").arg(m_rootPath), "", 0, file_list.length());
     progress.setCancelButton(nullptr);
     progress.setMinimumWidth(400);
     progress.adjustSize();
     progress.show();
     QCoreApplication::processEvents();
 
-    logUpdate(tr("Backing up install at %1").arg(m_rootPath));
+    logUpdate(tr("Respaldando instalación en %1").arg(m_rootPath));
 
     auto copy = [this, app_dir, backup_dir](QString to_bak_file) {
         auto rel_path = app_dir.relativeFilePath(to_bak_file);
         auto bak_path = FS::PathCombine(backup_dir, rel_path);
-        logUpdate(tr("Backing up and then removing %1").arg(to_bak_file));
+        logUpdate(tr("Respaldando y luego eliminando %1").arg(to_bak_file));
         FS::ensureFilePathExists(bak_path);
         auto result = FS::copy(to_bak_file, bak_path).overwrite(true)();
         if (!result) {
-            logUpdate(tr("Failed to backup %1 to %2").arg(to_bak_file).arg(bak_path));
+            logUpdate(tr("Falló el respaldo de %1 a %2").arg(to_bak_file).arg(bak_path));
         } else {
             if (!FS::deletePath(to_bak_file))
-                logUpdate(tr("Failed to remove %1").arg(to_bak_file));
+                logUpdate(tr("No se pudo eliminar %1").arg(to_bak_file));
         }
     };
 
@@ -1058,7 +1058,7 @@ void BetelineyUpdaterApp::backupAppDir()
             if (auto file_info = QFileInfo(FS::PathCombine(app_dir.absolutePath(), glob)); file_info.exists()) {
                 copy(file_info.absoluteFilePath());
             } else {
-                logUpdate(tr("File doesn't exist, ignoring: %1").arg(FS::PathCombine(app_dir.absolutePath(), glob)));
+                logUpdate(tr("El archivo no existe, ignorando: %1").arg(FS::PathCombine(app_dir.absolutePath(), glob)));
             }
         } else {
             while (iter.hasNext()) {
@@ -1079,11 +1079,11 @@ std::optional<QDir> BetelineyUpdaterApp::unpackArchive(QFileInfo archive)
 
     auto result = BetelineyZip::extractDir(archive.absoluteFilePath(), tmp_extract_dir.absolutePath());
     if (result) {
-        logUpdate(tr("Extracted the following to \"%1\":\n  %2").arg(tmp_extract_dir.absolutePath()).arg(result->join("\n  ")));
+        logUpdate(tr("Se extrajo lo siguiente a \"%1\":\n  %2").arg(tmp_extract_dir.absolutePath()).arg(result->join("\n  ")));
     } else {
-        logUpdate(tr("Failed to extract %1 to %2").arg(archive.absoluteFilePath()).arg(tmp_extract_dir.absolutePath()));
-        showFatalErrorMessage("Failed to extract archive",
-                              tr("Failed to extract %1 to %2").arg(archive.absoluteFilePath()).arg(tmp_extract_dir.absolutePath()));
+        logUpdate(tr("No se pudo extraer %1 a %2").arg(archive.absoluteFilePath()).arg(tmp_extract_dir.absolutePath()));
+        showFatalErrorMessage(tr("Error al extraer el archivo"),
+                              tr("No se pudo extraer %1 a %2").arg(archive.absoluteFilePath()).arg(tmp_extract_dir.absolutePath()));
         return std::nullopt;
     }
 
@@ -1097,11 +1097,11 @@ bool BetelineyUpdaterApp::loadBetelineyVersionFromExe(const QString& exe_path)
     proc.setReadChannel(QProcess::StandardOutput);
     proc.start(exe_path, { "--version" });
     if (!proc.waitForStarted(5000)) {
-        showFatalErrorMessage(tr("Failed to Check Version"), tr("Failed to launch child process to read version."));
+        showFatalErrorMessage(tr("Error al verificar versión"), tr("No se pudo iniciar el proceso hijo para leer la versión."));
         return false;
     }  // wait 5 seconds to start
     if (!proc.waitForFinished(5000)) {
-        showFatalErrorMessage(tr("Failed to Check Version"), tr("Child launcher process failed."));
+        showFatalErrorMessage(tr("Error al verificar versión"), tr("El proceso hijo del launcher falló."));
         return false;
     }
     auto out = proc.readAllStandardOutput();
