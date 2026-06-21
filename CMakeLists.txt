@@ -536,7 +536,7 @@ add_custom_target(CopyJars ALL
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_BINARY_DIR}/libraries/launcher/share/${Launcher_Name}/NewLaunchLegacy.jar"
         "${CMAKE_BINARY_DIR}/jars/NewLaunchLegacy.jar"
-    DEPENDS JavaCheck NewLaunch
+    DEPENDS JavaCheck NewLaunch NewLaunchLegacy
     COMMENT "Copiando JARs → build/jars/"
     VERBATIM
 )
