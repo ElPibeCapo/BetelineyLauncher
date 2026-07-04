@@ -87,7 +87,10 @@ jobs:
       - name: Obtener version
         id: ver
         run: |
-          VER=$(grep -oP 'Launcher_VERSION_NAME "\K[\d.]+' CMakeLists.txt | head -1)
+          MAJOR=$(grep -oP 'Launcher_VERSION_MAJOR \K\d+' CMakeLists.txt | head -1)
+          MINOR=$(grep -oP 'Launcher_VERSION_MINOR \K\d+' CMakeLists.txt | head -1)
+          PATCH=$(grep -oP 'Launcher_VERSION_PATCH \K\d+' CMakeLists.txt | head -1)
+          VER="${MAJOR}.${MINOR}.${PATCH}"
           ARCH=$(uname -m)
           echo "pkgname=BetelineyLauncher-${VER}-Linux-${ARCH}" >> $GITHUB_OUTPUT
           echo "tarname=BetelineyLauncher-${VER}-Linux-${ARCH}.tar.gz" >> $GITHUB_OUTPUT
@@ -179,7 +182,10 @@ jobs:
       - name: Obtener version
         id: ver
         run: |
-          VER=$(grep -oP 'Launcher_VERSION_NAME "\K[\d.]+' CMakeLists.txt | head -1)
+          MAJOR=$(grep -oP 'Launcher_VERSION_MAJOR \K\d+' CMakeLists.txt | head -1)
+          MINOR=$(grep -oP 'Launcher_VERSION_MINOR \K\d+' CMakeLists.txt | head -1)
+          PATCH=$(grep -oP 'Launcher_VERSION_PATCH \K\d+' CMakeLists.txt | head -1)
+          VER="${MAJOR}.${MINOR}.${PATCH}"
           echo "pkgname=BetelineyLauncher-${VER}-Windows-x64" >> $GITHUB_OUTPUT
           echo "zipname=BetelineyLauncher-${VER}-Windows-x64.zip" >> $GITHUB_OUTPUT
 
