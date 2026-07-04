@@ -351,7 +351,8 @@ void LaunchProfile::getLibraryFiles(const RuntimeContext& runtimeContext,
                                     QStringList& jars,
                                     QStringList& nativeJars,
                                     const QString& overridePath,
-                                    const QString& tempPath) const
+                                    const QString& tempPath,
+                                    bool addJarMods) const
 {
     QStringList native32, native64;
     jars.clear();
@@ -363,7 +364,7 @@ void LaunchProfile::getLibraryFiles(const RuntimeContext& runtimeContext,
     if (m_mainJar) {
         // When jar mods are present, the main jar is pre-merged into a temp minecraft.jar
         // by ModMinecraftJar step before launch. Point to that merged jar instead.
-        if (m_jarMods.size()) {
+        if (m_jarMods.size() && addJarMods) {
             QDir tempDir(tempPath);
             jars.append(tempDir.absoluteFilePath("minecraft.jar"));
         } else {
