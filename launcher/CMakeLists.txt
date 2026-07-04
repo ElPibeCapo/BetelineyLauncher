@@ -1520,7 +1520,8 @@ if(Launcher_BUILD_UPDATER)
     target_link_libraries("${Launcher_Name}_updater" prism_updater_logic)
 
     if(${Launcher_USE_PCH})
-        target_precompile_headers("${Launcher_Name}_updater" REUSE_FROM prism_updater_logic)
+        # FIX: No reusar PCH de prism_updater_logic porque QT_NEEDS_QMAIN difiere en el exe WIN32
+        target_precompile_headers("${Launcher_Name}_updater" PRIVATE ${PRECOMPILED_HEADERS})
     endif()
 
     if(DEFINED Launcher_APP_BINARY_NAME)

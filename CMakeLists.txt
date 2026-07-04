@@ -533,13 +533,13 @@ add_subdirectory(libraries/javacheck)
 add_custom_target(CopyJars ALL
     COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/jars"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_BINARY_DIR}/libraries/javacheck/share/${Launcher_Name}/JavaCheck.jar"
+        "${CMAKE_BINARY_DIR}/libraries/javacheck/${JARS_DEST_DIR}/JavaCheck.jar"
         "${CMAKE_BINARY_DIR}/jars/JavaCheck.jar"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_BINARY_DIR}/libraries/launcher/share/${Launcher_Name}/NewLaunch.jar"
+        "${CMAKE_BINARY_DIR}/libraries/launcher/${JARS_DEST_DIR}/NewLaunch.jar"
         "${CMAKE_BINARY_DIR}/jars/NewLaunch.jar"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_BINARY_DIR}/libraries/launcher/share/${Launcher_Name}/NewLaunchLegacy.jar"
+        "${CMAKE_BINARY_DIR}/libraries/launcher/${JARS_DEST_DIR}/NewLaunchLegacy.jar"
         "${CMAKE_BINARY_DIR}/jars/NewLaunchLegacy.jar"
     DEPENDS JavaCheck NewLaunch NewLaunchLegacy
     COMMENT "Copiando JARs → build/jars/"
