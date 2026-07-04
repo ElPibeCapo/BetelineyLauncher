@@ -796,8 +796,8 @@ Con los bugs #3-#8 corregidos, "Empaquetar" en Windows falló con `7z: command n
 | # | Ítem | Estado |
 |---|---|---|
 | — | CI del repo principal pasando en verde | ✅ Confirmado — Linux y Windows compilan, empaquetan y suben artifacts sin fallos (corrida `28694701624`) |
-| 1 | Secret `CURSEFORGE_API_KEY` en CI | 🔴 Sigue sin existir. Bloqueado por la rotación. |
-| — | **Rotar key de CurseForge expuesta** | 🔴 Crítico, exclusivo del usuario, sin sustituto posible vía ningún acceso de GitHub. |
+| 1 | Secret `CURSEFORGE_API_KEY` en CI | ✅ Rotado por el usuario y confirmado funcionando en CI — corrida `28712624812` en verde (sesión 18) |
+| — | **Rotar key de CurseForge expuesta** | ✅ Hecho por el usuario (sesión 18) |
 | — | Purgar key vieja del historial de git | ⏸️ Decisión del usuario, pendiente. |
 | 4 | Capturas de pantalla restantes | ⏳ Manual, requiere la app corriendo. |
 | 6 | Publicar en r/feedthebeast, r/Minecraft, Discord Prism | ⏳ Manual. |
