@@ -33,20 +33,10 @@ jobs:
           sudo apt-get install -y libtomlplusplus-dev 2>/dev/null || \
           sudo apt-get install -y libtomlplusplus3-dev 2>/dev/null || \
           echo "tomlplusplus: usara fallback de CMake"
-          sudo apt-get install -y libgamemode-dev 2>/dev/null || true
-
-      - name: Stub gamemode si no esta disponible
-        run: |
-          if ! pkg-config --exists gamemode 2>/dev/null; then
-            sudo mkdir -p /usr/local/lib/pkgconfig
-            sudo tee /usr/local/lib/pkgconfig/gamemode.pc > /dev/null << 'EOF'
-          Name: gamemode
-          Description: Gamemode stub for CI
-          Version: 1.8.1
-          Cflags:
-          Libs:
-          EOF
-            echo "gamemode stub creado"
+          if sudo apt-get install -y libgamemode-dev; then
+            echo "gamemode: paquete real instalado"
+          else
+            echo "::warning::libgamemode-dev no disponible en este runner — gamemode quedara deshabilitado en este build (el codigo ya lo maneja con __has_include, no rompe la compilacion)"
           fi
 
       - name: Fix cmark cmake config (CMake 4.x)
@@ -166,7 +156,20 @@ jobs:
             -G Ninja
 
       - name: Compilar
-        run: ninja -C build -j$(nproc) -k0 2>&1 | tail -50
+        shell: bash
+        run: |
+          set -o pipefail
+          ninja -C build -j$(nproc) -k0 2>&1 | tee ninja-build.log
+          echo "----- ultimas 80 lineas del log -----"
+          tail -80 ninja-build.log
+
+      - name: Subir log completo de build (Windows)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-ninja-build-log
+          path: ninja-build.log
+          retention-days: 7
 
       - name: Obtener version
         id: ver
