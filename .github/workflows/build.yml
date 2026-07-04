@@ -156,7 +156,7 @@ jobs:
             -G Ninja
 
       - name: Compilar
-        shell: bash
+        shell: msys2 {0}
         run: |
           set -o pipefail
           ninja -C build -j$(nproc) -k0 2>&1 | tee ninja-build.log
