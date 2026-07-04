@@ -138,7 +138,10 @@
 #ifdef Q_OS_LINUX
 #include <dlfcn.h>
 #include "LibraryUtils.h"
+#if __has_include("gamemode_client.h")
 #include "gamemode_client.h"
+#define BETELINEY_HAVE_GAMEMODE 1
+#endif
 #endif
 
 #if defined(Q_OS_LINUX)
@@ -1900,10 +1903,13 @@ void Application::updateCapabilities()
     if (!getFlameAPIKey().isEmpty())
         m_capabilities |= SupportsFlame;
 
-#ifdef Q_OS_LINUX
+#ifdef BETELINEY_HAVE_GAMEMODE
     if (gamemode_query_status() >= 0)
         m_capabilities |= SupportsGameMode;
 
+    if (!LibraryUtils::findMangoHud().isEmpty())
+        m_capabilities |= SupportsMangoHud;
+#elif defined(Q_OS_LINUX)
     if (!LibraryUtils::findMangoHud().isEmpty())
         m_capabilities |= SupportsMangoHud;
 #endif
