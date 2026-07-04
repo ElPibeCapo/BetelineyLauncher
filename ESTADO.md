@@ -1,6 +1,6 @@
 # ESTADO — BetelineyLauncher
 > Documento único y autocontenido. Cualquier chat nuevo lee SOLO esto y puede continuar.
-> Última actualización: sesión 16 (2026-06-21) — CI llevaba 30 corridas fallando sin que nadie lo supiera: 2 bugs reales encontrados y corregidos (race condition en CMake + include roto de rename viejo). Verificación final en CI todavía en curso al cierre de esta sesión.
+> Última actualización: sesión 17 (2026-07-04) — CI 100% verde confirmado: 7 bugs reales corregidos (2 de compilación/CMake ya arreglados en sesión previa + 5 nuevos: race condition duplicada en javacheck, PCH inválido, regex de versión roto, paquete 7zip faltante). Windows y Linux compilan, empaquetan y suben artifacts sin fallos.
 
 ---
 
@@ -42,6 +42,11 @@
 ## HISTORIAL DE COMMITS
 
 ```
+d33322c  fix(ci): agrega mingw-w64-x86_64-7zip — faltaba, 'Empaquetar' fallaba con 7z: command not found
+10fc804  fix(ci): regex de version roto — Launcher_VERSION_NAME contiene variables CMake, no digitos literales
+e63f8d7  fix(windows): elimina POST_BUILD duplicado en javacheck, race condition con CopyJars central
+6cdbad8  fix(windows): 2 bugs mas del build de Windows (path jars + PCH)
+6aaa17b  fix(windows): resuelve los 2 fallos reales del build de Windows (namespace + JDK)
 8cf6afc  docs: captura real de la ventana principal verificada (Día 2 cerrado)
 19f8f22  docs: Día 2 del plan — capturas de pantalla + sección Roadmap en README
 047a2bb  docs: ESTADO.md — Sesión 10, crash crítico en ejecución real documentado
@@ -742,15 +747,60 @@ Fix: corregido el path del include. Verificado con grep recursivo que no queda n
 - URL base `BETELINEY_PACKS_URL` (con mayúscula `ElPibeCapo` en el host) probada explícitamente — DNS no distingue mayúsculas, sin problema.
 - No se repite en ningún otro lado del CMake el patrón de `DEPENDS` incompleto del bug #1 (revisado cada `add_custom_target` con `DEPENDS` del proyecto).
 
+### Sesión 17 — Confirmación de CI en verde: 5 bugs más, ninguno de código C++ (2026-07-04)
+
+**Contexto:** continuación directa de la sesión 16. Al cierre de esa sesión, CI seguía sin confirmar verde tras los 2 fixes de la race condition de `CopyJars` y el include roto de `prismupdater`. Se retomó el diagnóstico corrida por corrida, un fallo a la vez, sin asumir que arreglar uno implicara que los demás fueran del mismo tipo.
+
+**Bug #3 — namespace faltante en llamada a función (commit `6aaa17b`)**
+
+`BetelineyUpdater.cpp` llamaba `AttachWindowsConsole()` sin calificar, pero la función vive en el namespace `console` (`WindowsConsole.h`). Fix: `console::AttachWindowsConsole()`.
+
+**Bug #4 — JDK equivocado en el runner de Windows (mismo commit `6aaa17b`)**
+
+`NewLaunch.jar` y `JavaCheck.jar` fallaban con `javac: invalid flag: --release`. Causa: el job de Windows no fijaba una versión de JDK, y `find_package(Java 1.8)` tomaba el primero que cumpliera `>=1.8` en el `PATH` — el runner `windows-2022` expone por defecto un Temurin 8.0.492-9, cuyo `javac` no reconoce `--release` (el flag existe desde JDK 9). Fix: agregado `actions/setup-java` con Temurin 21 antes del `configure`, para que CMake detecte el JDK correcto.
+
+**Bug #5 — path de jars hardcodeado a Linux (commit `6cdbad8`)**
+
+`CopyJars` (target central en el `CMakeLists.txt` raíz) asumía el path fijo `share/${Launcher_Name}` como origen de los 3 JARs — correcto solo en Linux, donde `JARS_DEST_DIR` vale eso. En Windows `JARS_DEST_DIR="jars"`, así que los jars reales quedaban en `libraries/{javacheck,launcher}/jars/*.jar` y `CopyJars` fallaba con "No such file or directory". Fix: usar `${JARS_DEST_DIR}` en vez del literal, igual que los `CMakeLists.txt` que generan los jars.
+
+**Bug #6 — PCH inválido por definición de macro distinta (mismo commit `6cdbad8`)**
+
+`target_precompile_headers("${Launcher_Name}_updater" REUSE_FROM prism_updater_logic)` reusaba el precompiled header de una librería estática que no define `QT_NEEDS_QMAIN`, en un ejecutable `WIN32` que sí la define — con `-Werror`, eso es `invalid-pch` tratado como error fatal. Mismo patrón ya corregido antes para `Launcher_logic` y `filelink_logic` (comentarios "FIX" ya existentes ahí); solo faltaba aplicarlo a este target. Fix: generar su propio PCH en vez de reusar el de `prism_updater_logic`.
+
+**Bug #7 — race condition duplicada en javacheck (commit `e63f8d7`)**
+
+`javacheck/CMakeLists.txt` tenía su propio `POST_BUILD` que copiaba `JavaCheck.jar` al mismo destino que el `CopyJars` central de la raíz (mismo origen, mismo destino: `build/jars/JavaCheck.jar`). En Windows/Ninja esa dependencia cruzada entre directorios para un `POST_BUILD` de un target utilitario no tiene garantía de orden entre sí — el propio comentario del repo ya advertía sobre este patrón ("requiere mismo directorio en CMake 4.x"). `CopyJars` espera solo el archivo de salida del target `JavaCheck`, no el paso `POST_BUILD` duplicado, así que ambos corrían sin orden garantizado. `launcher/CMakeLists.txt` ya no tenía este hack (su propio comentario decía que fue reemplazado) — solo quedaba en `javacheck`. Fix: eliminado el duplicado, `CopyJars` queda como único mecanismo.
+
+Con los bugs #3-#7 aplicados, **"Compilar" pasó en verde por primera vez** tanto en Linux como en Windows (confirmado en la corrida `28692985548`). El resto de bugs de esta sesión ya no son de C++/CMake — son del propio workflow de CI.
+
+**Bug #8 — regex de versión roto desde el commit inicial del proyecto (commit `10fc804`)**
+
+El step "Obtener version" (Linux y Windows) usaba `grep -oP 'Launcher_VERSION_NAME "\K[\d.]+' CMakeLists.txt`, pero esa línea es `set(Launcher_VERSION_NAME "${Launcher_VERSION_MAJOR}.${Launcher_VERSION_MINOR}.${Launcher_VERSION_PATCH}")` — no hay dígitos literales tras la comilla, son variables CMake sin resolver en el archivo de texto. El regex nunca matcheó nada, ni en este ni en ningún commit anterior.
+
+Por qué solo se manifestaba en Windows: el shell del job Linux es `bash -e {0}` (sin `pipefail`) — `VER=$(grep ... | head -1)` fallaba en silencio porque el exit status de la pipeline es el de `head` (éxito, aunque su entrada esté vacía), así que `VER` quedaba vacío pero el job seguía sin error visible (el nombre del artifact quedaba con un hueco: `BetelineyLauncher--Linux-x86_64`, nadie lo notó). El shell del job Windows es el wrapper `msys2.CMD`, que sí propaga el fallo de `grep` (exit 1, sin match) a través de la pipeline — abortando el script completo sin ningún output visible en el log, solo `Process completed with exit code 1`.
+
+Fix: leer `Launcher_VERSION_MAJOR`/`MINOR`/`PATCH` por separado con tres greps simples y componer `VER="${MAJOR}.${MINOR}.${PATCH}"`. Probado localmente antes de pushear: `VER=8.3.0` correcto.
+
+**Bug #9 — falta el paquete de 7-Zip en el setup de MSYS2 (commit `d33322c`)**
+
+Con los bugs #3-#8 corregidos, "Empaquetar" en Windows falló con `7z: command not found` (exit 127). La lista de paquetes `install:` de `msys2/setup-msys2@v2` no incluía `mingw-w64-x86_64-7zip`, y el script de empaquetado invoca `7z a` directamente para generar el `.zip`. Fix: agregado `mingw-w64-x86_64-7zip` a la lista de instalación.
+
+**Confirmación final:** corrida `28694701624` — **Linux y Windows ambos en verde** (`✓ Windows (msys2 MinGW64) in 13m47s`, `✓ Linux (Ubuntu 24.04) in 8m25s`), incluyendo "Compilar", "Obtener version" y "Empaquetar" en los tres. "Crear Release" quedó como skipped (`-`), esperado — ese job solo dispara con push de tags, no con push normal a `main`. Artifacts subidos correctamente: `windows-build`, `windows-ninja-build-log`, `linux-build`.
+
+**Total de bugs reales de CI encontrados y corregidos entre las sesiones 16 y 17: 9.** Ninguno era el mismo tipo de error que el anterior — cada fix exponía el siguiente fallo real, nunca un síntoma repetido. Confirma la lección de la sesión 16 ("compila limpio local ≠ pasa en CI") llevada un paso más: ni siquiera "compila en CI" garantiza que el pipeline entero (empaquetado incluido) funcione — cada etapa del workflow necesitó su propia verificación independiente.
+
+**Commits de la sesión (en orden):** `6aaa17b`, `e63f8d7`, `10fc804`, `d33322c`.
+
 **Tabla de pendientes — estado real actualizado:**
 
 | # | Ítem | Estado |
 |---|---|---|
-| — | CI del repo principal pasando en verde | 🟡 2 bugs reales corregidos y pusheados, verificación final en curso, no confirmada al cierre de esta sesión |
-| 1 | Secret `CURSEFORGE_API_KEY` en CI | 🔴 Sigue sin existir (`gh secret list` vacío). Bloqueado por la rotación. |
-| — | **Rotar key de CurseForge expuesta** | 🔴 Crítico, exclusivo del usuario, sin sustituto posible vía ningún acceso de GitHub. `console.curseforge.com` → revocar → generar nueva → cargarla como secret (idealmente con `gh secret set` corrido por el usuario mismo, para que el valor nunca pase por este chat). |
-| — | Purgar key vieja del historial de git | ⏸️ Decisión del usuario, pendiente — destructivo, secundario a la rotación. |
+| — | CI del repo principal pasando en verde | ✅ Confirmado — Linux y Windows compilan, empaquetan y suben artifacts sin fallos (corrida `28694701624`) |
+| 1 | Secret `CURSEFORGE_API_KEY` en CI | 🔴 Sigue sin existir. Bloqueado por la rotación. |
+| — | **Rotar key de CurseForge expuesta** | 🔴 Crítico, exclusivo del usuario, sin sustituto posible vía ningún acceso de GitHub. |
+| — | Purgar key vieja del historial de git | ⏸️ Decisión del usuario, pendiente. |
 | 4 | Capturas de pantalla restantes | ⏳ Manual, requiere la app corriendo. |
 | 6 | Publicar en r/feedthebeast, r/Minecraft, Discord Prism | ⏳ Manual. |
 | 7 | Formulario OpenAI Codex for OSS | ⏳ Manual. |
+
 
