@@ -1,6 +1,6 @@
 # ESTADO — BetelineyLauncher
 > Documento único y autocontenido. Cualquier chat nuevo lee SOLO esto y puede continuar.
-> Última actualización: sesión 17 (2026-07-04) — CI 100% verde confirmado: 7 bugs reales corregidos (2 de compilación/CMake ya arreglados en sesión previa + 5 nuevos: race condition duplicada en javacheck, PCH inválido, regex de versión roto, paquete 7zip faltante). Windows y Linux compilan, empaquetan y suben artifacts sin fallos.
+> Última actualización: sesión 19 (2026-07-04) — capturas de BetelineyPacks y perfiles JVM integradas al README (elegidas por OCR sobre 46 capturas del usuario), link de Discord corregido a discord.gg/fMbSkEd85r en README/ESTADO/ESTRATEGIA_IA, y Roadmap del README actualizado para reflejar el estado real (tenía 3 ítems marcados pendientes que ya estaban resueltos desde la sesión 14-17: GitHub Pages, BetelineyPacks publicados, CurseForge key rotada). Sesión 17 previa: CI 100% verde confirmado, 7 bugs reales corregidos. Windows y Linux compilan, empaquetan y suben artifacts sin fallos.
 
 ---
 
@@ -486,7 +486,7 @@ ESTADO.md: versión 8.2.0 → 8.3.0.
 ### Sesión 9 — Push, tag v8.3.0 y Discord (2026-06-19)
 `git push origin main` (78adefe) + `git tag v8.3.0 && git push origin v8.3.0` → CI dispara build Linux+Windows y publica la Release automáticamente (`.github/workflows/build.yml`, job `release`, trigger `tags: [v*.*.*]`).
 
-Servidor Discord: https://discord.gg/2JdB7pvBq3 — badge añadido al README (commit `6346499`).
+Servidor Discord: https://discord.gg/fMbSkEd85r — badge añadido al README (commit `6346499`, link actualizado sesión 19).
 
 **Plan de lanzamiento (Día 1 — cerrado):**
 | Hito | Estado |
@@ -799,8 +799,24 @@ Con los bugs #3-#8 corregidos, "Empaquetar" en Windows falló con `7z: command n
 | 1 | Secret `CURSEFORGE_API_KEY` en CI | ✅ Rotado por el usuario y confirmado funcionando en CI — corrida `28712624812` en verde (sesión 18) |
 | — | **Rotar key de CurseForge expuesta** | ✅ Hecho por el usuario (sesión 18) |
 | — | Purgar key vieja del historial de git | ⏸️ Decisión del usuario, pendiente. |
-| 4 | Capturas de pantalla restantes | ⏳ Manual, requiere la app corriendo. |
+| 4 | Capturas de pantalla restantes | ✅ BetelineyPacks y perfiles JVM integradas al README (sesión 19). ⏳ Falta solo el panel de diagnóstico de logs (requiere forzar un crash de lanzamiento). |
 | 6 | Publicar en r/feedthebeast, r/Minecraft, Discord Prism | ⏳ Manual. |
 | 7 | Formulario OpenAI Codex for OSS | ⏳ Manual. |
+
+### Sesión 19 — Capturas de pantalla integradas al README + corrección de Roadmap desactualizado (2026-07-04)
+
+**Contexto:** el usuario ya había tomado 46 capturas de pantalla navegando el launcher manualmente (`/home/pibe/Imágenes/Capturas de pantalla/`), tras el bloqueo de automatización en Wayland de sesiones anteriores (sin `ydotool`/`kdotool` funcionando de forma confiable, foco de ventana robado por la app de Claude Desktop). Se pidió revisar todo y elegir las mejores para documentar.
+
+**Método:** en vez de adivinar el contenido visual de 46 archivos, se corrió `tesseract` (OCR) sobre las 46 capturas en un solo batch, extrayendo el texto visible de cada una. Esto permitió identificar con certeza (no por inspección visual subjetiva) qué pantalla del launcher representa cada archivo:
+- **BetelineyPacks:** identificada por el texto "Modpacks de Beteliney", "Vanilla Optimizado", "PVP Competitivo", "Destacado" — elegida `Captura...121049.png` (primera vista de la pestaña, sin scroll).
+- **Perfiles JVM:** identificada por "Perfiles Beteliney (Ryzen 7 3700U + Vega 10)" + dropdown de perfiles — elegida `Captura...121642.png` porque muestra el desplegable abierto con varios perfiles listados (más informativa que las capturas con el dropdown cerrado).
+- **Diagnóstico de logs:** no se encontró ninguna captura del panel real (`BetelineyLogAnalyzer`/`diagnosisPanel`) porque ese panel solo se activa cuando un lanzamiento de Minecraft termina con `gameExitCode != 0` — el usuario nunca forzó ese escenario. Sí hay una captura de "View Launcher Logs" (ventana de logs cruda, sin el panel de diagnóstico), ya identificada pero **no usada** para no hacer pasar una cosa por otra. Queda pendiente en el Roadmap, con la causa exacta documentada.
+
+Archivos copiados a `source/screenshots/`: `betelineypacks.png`, `perfiles-jvm.png`.
+
+**README actualizado:**
+- Galería de capturas ampliada (ventana principal + BetelineyPacks + perfiles JVM lado a lado).
+- Link de Discord corregido: `discord.gg/2JdB7pvBq3` (el original de la sesión 9, ya no válido/reemplazado por el usuario) → `discord.gg/fMbSkEd85r`. Corregido también en `ESTADO.md` (sección Sesión 9) y `ESTRATEGIA_IA.md` (tabla de enlaces).
+- **Roadmap corregido — hallazgo no pedido pero relevante:** tenía 3 ítems marcados como pendientes (`[ ]`) que en realidad ya estaban resueltos desde las sesiones 14 a 17 según este mismo documento: activar GitHub Pages del repo `meta`, publicar los 3 BetelineyPacks, y `known-hashes.json`. El README nunca se había sincronizado con el avance real documentado acá. Marcados `[x]` con la aclaración exacta de cada uno (incluida la honestidad de que `known-hashes.json` quedó vacío por diseño, no relleno con datos inventados — ver sesión 14). También se agregó al Roadmap la rotación de la CurseForge API key (sesión 18) y el pendiente de publicar en Reddit/Discord de Prism, que no estaban listados ahí.
 
 

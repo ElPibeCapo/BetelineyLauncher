@@ -139,7 +139,7 @@ URL: `openai.com/form/codex-for-oss/`
 | DeepSeek API | platform.deepseek.com |
 | Google AI Studio | aistudio.google.com |
 | Repositorio | github.com/ElPibeCapo/BetelineyLauncher |
-| Discord | discord.gg/2JdB7pvBq3 |
+| Discord | discord.gg/fMbSkEd85r |
 
 ---
 
