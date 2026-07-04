@@ -333,7 +333,12 @@ find_package(cmark REQUIRED)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     find_package(PkgConfig REQUIRED)
-    pkg_check_modules(gamemode REQUIRED IMPORTED_TARGET gamemode)
+    # No REQUIRED: gamemode es opcional. El codigo (Application.cpp, LauncherPartLaunch.cpp)
+    # usa __has_include para deshabilitarse solo si el header/lib real no esta disponible.
+    pkg_check_modules(gamemode IMPORTED_TARGET gamemode)
+    if(NOT gamemode_FOUND)
+        message(STATUS "gamemode no encontrado — soporte GameMode deshabilitado en este build")
+    endif()
 endif()
 
 # Find libqrencode

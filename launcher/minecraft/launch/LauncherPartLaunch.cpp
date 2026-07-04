@@ -46,7 +46,10 @@
 #include "minecraft/MinecraftInstance.h"
 
 #ifdef Q_OS_LINUX
+#if __has_include("gamemode_client.h")
 #include "gamemode_client.h"
+#define BETELINEY_HAVE_GAMEMODE 1
+#endif
 #endif
 
 LauncherPartLaunch::LauncherPartLaunch(LaunchTask* parent)
@@ -150,7 +153,7 @@ void LauncherPartLaunch::executeTask()
         m_process.start(javaPath, args);
     }
 
-#ifdef Q_OS_LINUX
+#ifdef BETELINEY_HAVE_GAMEMODE
     if (instance->settings()->get("EnableFeralGamemode").toBool() && APPLICATION->capabilities() & Application::SupportsGameMode) {
         auto pid = m_process.processId();
         if (pid) {
