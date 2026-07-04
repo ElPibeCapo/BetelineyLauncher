@@ -14,13 +14,19 @@
 </p>
 
 <p align="center">
-  <a href="https://discord.gg/2JdB7pvBq3"><img alt="Discord" src="https://img.shields.io/badge/Discord-Únete-5865F2?style=for-the-badge&logo=discord&logoColor=white"></a>
+  <a href="https://discord.gg/fMbSkEd85r"><img alt="Discord" src="https://img.shields.io/badge/Discord-Únete-5865F2?style=for-the-badge&logo=discord&logoColor=white"></a>
 </p>
 
 <p align="center">
   <img src="screenshots/ventana-principal.png" alt="Ventana principal de Beteliney Launcher" width="85%">
 </p>
-<p align="center"><i>Vista de la ventana principal — más capturas (BetelineyPacks, perfiles JVM, diagnóstico de logs) en camino.</i></p>
+<p align="center"><i>Ventana principal — instancias con tema neón.</i></p>
+
+<p align="center">
+  <img src="screenshots/betelineypacks.png" alt="BetelineyPacks" width="49%">
+  <img src="screenshots/perfiles-jvm.png" alt="Perfiles JVM" width="49%">
+</p>
+<p align="center"><i>BetelineyPacks (izquierda) — Perfiles JVM calibrados (derecha).</i></p>
 
 ---
 
@@ -171,14 +177,17 @@ EMPAQUETAR_APPIMAGE.sh Script para generar AppImage
 
 ## Roadmap
 
-- [ ] Activar GitHub Pages en el repo `meta` (lista de malware, BetelineyPacks, feed de noticias)
-- [ ] `known-hashes.json` real con firmas de Fractureiser y variantes conocidas
-- [ ] 3 BetelineyPacks publicados (Survival, PvP, Modpack pesado)
-- [ ] Más capturas de pantalla: BetelineyPacks, perfiles JVM, diagnóstico de logs
+- [x] Activar GitHub Pages en el repo `meta` (causa raíz era `build_type` mal configurado, no falta de activación)
+- [x] 3 BetelineyPacks publicados (Vanilla Optimizado, PvP Competitivo, Pesado NeoForge — mods verificados contra la API de Modrinth)
+- [x] `known-hashes.json` en el meta server — sin lista pública de hashes reales de Fractureiser encontrada tras investigación (el proyecto oficial usa detección por ruta/comportamiento, no hash estático); queda documentado y vacío en vez de con datos inventados
+- [x] Rotación de la CurseForge API key expuesta + secret cargado en CI
+- [x] Capturas de BetelineyPacks y perfiles JVM
+- [ ] Captura del panel de diagnóstico de logs (requiere forzar un crash de lanzamiento para activarlo)
 - [ ] Flathub — submitear el manifest Flatpak para revisión oficial
 - [ ] macOS — activar CI (el código heredado de Prism ya soporta Sparkle updater + entitlements)
 - [ ] Certificado de firma de código Windows (elimina el aviso de SmartScreen)
 - [ ] i18n propio conectado a Weblate o similar
+- [ ] Publicar en r/feedthebeast, r/Minecraft, Discord de Prism Launcher
 
 ---
 
