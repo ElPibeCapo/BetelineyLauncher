@@ -21,16 +21,10 @@ add_custom_command(
 )
 add_custom_target(JavaCheck ALL DEPENDS "${JAVACHECK_JAR}")
 
-# FIX: en builds de desarrollo el launcher busca JavaCheck.jar en
-# <build>/jars/ pero javacheck lo genera en
-# <build>/libraries/javacheck/share/<LauncherName>/.
-# Creamos el directorio y copiamos el jar post-build para que funcione
-# sin necesidad de hacer cmake --install.
-add_custom_command(TARGET JavaCheck POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/jars"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_CURRENT_BINARY_DIR}/${JARS_DEST_DIR}/JavaCheck.jar"
-        "${CMAKE_BINARY_DIR}/jars/JavaCheck.jar"
-    COMMENT "Copiando JavaCheck.jar -> build/jars/ (fix ruta dev)"
-    VERBATIM
-)
+# El copiado a build/jars/ para dev builds lo hace el CopyJars central
+# en el CMakeLists.txt raiz (unico consumidor de JARS_DEST_DIR entre
+# directorios). Tener aca ademas un POST_BUILD duplicado hacia el
+# mismo destino compite con esa dependencia cruzada de directorio
+# (ver nota en el CMakeLists.txt raiz) y en Windows/Ninja provoca una
+# carrera: CopyJars puede correr antes de que este paso termine.
+
