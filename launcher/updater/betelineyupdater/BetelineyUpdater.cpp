@@ -89,7 +89,7 @@ BetelineyUpdaterApp::BetelineyUpdaterApp(int& argc, char** argv) : QApplication(
 {
 #if defined Q_OS_WIN32
     // attach the parent console if stdout not already captured
-    if (AttachWindowsConsole()) {
+    if (console::AttachWindowsConsole()) {
         consoleAttached = true;
     }
 #endif
