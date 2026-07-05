@@ -1,6 +1,6 @@
 # ESTADO — BetelineyLauncher
 > Documento único y autocontenido. Cualquier chat nuevo lee SOLO esto y puede continuar.
-> Última actualización: sesión 20 (2026-07-05) — backport de 3 fixes reales de Prism Launcher 11.0.0→11.0.2 confirmado en CI (verde) y testeado en la práctica: build local limpio (0 errores/warnings con -Werror), binario ejecutado estable, descarga real desde el meta server confirmada en producción (no solo con curl), 29/29 tests pasando. Corregido además un problema de configuración de `gh` (repo default apuntaba a PrismLauncher/PrismLauncher por el remote `upstream`).
+> Última actualización: sesión 22 (2026-07-05) — limpieza de estructura del repo (stubs deprecated eliminados, carpeta `tools/pc` renombrada). Sesión 21: ícono macOS corregido + bug en `genicons.sh`. Sesión 20: backport de 3 fixes reales de Prism Launcher 11.0.0→11.0.2 confirmado en CI (verde) y testeado en la práctica: build local limpio (0 errores/warnings con -Werror), binario ejecutado estable, descarga real desde el meta server confirmada en producción (no solo con curl), 29/29 tests pasando. Corregido además un problema de configuración de `gh` (repo default apuntaba a PrismLauncher/PrismLauncher por el remote `upstream`).
 
 ---
 
@@ -807,6 +807,22 @@ Con los bugs #3-#8 corregidos, "Empaquetar" en Windows falló con `7z: command n
 | 4 | Capturas de pantalla restantes | ✅ BetelineyPacks y perfiles JVM integradas al README (sesión 19). ⏳ Falta solo el panel de diagnóstico de logs (requiere forzar un crash de lanzamiento). |
 | 6 | Publicar en r/feedthebeast, r/Minecraft, Discord Prism | ⏳ Manual. |
 | 7 | Formulario OpenAI Codex for OSS | ⏳ Manual. |
+
+### Sesión 22 — Limpieza y organización de estructura del repo (2026-07-05)
+
+**Contexto:** se pidió limpiar y organizar la estructura general. Auditoría real antes de mover nada, no reorganización cosmética a ciegas.
+
+**Intento revertido conscientemente:** se evaluó mover los scripts de compilación/empaquetado de la raíz (`COMPILAR_LINUX.sh`, `COMPILAR_BETELINEY.bat`, `COMPILAR.ps1`, `EMPAQUETAR_*`, `MONTAR_WINDOWS_NOBARA.sh`) a `scripts/` para despejar la raíz. Se revirtió al confirmar que `COMPILAR_LINUX.sh` usa `SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"` y luego rutas relativas (`build/`, `libraries/libnbtplusplus/`, `.git/HEAD`) asumiendo que el script vive en la raíz del repo. Moverlo sin reescribir esa lógica interna habría roto el build. Además, 13 archivos (README, LEEME.txt, docs/*) referencian estos scripts asumiendo ejecución desde la raíz — el riesgo/beneficio no lo justificaba sin poder recompilar y confirmar en el momento. **Se dejaron donde estaban.**
+
+**Falso positivo descartado:** `COPYING.md` (raíz) y `docs/COPYING.md` parecían duplicados (contenido idéntico, confirmado con `diff`). No lo son: `docs/COPYING.md` está referenciado por `launcher/resources/documents/documents.qrc` y se embebe como recurso Qt dentro del binario compilado (se muestra en la app); `COPYING.md` de la raíz es el que GitHub detecta automáticamente como licencia del repo. Cumplen roles distintos — no se tocó ninguno.
+
+**Limpieza real aplicada:**
+- Eliminados `DEVLOG.md` y `MASTER_PLAN.md` — eran stubs de 3 líneas ("DEPRECATED, reemplazado por ESTADO.md") desde hace varias sesiones, sin contenido útil, y solo referenciados históricamente en este mismo documento.
+- Renombrado `tools/pc/` → `tools/windows-fixes/` (scripts `ACTUALIZAR_DRIVERS.bat`, `DESHABILITAR_FAST_STARTUP.bat`, `DESHABILITAR_HYPERV.bat`). "pc" no describía nada; confirmado por búsqueda de código que ningún otro archivo referencia esa ruta por nombre, así que el rename es seguro.
+- Confirmado que `dist/` (ignorado en `.gitignore`) no tiene ningún archivo trackeado por error.
+- Búsqueda de archivos temporales/basura sueltos (`*.tmp`, `*.log`, `*~`, `*.orig`, `*.rej`) en el árbol — ninguno real encontrado.
+
+**Conclusión:** la estructura del repo ya estaba, en general, bien pensada — lo que parecía desorden (scripts en la raíz, "duplicados" de licencia) tenía razones funcionales reales. La limpieza real posible era acotada: 2 archivos basura eliminados, 1 carpeta renombrada.
 
 ### Sesión 21 — Ícono macOS (Icon Composer) corregido + bug en genicons.sh (2026-07-05)
 
