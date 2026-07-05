@@ -1,6 +1,6 @@
 # ESTADO — BetelineyLauncher
 > Documento único y autocontenido. Cualquier chat nuevo lee SOLO esto y puede continuar.
-> Última actualización: sesión 19 (2026-07-04) — capturas de BetelineyPacks y perfiles JVM integradas al README (elegidas por OCR sobre 46 capturas del usuario), link de Discord corregido a discord.gg/fMbSkEd85r en README/ESTADO/ESTRATEGIA_IA, y Roadmap del README actualizado para reflejar el estado real (tenía 3 ítems marcados pendientes que ya estaban resueltos desde la sesión 14-17: GitHub Pages, BetelineyPacks publicados, CurseForge key rotada). Sesión 17 previa: CI 100% verde confirmado, 7 bugs reales corregidos. Windows y Linux compilan, empaquetan y suben artifacts sin fallos.
+> Última actualización: sesión 20 (2026-07-05) — backport de 3 fixes reales de Prism Launcher 11.0.0→11.0.2 confirmado en CI (verde) y testeado en la práctica: build local limpio (0 errores/warnings con -Werror), binario ejecutado estable, descarga real desde el meta server confirmada en producción (no solo con curl), 29/29 tests pasando. Corregido además un problema de configuración de `gh` (repo default apuntaba a PrismLauncher/PrismLauncher por el remote `upstream`).
 
 ---
 
@@ -42,6 +42,11 @@
 ## HISTORIAL DE COMMITS
 
 ```
+a7795abe7  fix: backport 3 fixes reales de Prism 11.0.0 -> 11.0.2 upstream
+2d475330e  docs: capturas de BetelineyPacks y perfiles JVM en README, Discord corregido, Roadmap sincronizado
+8550d2550  docs: confirmar rotacion CurseForge key + CI verde en corrida 28712624812
+359498a21  ci: verificar secret CURSEFORGE_API_KEY recien rotado y cargado
+377718865  docs: ESTADO.md Sesión 17 — CI confirmado 100% verde, 5 bugs mas documentados
 d33322c  fix(ci): agrega mingw-w64-x86_64-7zip — faltaba, 'Empaquetar' fallaba con 7z: command not found
 10fc804  fix(ci): regex de version roto — Launcher_VERSION_NAME contiene variables CMake, no digitos literales
 e63f8d7  fix(windows): elimina POST_BUILD duplicado en javacheck, race condition con CopyJars central
@@ -802,6 +807,47 @@ Con los bugs #3-#8 corregidos, "Empaquetar" en Windows falló con `7z: command n
 | 4 | Capturas de pantalla restantes | ✅ BetelineyPacks y perfiles JVM integradas al README (sesión 19). ⏳ Falta solo el panel de diagnóstico de logs (requiere forzar un crash de lanzamiento). |
 | 6 | Publicar en r/feedthebeast, r/Minecraft, Discord Prism | ⏳ Manual. |
 | 7 | Formulario OpenAI Codex for OSS | ⏳ Manual. |
+
+### Sesión 21 — Ícono macOS (Icon Composer) corregido + bug en genicons.sh (2026-07-05)
+
+**Contexto:** se pidió mejorar la estética general (íconos, logo, UI, fondos). Revisión real del branding existente, no cambios cosméticos a ciegas.
+
+**Estado encontrado:**
+- Logo principal (`com.beteliney.BetelineyLauncher.logo.svg`) y tema de widgets (`BetelineyTheme.cpp`) — ya correctos: hexágono deep-space + "B" en gradiente verde neón `#39FF14`, paleta consistente, tipografía JetBrains Mono. No se tocaron.
+- **Bug real encontrado:** el ícono para macOS moderno (formato Icon Composer, `program_info/BetelineyLauncher.icon/Assets/block.svg` + `rainbow.svg`) seguía siendo literalmente el logo de PrismLauncher sin reemplazar (`<title>Prism Launcher Logo</title>` en el XML), mientras el resto del proyecto ya tenía el logo propio.
+
+**Fix aplicado:** reemplazo de `block.svg` y `rainbow.svg` por el hexágono-B real, escalado matemáticamente desde el logo oficial 512×512 a las unidades del formato Icon Composer (12.7×12.7), separado en las dos capas que pide ese formato (capa base opaca + capa "glass" con contorno y puntos de vértice en glow). Verificado por histograma de color, no a ojo: verde en `#37F513` (`#39FF14` con antialiasing esperado) y gradiente deep-space correcto. Backups `.bak` generados y luego excluidos vía `.gitignore` (no hacía falta versionarlos, git ya guarda el original en el historial).
+
+**Segundo bug encontrado en esta sesión, no en la anterior:** `genicons.sh` tenía el `LAUNCHER_APPID` ya corregido a `com.beteliney.BetelineyLauncher` de una pasada previa, pero los nombres de archivo de salida seguían hardcodeados como `prismlauncher.ico`/`prismlauncher.icns` — mientras los archivos reales del proyecto son `beteliney.ico`/`beteliney.icns` (confirmado listando `program_info/`). Esto habría generado íconos con el nombre equivocado en cada regeneración, y `rm prismlauncher.ico` habría fallado porque ese archivo nunca existe en este repo (corregido a `rm -f beteliney.ico` de paso). Corregidos todos los nombres intermedios (`beteliney_16.png`...`beteliney_256.png`, `beteliney.iconset`) y los dos `cp`/`icotool` finales.
+
+**Pendiente, decisión del usuario:** los fondos (`resources/backgrounds/`) siguen siendo las mascotas heredadas de PrismLauncher (`rory`, `kitteh`, `teawie` — esta última con licencia CC BY-SA de terceros, atribución obligatoria en el `.qrc`). Reemplazarlos requiere diseñar ilustración propia de marca y, si se quita `teawie`, retirar correctamente su atribución legal del `.qrc`. No se tocó sin definición explícita.
+
+### Sesión 20 — Backport de Prism 11.0.0→11.0.2 testeado en la práctica (2026-07-05)
+
+**Contexto:** entre la sesión 19 y esta, se hizo un backport de 3 fixes reales de PrismLauncher upstream (commit `a7795abe7`, ya pusheado y con CI verde confirmado antes de retomar esta sesión). Se pidió documentar todo y testear en la práctica, no solo confiar en que CI pasó.
+
+**Los 3 fixes backporteados:**
+1. `LaunchProfile::getLibraryFiles` — nuevo parámetro `addJarMods` (default `true`) para poder pedir la lista de jars sin el jar-mods merge.
+2. `EnsureOfflineLibraries` — ya no cuenta los jar mods como si fueran librerías normales (se fusionan después, en un paso posterior), y cuando faltan librerías reales ahora loguea la lista completa en vez de fallar con un mensaje genérico sin detalle.
+3. `BetelineyUpdater` — el signal `finished` de la descarga ya no resetea `m_current_task`, lo que causaba un softlock del updater cuando necesitaba traer más de 1 página de releases de GitHub.
+
+**Verificación de la base real antes del backport (ya hecha, documentada en el mensaje del commit):** diff limpio del fork contra el tag `11.0.0` de PrismLauncher en los archivos no tocados por branding — confirma que el fork parte exactamente de esa versión. El gap real a 11.0.2 son 24 commits / 16 archivos; de esos, solo 3 eran fixes reales aplicables sin conflicto con la customización propia. El resto queda pendiente de revisión manual uno por uno (no se tocan a ciegas): `MinecraftInstance.cpp` (toggle LowMemWarning), `JavaSettingsWidget.cpp/.ui` (checkbox — el `.ui` requeriría rehacer el layout entero en Qt Designer), `PrintInstanceInfo.cpp` (ya diverge ~50 líneas por logging propio), `McClient.cpp/h` + `ManagedPackPage.cpp` (fix de changelog de Modrinth + fix de pack upgrade — es un refactor grande de `McClient`, no un fix aislado).
+
+Remote `upstream` (`PrismLauncher/PrismLauncher`) agregado al repo local para poder diffear contra versiones futuras.
+
+**Problema de tooling encontrado y corregido en esta sesión — `gh` apuntaba al repo equivocado:** al agregar el remote `upstream` en la sesión del backport, `gh repo view` empezó a resolver por defecto a `PrismLauncher/PrismLauncher` en vez de `ElPibeCapo/BetelineyLauncher`, pese a que `origin` seguía apuntando correctamente y el directorio de trabajo era el correcto. `gh run list` sin `--repo` explícito devolvía corridas de CI de PrismLauncher (irrelevantes), lo cual habría hecho perder tiempo revisando el pipeline equivocado si no se hubiera verificado con `gh repo view --json nameWithOwner` antes de confiar en el resultado. Fix: `gh repo set-default ElPibeCapo/BetelineyLauncher` — confirmado que a partir de ahí `gh` resuelve al repo correcto en este directorio. **Lección operativa para sesiones futuras: verificar siempre `gh repo view --json nameWithOwner` antes de confiar en `gh run list`/`gh pr list` sin `--repo` explícito, especialmente en repos con más de un remote configurado.**
+
+**Testeo real hecho en esta sesión (no solo confiar en el verde de CI):**
+- CI: corrida `28716550226` — `completed success`, confirmado con el repo default ya corregido.
+- Build local incremental limpio: `ninja -C build -j$(nproc)` desde el binario existente (previo al backport) — 91 pasos, terminó con exit code 0, cero errores y cero warnings pese a tener `-Werror` activo en `Launcher_logic` y `BetelineyLauncher` (cualquier warning real habría abortado el build). Tardó varios minutos por el LTO con recursos limitados de esta máquina (8 tests linkeando en paralelo con LTO en una APU con 13.5 GB de RAM compartida) — normal en este hardware, no indica ningún problema.
+- Ejecución real del binario recompilado (`lanzar.sh --offline`): arrancó y quedó estable, sin crash dumps en `/tmp/beteliney_crash_*`. Confirmó además, como efecto colateral útil, que **la descarga real desde el meta server funciona en producción** (no solo probado con `curl` como en la sesión 15): el log de la sesión mostró `Net::Download(...) Request succeeded` tanto para `known-hashes.json` como para `feed.atom`, y la noticia "BetelineyLauncher v8.3.0 ya disponible" se cargó correctamente en la UI.
+- `ctest` sobre el build recompilado: **29/29 tests pasando, 100%**, incluyendo los 16 de `BetelineyTranslation` (sesión 12) y los tests base (`Library`, `Task`, `Version`, `INIFile`, etc.) — el backport no rompió ningún test existente.
+
+**Conclusión:** el backport está confirmado en 4 niveles independientes (CI real, build local limpio, ejecución real estable, suite de tests completa) — no solo "CI dice que pasó".
+
+**Pendientes reales identificados para sesiones futuras, sin tocar todavía:**
+- 21 commits / 13 archivos restantes del gap Prism 11.0.0→11.0.2, listados arriba, cada uno requiere revisión manual uno por uno por el conflicto con customización propia (especialmente el refactor de `McClient`).
+- El resto de la tabla de pendientes no cambió respecto a la sesión 19 (ver abajo).
 
 ### Sesión 19 — Capturas de pantalla integradas al README + corrección de Roadmap desactualizado (2026-07-04)
 
