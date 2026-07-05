@@ -1,6 +1,6 @@
 # ESTADO — BetelineyLauncher
 > Documento único y autocontenido. Cualquier chat nuevo lee SOLO esto y puede continuar.
-> Última actualización: sesión 22 (2026-07-05) — limpieza de estructura del repo (stubs deprecated eliminados, carpeta `tools/pc` renombrada). Sesión 21: ícono macOS corregido + bug en `genicons.sh`. Sesión 20: backport de 3 fixes reales de Prism Launcher 11.0.0→11.0.2 confirmado en CI (verde) y testeado en la práctica: build local limpio (0 errores/warnings con -Werror), binario ejecutado estable, descarga real desde el meta server confirmada en producción (no solo con curl), 29/29 tests pasando. Corregido además un problema de configuración de `gh` (repo default apuntaba a PrismLauncher/PrismLauncher por el remote `upstream`).
+> Última actualización: sesión 23 (2026-07-05) — acceso directo funcional en Escritorio + `.desktop` roto corregido (apuntaba a una ruta con sufijo de versión vieja inexistente) + confusión de nombres detectada: el binario `beteliney` en el `$PATH` es en realidad del launcher de Roblox (otro proyecto homónimo), no de este. Sesión 22: limpieza de estructura del repo (stubs deprecated eliminados, carpeta `tools/pc` renombrada). Sesión 21: ícono macOS corregido + bug en `genicons.sh`.
 
 ---
 
@@ -807,6 +807,31 @@ Con los bugs #3-#8 corregidos, "Empaquetar" en Windows falló con `7z: command n
 | 4 | Capturas de pantalla restantes | ✅ BetelineyPacks y perfiles JVM integradas al README (sesión 19). ⏳ Falta solo el panel de diagnóstico de logs (requiere forzar un crash de lanzamiento). |
 | 6 | Publicar en r/feedthebeast, r/Minecraft, Discord Prism | ⏳ Manual. |
 | 7 | Formulario OpenAI Codex for OSS | ⏳ Manual. |
+
+### Sesión 23 — Acceso directo en Escritorio + auditoría de confusión de nombres "Beteliney" en el sistema (2026-07-05)
+
+**Contexto:** se pidió poner el launcher en el Escritorio y revisar si algo más se llama "Beteliney" en el sistema, por posible confusión.
+
+**Hallazgo real de confusión de nombres — dos proyectos distintos, mismo nombre:**
+1. **BetelineyLauncher (Minecraft)** — este repo. AppID `com.beteliney.BetelineyLauncher`.
+2. **Beteliney (Roblox)** — proyecto completamente distinto en `~/Descargas/Beteliney Launcher [Roblox]/`, un fork de Sober (launcher de Roblox para Linux). AppID `org.beteliney.Beteliney`.
+
+**Problema real encontrado y corregido:** en `~/.local/share/applications/` había 3 archivos `.desktop`:
+- `beteliney.desktop` (genérico, sin AppID) — apuntaba correctamente al `lanzar.sh` de Minecraft actual. Parche manual creado el 12/06.
+- `com.beteliney.BetelineyLauncher.desktop` — el `.desktop` "oficial" de este proyecto (con `MimeType` completo para modrinth/curseforge/`beteliney://`), pero con el `Exec` **roto**: apuntaba a `.../Beteliney Launcher [Minecraft] 7.0v/lanzar.sh`, una ruta con sufijo de versión vieja que ya no existe (confirmado, la carpeta actual no tiene sufijo). Este archivo quedó desactualizado desde el 23/05 tras un rename de carpeta, y el genérico de arriba fue el parche manual del usuario para no quedarse sin lanzador funcional.
+- `org.beteliney.Beteliney.desktop` — el de Roblox, correcto, sin tocar.
+
+**Confusión adicional, no corregida por ser de otro proyecto:** `~/.local/bin/beteliney` (en el `$PATH`) es el binario del launcher de **Roblox**, confirmado por hash MD5 idéntico al binario en `Beteliney Launcher [Roblox]/beteliney/beteliney`. Si se ejecuta `beteliney` desde una terminal esperando abrir Minecraft, en realidad abre Roblox/Sober. No se tocó porque pertenece a la gestión de otro proyecto instalado por su propio instalador — cambiarlo sin permiso explícito podría romper esa instalación. Queda anotado para que el usuario decida si quiere renombrar ese binario o el símbolo del PATH.
+
+**Corregido:**
+- `com.beteliney.BetelineyLauncher.desktop`: `Exec` corregido a la ruta real actual (`bash "/home/pibe/Descargas/Beteliney Launcher [Minecraft]/lanzar.sh" %U`). Validado con `desktop-file-validate` — sin errores.
+- Ícono verificado: `~/.local/share/icons/hicolor/scalable/apps/com.beteliney.BetelineyLauncher.svg` ya era idéntico (diff) al logo real del repo — no había que tocarlo, ya estaba instalado correctamente desde antes.
+- Eliminado `beteliney.desktop` (genérico, redundante una vez arreglado el oficial — tenía menos metadata, sin `MimeType`).
+- `update-desktop-database` corrido para refrescar la caché.
+
+**Acceso directo en Escritorio:** copiado `com.beteliney.BetelineyLauncher.desktop` a `~/Escritorio/BetelineyLauncher.desktop`, permisos `755` (idénticos al `Paralives.desktop` que ya funciona ahí). `gio set metadata::trusted` no aplica en este entorno (KDE Plasma, no GNOME/Nautilus) — en KDE el bit ejecutable es suficiente, no hace falta el atributo extra.
+
+**Nota:** estos cambios son a nivel de sistema operativo del usuario (`~/.local/share/applications`, `~/Escritorio`), no del repo — se documentan acá por ser la fuente de verdad de sesiones, pero no generan commit.
 
 ### Sesión 22 — Limpieza y organización de estructura del repo (2026-07-05)
 
