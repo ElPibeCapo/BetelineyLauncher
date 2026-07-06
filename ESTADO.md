@@ -1,6 +1,6 @@
 # ESTADO — BetelineyLauncher
 > Documento único y autocontenido. Cualquier chat nuevo lee SOLO esto y puede continuar.
-> Última actualización: sesión 24 (2026-07-05) — investigación/comparación con otros launchers (sin cambios de código, ver sección al final para lista priorizada de mejoras propuestas). Sesión 23: acceso directo funcional en Escritorio + `.desktop` roto corregido (apuntaba a una ruta con sufijo de versión vieja inexistente) + confusión de nombres detectada: el binario `beteliney` en el `$PATH` es en realidad del launcher de Roblox (otro proyecto homónimo), no de este. Sesión 22: limpieza de estructura del repo (stubs deprecated eliminados, carpeta `tools/pc` renombrada). Sesión 21: ícono macOS corregido + bug en `genicons.sh`.
+> Última actualización: sesión 25 (2026-07-06) — plan de ejecución completo para las 10 mejoras de sesión 24, con paso 0 previo (bump de versión + release pendiente desde hace 32 commits). Sin cambios de código todavía, ver sección al final para el plan detallado por fases. Sesión 24: investigación/comparación con otros launchers (sin cambios de código). Sesión 23: acceso directo funcional en Escritorio + `.desktop` roto corregido (apuntaba a una ruta con sufijo de versión vieja inexistente) + confusión de nombres detectada: el binario `beteliney` en el `$PATH` es en realidad del launcher de Roblox (otro proyecto homónimo), no de este. Sesión 22: limpieza de estructura del repo (stubs deprecated eliminados, carpeta `tools/pc` renombrada). Sesión 21: ícono macOS corregido + bug en `genicons.sh`.
 
 ---
 
@@ -9,8 +9,8 @@
 | | |
 |---|---|
 | **Nombre** | BetelineyLauncher |
-| **Versión actual en código** | v8.3.0 |
-| **Próxima release** | v8.3.0 — tagear con `git tag v8.3.0 && git push --tags`
+| **Versión actual en código** | 8.3.0 (`CMakeLists.txt` líneas 179-181, sin bump desde sesión 8) |
+| **Próxima release** | **v8.3.0 YA existe como tag** (creado sesión 8, 19/06, apunta al commit `78adefe`) — hay 32 commits reales sin tagear desde entonces (3 backports de Prism, fix ícono macOS, limpieza de estructura, esta investigación). Pendiente: bump a `8.4.0` en `CMakeLists.txt` + `git tag v8.4.0 && git push --tags` + release notes en GitHub (ver Sesión 25 al final)
 | **Base** | Prism Launcher (GPL-3.0), fork extensamente modificado |
 | **Autor** | El_PibeCapo — `elpibecapoofficial@gmail.com` |
 | **Repo launcher** | https://github.com/ElPibeCapo/BetelineyLauncher |
@@ -949,3 +949,57 @@ Archivos copiados a `source/screenshots/`: `betelineypacks.png`, `perfiles-jvm.p
 10. Búsqueda combinada Modrinth+CurseForge en una sola pestaña — alto esfuerzo, mediano/largo plazo, no urgente.
 
 **Pendientes reales identificados para sesiones futuras, sin tocar todavía:** las 10 ideas de arriba, en el orden de prioridad indicado. Ninguna implementada aún — requiere que el usuario elija por cuál empezar.
+
+
+### Sesión 25 — Plan de ejecución completo para las 10 mejoras + hallazgo de release sin tagear (2026-07-06)
+
+**Contexto:** el usuario pidió un plan completo de qué sigue después de la investigación de sesión 24, con orden lógico, y qué reforzar cuando eso termine. Sesión de planificación pura — sin cambios de código.
+
+**Hallazgo previo al plan, verificado con git (no supuesto):** el tag `v8.3.0` ya existe (creado sesión 8, 2026-06-19, apunta al commit `78adefe8bc5032ca16e54d353e81110beb4561b6`). Desde entonces hay **32 commits reales** sin ningún tag nuevo: los 3 backports de Prism (sesión 20), el fix del ícono macOS (sesión 21), la limpieza de estructura (sesión 22), el acceso directo de escritorio (sesión 23) y la investigación de sesión 24. `CMakeLists.txt` (líneas 179-181) sigue con `Launcher_VERSION_MAJOR/MINOR/PATCH` en `8.3.0` literal, sin bump. Conclusión: hay trabajo real, probado y funcional (91 pasos de build limpio, 29/29 tests, ver sesión 20) que nunca llegó a un release público.
+
+**Paso 0 — antes de cualquier feature nueva, cero riesgo, cero código:**
+1. Bump de versión en `CMakeLists.txt` líneas 179-181: `8.3.0` → `8.4.0`.
+2. `git tag v8.4.0 && git push --tags`.
+3. Generar release notes en GitHub Releases a partir de las sesiones 9-24 de este mismo documento (no inventar contenido, reusar lo ya documentado).
+
+**Plan de las 10 mejoras de sesión 24, organizado en 4 fases por dependencia técnica real (verificada en código, no orden arbitrario):**
+
+**Fase 1 — bajo riesgo, reutiliza infraestructura ya existente:**
+- Backup automático de mundos: reusa `BetelineyZip.h` (mismo wrapper de compresión que ya usa `ExportPackDialog.cpp` para exportar `.mrpack`) — no requiere librería nueva. Hook en el punto donde arranca la actualización de instancia/pack, antes de tocar `saves/`.
+- Badge de mods con actualización disponible: las llamadas a las APIs de versión de Modrinth/CurseForge ya existen en el flujo de actualización de mods — falta cachear el resultado y pintarlo en la card de instancia (`InstanceView`/delegate correspondiente).
+
+**Fase 2 — UX rápida, mismo patrón de bajo riesgo:**
+- Command palette Ctrl+K: sigue el patrón ya usado en `MainWindow.cpp` (confirmado uso extensivo de `QShortcut`/`QKeySequence` para atajos existentes, líneas ~261-287 y 715) — `QDialog` flotante + `QCompleter`, nada nuevo conceptualmente.
+- Servidores favoritos + quick-join: se apoya en `SettingsObject.h`, el sistema de persistencia de configuración ya existente — sin mecanismo de guardado nuevo. Lanza con el flag `--server` que Minecraft ya soporta por CLI.
+
+**Fase 3 — marca y comunidad:**
+- Discord Rich Presence: única dependencia externa nueva de todo el plan — librería `discord-rpc` (C++, MIT).
+- Preset de BetelineyPacks con fuente CurseForge: el enum `PackProvider::CurseForge` ya existe en `BetelineyPackListModel.cpp`, la API key de CurseForge ya está rotada y cargada en CI (sesión 18) — solo falta escribir el dato del preset nuevo en `BetelineyPresets.h`.
+- Sistema de logros de marca: reutiliza `totalTimePlayed()`/`lastTimePlayed()`, accesores ya existentes y confirmados en `MinecraftInstance.cpp` (línea ~1086-1097) — sin trackeo nuevo. Persistencia de logros desbloqueados vía `SettingsObject.h`. No hay sistema de notificación/toast previo en el código (confirmado, búsqueda vacía) — la UI de notificación de logro desbloqueado es la única pieza nueva de UI de esta fase.
+
+**Fase 4 — trabajo pesado, al final a propósito por ser lo más delicado:**
+- Backport de `McClient.cpp`/`ManagedPackPage.cpp` (changelog de modpacks, ya identificado como prioridad en sesión 24 dentro del gap Prism 11.0.0→11.0.2) — mismo nivel de cuidado que los 3 backports ya hechos en sesión 20, no apurar.
+- i18n conectado a Weblate — trabajo de proceso/configuración, no de código, puede llevarse en paralelo sin bloquear nada del resto.
+- Búsqueda combinada Modrinth+CurseForge en una sola pestaña — fuera del sprint principal, proyecto aparte de mediano/largo plazo (arquitectura nueva, dedup entre dos APIs).
+
+**Fase 5 — refuerzo, DESPUÉS de completar las fases 1-4, tal como pidió el usuario explícitamente ("cuando eso termine, reforzar"):**
+- Repetir con cada feature nueva el mismo nivel de validación usado en el backport de sesión 20: no solo CI en verde, sino build local limpio (`ninja -C build`), ejecución real del binario, y `ctest` completo — cada feature nueva debería sumar sus propios tests a la suite (hoy 29/29).
+- Capturas de pantalla nuevas para el README siguiendo el método de sesión 19 (OCR con `tesseract` sobre capturas reales tomadas a mano, nunca inventar contenido visual).
+- Actualizar el Roadmap del README quitando de la lista de "ideas de mejora futuras" lo ya resuelto.
+- Tag de versión nueva (`8.5.0` o el número que corresponda) una vez cerrado el bloque completo.
+- Recién ahí, publicar en r/feedthebeast, r/Minecraft, Discord de Prism Launcher (ítem ya en el Roadmap desde antes) — tiene más sentido promocionar con el pulido de las 4 fases encima que con la versión actual sin tagear.
+
+**Orden de sesiones sugerido (uno por sesión, mismo patrón incremental ya usado en todo este proyecto, para no mezclar cambios grandes):**
+- Sesión 26: Paso 0 (bump de versión + tag + release).
+- Sesión 27: backup de mundos.
+- Sesión 28: badge de updates de mods.
+- Sesión 29: command palette Ctrl+K.
+- Sesión 30: servidores favoritos + quick-join.
+- Sesión 31: Discord Rich Presence.
+- Sesión 32: preset BetelineyPacks CurseForge.
+- Sesión 33: sistema de logros de marca.
+- Sesión 34: backport `McClient`/`ManagedPackPage` (con tiempo dedicado, el más delicado).
+- Sesión 35: refuerzo completo (tests, capturas, tag final de la tanda).
+- Sesión 36+: i18n/Weblate y búsqueda combinada Modrinth+CurseForge, sin fecha fija, no bloquean nada del resto.
+
+**Pendientes reales identificados para sesiones futuras, sin tocar todavía:** todo el plan de arriba, empezando por el Paso 0 (bump de versión y release), que es lo más urgente por ser trabajo ya terminado sin publicar.
