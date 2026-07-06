@@ -1,6 +1,6 @@
 # ESTADO — BetelineyLauncher
 > Documento único y autocontenido. Cualquier chat nuevo lee SOLO esto y puede continuar.
-> Última actualización: sesión 23 (2026-07-05) — acceso directo funcional en Escritorio + `.desktop` roto corregido (apuntaba a una ruta con sufijo de versión vieja inexistente) + confusión de nombres detectada: el binario `beteliney` en el `$PATH` es en realidad del launcher de Roblox (otro proyecto homónimo), no de este. Sesión 22: limpieza de estructura del repo (stubs deprecated eliminados, carpeta `tools/pc` renombrada). Sesión 21: ícono macOS corregido + bug en `genicons.sh`.
+> Última actualización: sesión 24 (2026-07-05) — investigación/comparación con otros launchers (sin cambios de código, ver sección al final para lista priorizada de mejoras propuestas). Sesión 23: acceso directo funcional en Escritorio + `.desktop` roto corregido (apuntaba a una ruta con sufijo de versión vieja inexistente) + confusión de nombres detectada: el binario `beteliney` en el `$PATH` es en realidad del launcher de Roblox (otro proyecto homónimo), no de este. Sesión 22: limpieza de estructura del repo (stubs deprecated eliminados, carpeta `tools/pc` renombrada). Sesión 21: ícono macOS corregido + bug en `genicons.sh`.
 
 ---
 
@@ -907,3 +907,45 @@ Archivos copiados a `source/screenshots/`: `betelineypacks.png`, `perfiles-jvm.p
 - **Roadmap corregido — hallazgo no pedido pero relevante:** tenía 3 ítems marcados como pendientes (`[ ]`) que en realidad ya estaban resueltos desde las sesiones 14 a 17 según este mismo documento: activar GitHub Pages del repo `meta`, publicar los 3 BetelineyPacks, y `known-hashes.json`. El README nunca se había sincronizado con el avance real documentado acá. Marcados `[x]` con la aclaración exacta de cada uno (incluida la honestidad de que `known-hashes.json` quedó vacío por diseño, no relleno con datos inventados — ver sesión 14). También se agregó al Roadmap la rotación de la CurseForge API key (sesión 18) y el pendiente de publicar en Reddit/Discord de Prism, que no estaban listados ahí.
 
 
+
+
+### Sesión 24 — Investigación y comparación con otros launchers para priorizar mejoras futuras (2026-07-05)
+
+**Contexto:** el usuario pidió una investigación con lógica, verificación y comparación real (no opiniones) sobre qué mejorar en el launcher, qué tecnología usar, y si valía la pena portar código/ideas de otros launchers. Sesión sin cambios de código — es research y priorización para sesiones futuras.
+
+**Decisión de fondo (verificada con research externo):** no cambiar de stack. Comparando contra Modrinth App (Rust/Tauri), CurseForge App (JS sobre Overwolf) y ATLauncher, los rankings 2026 siguen poniendo a los launchers basados en Prism (Qt/C++) primero por control y estabilidad. Reescribir a otro framework sería meses de trabajo sin ganancia real, solo estética. Portar código literal de otros launchers no es viable salvo con Prism mismo (mismo lenguaje/framework) — con el resto, como mucho se pueden tomar ideas de UX, no código.
+
+**Verificado en el código propio (no supuesto) — cosas que ya existen, no son gaps:**
+- Soporte FTB (`launcher/modplatform/ftb/`, `import_ftb/`) — viene de la base Prism 11.0.0 forkeada, que restauró soporte FTB (sacado en la 7.0) y agregó trackeo de dependencias de mods.
+- Galería de screenshots (`launcher/ui/pages/instance/ScreenshotsPage.cpp`) — ya existe.
+- Exportar instancia a `.mrpack` (`ExportPackDialog.cpp`) — ya existe.
+- `BetelineyPackListModel.cpp` ya tiene el enum `PackProvider::CurseForge` implementado en la arquitectura, pero los 3 presets reales en `BetelineyPresets.h` apuntan 100% a `cdn.modrinth.com` — ninguno usa CurseForge todavía pese a que la infraestructura ya lo soporta.
+
+**Verificado como ausente (gaps reales, no inventados):**
+- Discord Rich Presence a nivel de proceso launcher/juego — solo existen íconos SVG estáticos de Discord (`resources/*/discord.svg`), cero integración RPC.
+- Backup automático de mundos (`saves/`) antes de actualizar mods/pack — no existe ningún módulo de backup.
+- Badge de "actualización disponible" en la card de instancia — no existe, la info ya la trae la API de Modrinth/CurseForge pero no se muestra agregada.
+- Servidores favoritos / quick-join desde el dashboard — no existe ningún `FavoriteServer` o similar.
+- Command palette tipo Ctrl+K (búsqueda universal de instancias/settings) — no existe, no hay ningún `CommandPalette`/`QuickSearch`.
+- Sistema de logros/gamificación ligado a la marca (neón gamer) — no existe en Beteliney ni se encontró en ningún launcher competidor revisado (Prism, Modrinth App, ATLauncher, CurseForge, GDLauncher Carbon) — sería diferencial único, no copiado.
+
+**Descartado explícitamente, con razón:**
+- Overlay de FPS/RAM in-game — capa incorrecta: requiere inyectar en el proceso de Minecraft (hook LWJGL o mod), no es código de launcher. Terreno de mods tipo BetterFPS, fuera de alcance.
+- Diseño Fluent nativo de Windows (como FluentLauncher) — chocaría con el tema neón de marca propio, no suma.
+- Búsqueda combinada Modrinth+CurseForge en una sola pestaña — sí es una mejora real (hoy `atlauncher/`, `flame/`, `ftb/`, `modrinth/`, `technic/`, `beteliney/` son pestañas separadas por proveedor, ningún launcher tipo Prism lo resuelve bien en 2026 según reviews), pero de alto esfuerzo (dedup por hash entre dos APIs) — no es para ahora.
+
+**Hallazgo con validación cruzada (research externo + pendiente interno ya anotado):** el refactor pendiente de `McClient.cpp`/`ManagedPackPage.cpp` (gap Prism 11.0.0→11.0.2, ver sesión 20) es exactamente la funcionalidad de "ver el changelog del modpack en la página de instancia" — Prism la rompió en 11.0.0 y la restauró en 11.0.1 (PR #5354). Reviews externas de 2026 la destacan como diferencial de calidad. Se recomienda subir su prioridad dentro de los 21 commits pendientes del gap, en vez de dejarla para el final por ser "el refactor grande".
+
+**Lista priorizada de mejoras propuestas (research + código, sin implementar todavía — pendiente de que el usuario decida cuáles hacer):**
+1. Backup automático de mundos con timestamp antes de update de instancia — bajo esfuerzo, alto valor (red de seguridad real).
+2. Servidores favoritos + quick-join desde el dashboard — bajo esfuerzo, usa el flag `--server` que Minecraft ya soporta por CLI.
+3. Command palette Ctrl+K (`QDialog` flotante + `QCompleter`, patrón estándar en Qt) — bajo esfuerzo, sensación de herramienta pulida.
+4. Badge de mods con actualización disponible en la card de instancia — bajo esfuerzo, reusa llamadas API que el launcher ya hace.
+5. Discord Rich Presence a nivel de proceso (librería oficial `discord-rpc`, C++, MIT) — bajo esfuerzo, cierra el círculo con el servidor de Discord ya promocionado.
+6. Subir prioridad al backport de `McClient`/`ManagedPackPage` (changelog de modpack) dentro del gap Prism pendiente.
+7. Preset de BetelineyPacks con fuente CurseForge, aprovechando el enum `PackProvider::CurseForge` ya existente en el código.
+8. Sistema de logros de marca (gamificación ligada al tema neón) — diferencial único frente a toda la competencia revisada, sin backend, solo estado local.
+9. i18n propio conectado a Weblate — ya estaba en el Roadmap del README, sigue sin resolver.
+10. Búsqueda combinada Modrinth+CurseForge en una sola pestaña — alto esfuerzo, mediano/largo plazo, no urgente.
+
+**Pendientes reales identificados para sesiones futuras, sin tocar todavía:** las 10 ideas de arriba, en el orden de prioridad indicado. Ninguna implementada aún — requiere que el usuario elija por cuál empezar.
