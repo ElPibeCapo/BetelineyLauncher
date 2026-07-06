@@ -189,6 +189,17 @@ EMPAQUETAR_APPIMAGE.sh Script para generar AppImage
 - [ ] i18n propio conectado a Weblate o similar
 - [ ] Publicar en r/feedthebeast, r/Minecraft, Discord de Prism Launcher
 
+**Ideas de mejora futuras (investigadas y verificadas, no confirmadas aún — ver ESTADO.md sesión 24 para el detalle):**
+
+- [ ] Backup automático de mundos antes de actualizar una instancia
+- [ ] Servidores favoritos + quick-join desde el dashboard
+- [ ] Búsqueda universal tipo Ctrl+K (instancias, settings)
+- [ ] Badge de mods con actualización disponible en la card de instancia
+- [ ] Discord Rich Presence a nivel de proceso launcher/juego
+- [ ] Preset de BetelineyPacks con fuente CurseForge
+- [ ] Sistema de logros ligado a la marca (gamificación)
+- [ ] Búsqueda combinada Modrinth+CurseForge en una sola pestaña (mediano/largo plazo)
+
 ---
 
 ## Licencia
