@@ -60,8 +60,13 @@
 #include "DesktopServices.h"
 #include "ui/GuiUtil.h"
 
+#include <QDateTime>
 #include "Application.h"
 #include "DataPackPage.h"
+#include "BetelineyZip.h"
+#include "archive/ExportToZipTask.h"
+#include "ui/dialogs/CustomMessageBox.h"
+#include "ui/dialogs/ProgressDialog.h"
 
 class WorldListProxyModel : public QSortFilterProxyModel {
     Q_OBJECT
@@ -376,6 +381,7 @@ void WorldListPage::worldChanged([[maybe_unused]] const QModelIndex& current, [[
     ui->actionCopy->setEnabled(enable);
     ui->actionRename->setEnabled(enable);
     ui->actionData_Packs->setEnabled(enable);
+    ui->actionBackup->setEnabled(enable);
     bool hasIcon = !index.data(WorldList::IconFileRole).isNull();
     ui->actionReset_Icon->setEnabled(enable && hasIcon);
 
@@ -473,6 +479,44 @@ void WorldListPage::on_actionJoin_triggered()
     auto worldVariant = m_worlds->data(index, WorldList::ObjectRole);
     auto world = (World*)worldVariant.value<void*>();
     APPLICATION->launch(m_inst, LaunchMode::Normal, std::make_shared<MinecraftTarget>(MinecraftTarget::parse(world->folderName(), true)));
+}
+
+void WorldListPage::on_actionBackup_triggered()
+{
+    QModelIndex index = getSelectedWorld();
+    if (!index.isValid()) {
+        return;
+    }
+
+    const QString worldName = m_worlds->data(index, WorldList::NameRole).toString();
+    const QString worldFolder = m_worlds->data(index, WorldList::FolderRole).toString();
+
+    const QString backupsDir = FS::PathCombine(m_inst->instanceRoot(), "backups", "worlds");
+    if (!FS::ensureFolderPathExists(backupsDir)) {
+        CustomMessageBox::selectable(this, tr("Error"), tr("Could not create the backups folder."), QMessageBox::Critical)->show();
+        return;
+    }
+
+    const QString safeName = FS::RemoveInvalidFilenameChars(worldName);
+    const QString timestamp = QDateTime::currentDateTime().toString("yyyyMMdd_HHmmss");
+    const QString outputPath = FS::PathCombine(backupsDir, QString("%1_%2.zip").arg(safeName, timestamp));
+
+    auto files = QFileInfoList();
+    if (!BetelineyZip::collectFileListRecursively(worldFolder, nullptr, &files, nullptr)) {
+        CustomMessageBox::selectable(this, tr("Error"), tr("Could not read the world's files."), QMessageBox::Critical)->show();
+        return;
+    }
+
+    auto task = makeShared<BetelineyZip::ExportToZipTask>(outputPath, worldFolder, files, "", true);
+
+    connect(task.get(), &Task::failed, this, [this](QString reason) {
+        CustomMessageBox::selectable(this, tr("Backup failed"), reason, QMessageBox::Critical)->show();
+    });
+    connect(task.get(), &Task::finished, this, [task] { task->deleteLater(); });
+
+    ProgressDialog progress(this);
+    progress.setSkipButton(true, tr("Abort"));
+    progress.execWithTask(task.get());
 }
 
 #include "WorldListPage.moc"

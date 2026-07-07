@@ -1064,6 +1064,32 @@ Esto cierra el ciclo completo: las URLs funcionan (ya no 404), el archivo que se
 
 - **Nota menor de higiene legal:** no hay archivo `NOTICE`/`ATTRIBUTION` explícito (más allá de `COPYING.md`/`LICENSE` y la aclaración "No afiliado con Prism Launcher" en el README). GPLv3 §5(a) técnicamente pide aviso prominente de modificación en archivos cambiados — en la práctica casi ningún fork chico lo cumple al pie de la letra y no es un riesgo legal real hoy, pero queda anotado por si el proyecto crece y se quiere estar prolijo del todo.
 
+### Sesión 27 — Paso 0 ejecutado (release v8.4.0) + arranque de Fase 1 (2026-07-07)
+
+**Contexto:** continuación directa de la sesión 26. Se ejecutó el Paso 0 documentado en el bloque consolidado (bump + tag + release) y se arrancó la Fase 1 del plan (backup de mundos, sembrado de `known-hashes.json`, badge de updates).
+
+**Paso 0 — completo, verificado en GitHub:**
+1. Bump `CMakeLists.txt` líneas 179-181: `8.3.0` → `8.4.0`. Commit `7a3dbf14b` ("chore: bump version 8.3.0 → 8.4.0"), pusheado a `main`.
+2. Tag `v8.4.0` creado con mensaje anotado (resumen de todo lo acumulado desde `v8.3.0`) y pusheado.
+3. Release publicado en GitHub Releases con notas reales (no genéricas) armadas a partir de las sesiones 9-26 de este documento: https://github.com/ElPibeCapo/BetelineyLauncher/releases/tag/v8.4.0
+
+**Intento de sembrar `known-hashes.json` — bloqueado, no completado, hallazgo real nuevo:** al ir a aplicar el hash SHA-1 de Fractureiser Stage 1 (`dc43c4685c3f47808ac207d1667cc1eb915b2d82`) que quedó anotado como "confirmado" en la sesión 26, se intentó verificarlo de forma independiente contra la API de MalwareBazaar (`mb-api.abuse.ch`) antes de escribir nada. La API devolvió `{"error": "Unauthorized"}` — **MalwareBazaar ahora exige `Auth-Key` para absolutamente todas las queries de la API**, incluida la consulta simple por hash (antes solo se sabía que hacía falta key para descargar la muestra completa, ver Opción B de la sesión 26; ahora aplica también a la Opción A, la de solo consultar). Sin esa key no hay forma de verificar el hash ni de obtener el SHA-256/SHA-512 real asociado (el scanner de Beteliney solo soporta esos dos algoritmos, no SHA-1). **No se escribió ningún hash en `known-hashes.json` — se dejó exactamente como estaba (arrays vacíos), para no fabricar un dato no verificado.** Repo: `/home/pibe/Descargas/meta_beteliney` (clon local separado del repo principal). Pendiente real: conseguir una API key de `abuse.ch` (gratis para uso no comercial, requiere registro) antes de poder avanzar esto.
+
+**Feature implementada — backup manual de mundos, reusando infraestructura existente:**
+- Nuevo botón "Backup" en la toolbar de `WorldListPage` (pestaña Worlds de cada instancia), junto a Copy/Rename/Delete — sigue exactamente el mismo patrón `on_action*_triggered()` que ya usan las demás acciones del archivo.
+- Al presionarlo con un mundo seleccionado: comprime ese mundo completo a un `.zip` con timestamp (`{nombre}_{yyyyMMdd_HHmmss}.zip`) dentro de `backups/worlds/` en la raíz de la instancia. Reusa `BetelineyZip::collectFileListRecursively` + `BetelineyZip::ExportToZipTask` — el mismo mecanismo que ya usa `ExportInstanceDialog.cpp` para exportar la instancia entera a zip. Cero librerías nuevas, cero mecanismo de compresión nuevo.
+- Progreso visible vía `ProgressDialog` (mismo patrón que el export de instancia), con manejo de error vía `CustomMessageBox` si falla.
+- Archivos tocados: `launcher/ui/pages/instance/WorldListPage.ui` (acción `actionBackup` + separador en la toolbar), `WorldListPage.h` (slot nuevo), `WorldListPage.cpp` (implementación + habilitado/deshabilitado según selección en `worldChanged`).
+- **Alcance real de esto — corrección honesta sobre lo que dice el plan de sesión 25:** esto es un backup **manual**, a pedido del usuario desde la UI de Worlds — no es todavía el "backup automático antes de actualizar el pack" que proponía la sesión 24/25. Ese automatismo requeriría enganchar el mismo `ExportToZipTask` en el punto donde arranca cada actualización de pack (distinto por proveedor: Modrinth/Flame/FTB/ATLauncher/Technic/Beteliney), lo cual es varias veces más superficie de cambio y de testeo que este botón manual. Se implementó primero la pieza manual porque es autocontenida, de bajo riesgo, y da valor inmediato por sí sola; el hook automático queda como siguiente paso explícito, no asumido como ya resuelto.
+- **Build:** compilación incremental (`ninja -C build -j$(nproc)`) arrancada tras el cambio. Primer intento falló por un include faltante (`BetelineyZip.h` no lo trae `ExportToZipTask.h` automáticamente) — corregido agregando el include, no fue necesario tocar lógica. Segunda compilación en curso al momento de escribir esta sección (LTO tarda varios minutos en este hardware, ya documentado en sesiones previas) — **resultado del build y de `ctest` todavía no confirmado, se documenta en la próxima entrada de este archivo apenas termine.**
+
+**Pendiente inmediato, sin completar todavía:**
+1. Confirmar que el build en curso termina sin errores ni warnings (con `-Werror` activo).
+2. Correr `ctest` completo (29/29 esperado, ninguno cubre específicamente esta feature nueva todavía).
+3. Prueba funcional real: usar el botón Backup sobre un mundo real y confirmar que el zip se genera, se puede reabrir, y contiene los archivos correctos.
+4. Solo si todo lo anterior pasa: commit + push de este feature.
+5. Recién ahí seguir con el resto de Fase 1 (badge de updates de mods — el gap real confirmado en sesión 26, `setUpdateAvailable()` sin ningún caller) y, si el usuario consigue una API key de MalwareBazaar, retomar el sembrado de `known-hashes.json`.
+
 
 ## ESTADO CONSOLIDADO — leer esto primero en cualquier sesión nueva (actualizado 2026-07-07)
 
@@ -1085,7 +1111,15 @@ Este bloque resume todo lo relevante de las sesiones 24, 25 y 26 sin necesidad d
 
 Todo el plan de 4 fases + refuerzo de sesión 25 (ver más arriba en este mismo documento para el detalle completo), MENOS los dos ítems corregidos arriba. Los hallazgos nuevos de la investigación sobre MalwareBazaar/jarspect, telemetría (confirmado: no existe, es fortaleza de privacidad no un gap), accesibilidad (gap real, alto contraste ausente) y atribución GPL (nota menor) también siguen vigentes, documentados en la sección justo anterior a esta.
 
-### Próxima acción concreta, en orden, ninguna ejecutada todavía
+### ACTUALIZACIÓN 2026-07-07 (sesión 27) — Paso 0 completo, Fase 1 en curso
+
+**Paso 0: hecho, no pendiente.** Bump a `8.4.0` (commit `7a3dbf14b`), tag `v8.4.0` pusheado, release publicado: https://github.com/ElPibeCapo/BetelineyLauncher/releases/tag/v8.4.0. La sección "Próxima acción concreta" de más abajo, en la parte que dice "Paso 0 — pendiente", **ya no es cierta** — queda como registro histórico de lo que se planeó, no como estado actual. Ver detalle completo en la sección "Sesión 27" un poco más arriba en este documento.
+
+**`known-hashes.json`: sigue vacío, a propósito, por un bloqueo real nuevo.** El hash SHA-1 de Fractureiser que esta misma sección daba por "confirmado públicamente" (línea del punto 2 de abajo) se intentó verificar en vivo contra la API de MalwareBazaar antes de usarlo — la API ahora exige `Auth-Key` para **cualquier** query, no solo para descargar la muestra completa. No se pudo verificar el hash ni conseguir el SHA-256/SHA-512 real (los únicos algoritmos que soporta el scanner). No se escribió nada al archivo. Pendiente real: conseguir una API key de `abuse.ch`.
+
+**Feature en curso — backup manual de mundos (botón en WorldListPage):** implementado (`WorldListPage.ui/.h/.cpp`), reusando `BetelineyZip::ExportToZipTask` (mismo mecanismo que ya usa `ExportInstanceDialog.cpp`). Build incremental en curso al momento de escribir esto — **todavía no confirmado que compile limpio ni que pase `ctest`, no commiteado todavía.** No confundir con el "backup automático antes de actualizar el pack" de la lista de abajo (punto 2) — eso sigue sin implementar, es un trabajo aparte y más grande (hook en cada proveedor de pack).
+
+### Próxima acción concreta (histórico de sesión 25/26 — ver arriba para el estado real actualizado)
 
 1. **Paso 0 — bump de versión + release (pendiente, NO ejecutado, se intentó y se revirtió a pedido explícito del 2026-07-07 para no actuar sin confirmación):** `CMakeLists.txt` líneas 179-181, `8.3.0` → `8.4.0`, después `git tag v8.4.0 && git push --tags`, después release notes en GitHub desde las sesiones 9-26 de este documento. Es una operación atómica — hacer los tres pasos juntos, no dejar el bump de versión commiteado sin el tag, para no generar un estado intermedio confuso.
 2. Fase 1 del plan: backup automático de mundos (reusa `BetelineyZip.h`) + sembrar `known-hashes.json` con datos reales de MalwareBazaar (hash SHA-1 `dc43c4685c3f47808ac207d1667cc1eb915b2d82` confirmado públicamente para Fractureiser Stage 1, más lo que devuelva la API filtrada por tags `fractureiser`/`mavenrat`/`maksstealer`/`maksrat`) + badge de actualización de mods (gap real confirmado por sesión 26: `setUpdateAvailable()` sin ningún caller en todo el árbol, feature fantasma completa — UI y modelo ya listos, falta el disparador).
@@ -1094,4 +1128,4 @@ Todo el plan de 4 fases + refuerzo de sesión 25 (ver más arriba en este mismo 
 5. Fase 4: i18n/Weblate (proceso, no código) + búsqueda combinada Modrinth+CurseForge (alto esfuerzo, mediano/largo plazo, fuera del sprint principal).
 6. Fase 5: refuerzo — tests nuevos por cada feature, capturas de pantalla actualizadas, Roadmap del README limpio, tag de versión final de la tanda.
 
-**Nada de esto está implementado todavía. El punto de partida para la próxima sesión de trabajo real es el Paso 0.**
+**Estado real, actualizado sesión 27: Paso 0 completo. Backup manual de mundos implementado, build/test/commit pendiente de confirmación (ver sección "Sesión 27" arriba). Resto de Fase 1 (badge de updates, known-hashes.json) y Fases 2-5 sin empezar.**
