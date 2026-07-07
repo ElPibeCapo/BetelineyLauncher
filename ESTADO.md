@@ -1081,14 +1081,13 @@ Esto cierra el ciclo completo: las URLs funcionan (ya no 404), el archivo que se
 - Progreso visible vía `ProgressDialog` (mismo patrón que el export de instancia), con manejo de error vía `CustomMessageBox` si falla.
 - Archivos tocados: `launcher/ui/pages/instance/WorldListPage.ui` (acción `actionBackup` + separador en la toolbar), `WorldListPage.h` (slot nuevo), `WorldListPage.cpp` (implementación + habilitado/deshabilitado según selección en `worldChanged`).
 - **Alcance real de esto — corrección honesta sobre lo que dice el plan de sesión 25:** esto es un backup **manual**, a pedido del usuario desde la UI de Worlds — no es todavía el "backup automático antes de actualizar el pack" que proponía la sesión 24/25. Ese automatismo requeriría enganchar el mismo `ExportToZipTask` en el punto donde arranca cada actualización de pack (distinto por proveedor: Modrinth/Flame/FTB/ATLauncher/Technic/Beteliney), lo cual es varias veces más superficie de cambio y de testeo que este botón manual. Se implementó primero la pieza manual porque es autocontenida, de bajo riesgo, y da valor inmediato por sí sola; el hook automático queda como siguiente paso explícito, no asumido como ya resuelto.
-- **Build:** compilación incremental (`ninja -C build -j$(nproc)`) arrancada tras el cambio. Primer intento falló por un include faltante (`BetelineyZip.h` no lo trae `ExportToZipTask.h` automáticamente) — corregido agregando el include, no fue necesario tocar lógica. Segunda compilación en curso al momento de escribir esta sección (LTO tarda varios minutos en este hardware, ya documentado en sesiones previas) — **resultado del build y de `ctest` todavía no confirmado, se documenta en la próxima entrada de este archivo apenas termine.**
+- **Build:** compilación incremental (`ninja -C build -j$(nproc)`) — exit code 0, sin errores ni warnings pese a `-Werror` activo. Primer intento había fallado por un include faltante (`BetelineyZip.h` no lo trae `ExportToZipTask.h` automáticamente) — corregido agregando el include, no fue necesario tocar lógica.
+- **`ctest --output-on-failure`: 29/29 tests pasando**, 2.77s total. Ningún test existente cubre específicamente esta feature (no hay test dedicado a la acción de Backup), así que confirma que no rompió nada existente, no que la feature en sí sea correcta — la verificación de la feature en sí queda pendiente de una prueba manual real (ver abajo).
+- **Commit y push confirmados:** `523027d18` ("feat(worlds): botón de backup manual de mundos"), pusheado a `main` sobre el commit del bump (`7a3dbf14b`).
 
-**Pendiente inmediato, sin completar todavía:**
-1. Confirmar que el build en curso termina sin errores ni warnings (con `-Werror` activo).
-2. Correr `ctest` completo (29/29 esperado, ninguno cubre específicamente esta feature nueva todavía).
-3. Prueba funcional real: usar el botón Backup sobre un mundo real y confirmar que el zip se genera, se puede reabrir, y contiene los archivos correctos.
-4. Solo si todo lo anterior pasa: commit + push de este feature.
-5. Recién ahí seguir con el resto de Fase 1 (badge de updates de mods — el gap real confirmado en sesión 26, `setUpdateAvailable()` sin ningún caller) y, si el usuario consigue una API key de MalwareBazaar, retomar el sembrado de `known-hashes.json`.
+**Pendiente real, sin completar todavía:**
+1. Prueba funcional manual: usar el botón Backup sobre un mundo real dentro de la app corriendo, y confirmar que el zip se genera en `backups/worlds/`, se puede reabrir, y contiene los archivos correctos. No se hizo en esta sesión (requeriría la app corriendo con una instancia real con mundos).
+2. Seguir con el resto de Fase 1: badge de updates de mods (gap real confirmado en sesión 26, `setUpdateAvailable()` sin ningún caller en todo el árbol) y, si el usuario consigue una API key de `abuse.ch`, retomar el sembrado de `known-hashes.json`.
 
 
 ## ESTADO CONSOLIDADO — leer esto primero en cualquier sesión nueva (actualizado 2026-07-07)
@@ -1117,7 +1116,7 @@ Todo el plan de 4 fases + refuerzo de sesión 25 (ver más arriba en este mismo 
 
 **`known-hashes.json`: sigue vacío, a propósito, por un bloqueo real nuevo.** El hash SHA-1 de Fractureiser que esta misma sección daba por "confirmado públicamente" (línea del punto 2 de abajo) se intentó verificar en vivo contra la API de MalwareBazaar antes de usarlo — la API ahora exige `Auth-Key` para **cualquier** query, no solo para descargar la muestra completa. No se pudo verificar el hash ni conseguir el SHA-256/SHA-512 real (los únicos algoritmos que soporta el scanner). No se escribió nada al archivo. Pendiente real: conseguir una API key de `abuse.ch`.
 
-**Feature en curso — backup manual de mundos (botón en WorldListPage):** implementado (`WorldListPage.ui/.h/.cpp`), reusando `BetelineyZip::ExportToZipTask` (mismo mecanismo que ya usa `ExportInstanceDialog.cpp`). Build incremental en curso al momento de escribir esto — **todavía no confirmado que compile limpio ni que pase `ctest`, no commiteado todavía.** No confundir con el "backup automático antes de actualizar el pack" de la lista de abajo (punto 2) — eso sigue sin implementar, es un trabajo aparte y más grande (hook en cada proveedor de pack).
+**Feature completa — backup manual de mundos (botón en WorldListPage):** implementado, build limpio (`-Werror`, sin warnings), `ctest` 29/29, commiteado y pusheado (`523027d18`). Reusa `BetelineyZip::ExportToZipTask` (mismo mecanismo que ya usa `ExportInstanceDialog.cpp`). **Pendiente real:** prueba manual con la app corriendo (no hecha esta sesión). No confundir con el "backup automático antes de actualizar el pack" de la lista de abajo (punto 2) — eso sigue sin implementar, es un trabajo aparte y más grande (hook en cada proveedor de pack).
 
 ### Próxima acción concreta (histórico de sesión 25/26 — ver arriba para el estado real actualizado)
 
