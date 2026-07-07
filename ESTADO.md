@@ -1043,3 +1043,29 @@ La librería `discord-rpc` (C++, MIT) que sesión 24/25 propuso como "la única 
 2. Build limpio + `ctest` para confirmar que no rompe nada.
 3. Commit.
 4. El resto del plan de sesión 25 (Paso 0 bump de versión, Fases 1-5) sigue vigente sin cambios salvo las correcciones de arriba.
+
+### Estado de ejecución (previo a testear)
+
+Paso 1 confirmado aplicado: `git diff` sobre `launcher/modplatform/beteliney/BetelineyPresets.h` muestra las 7 entradas de mods reemplazadas exactamente con los datos de la tabla de arriba (mismos version id, mismos sha512) — verificado de nuevo de forma independiente contra `api.modrinth.com` en este mismo chat antes de leer el diff, coincidencia exacta. Cambio sin commitear todavía (`M` en `git status`). `PLAN_MEJORAS.md` (el archivo suelto original que disparó la auditoría) sigue sin trackear, contenido ya absorbido y corregido en esta sección — se puede borrar tras el commit para no dejar dos fuentes de verdad.
+
+Paso 2 (build + ctest) arranca ahora mismo, resultado se documenta abajo al terminar.
+
+### Resultado de testing (paso 2, completo)
+
+**Build incremental (`ninja -j$(nproc)`, Release con LTO):** exitoso, sin errores ni warnings nuevos. El header modificado compila limpio — `build/beteliney` se regeneró (16 MB, timestamp fresco).
+
+**`ctest --output-on-failure`:** 29/29 tests pasan, 0 fallos, 3.30s total. Ningún test unitario existente cubre específicamente los datos de `BetelineyPresets.h` (no hay test dedicado a presets), así que este resultado confirma que el cambio no rompió nada existente, pero no valida por sí solo que los datos nuevos sean correctos.
+
+**Test funcional end-to-end (el que realmente prueba el fix):** se descargaron los 5 jars reales desde las URLs nuevas del CDN de Modrinth y se calculó su SHA-512 real, comparándolo contra el hash hardcodeado en `BetelineyPresets.h`. Resultado: **5/5 coinciden exactamente.**
+
+| Mod | Tamaño descargado | SHA-512 real vs. código |
+|---|---|---|
+| Sodium | 1,573,180 bytes | ✅ coincide |
+| Lithium | 797,454 bytes | ✅ coincide |
+| Iris | 2,791,343 bytes | ✅ coincide |
+| ModernFix | 471,258 bytes | ✅ coincide |
+| FerriteCore | 123,450 bytes | ✅ coincide |
+
+Esto cierra el ciclo completo: las URLs funcionan (ya no 404), el archivo que se descarga es exactamente el que el hash dice que debe ser, y el binario compilado con estos datos pasa toda la suite de tests existente. El fix de `BetelineyPresets.h` queda validado de punta a punta, no solo "compila".
+
+**Siguiente paso:** commit de `BetelineyPresets.h` + esta sección de ESTADO.md, y borrar `PLAN_MEJORAS.md` (contenido ya absorbido en sesión 26, no dejar dos fuentes de verdad).
