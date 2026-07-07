@@ -77,11 +77,14 @@ ae1ddd6  fix: Q_INIT_RESOURCE dup, BUILD_TESTING OFF, CurseForge env, BUILD_ARTI
 
 ## CÓMO HACER UNA RELEASE
 
+⚠️ El tag `v8.3.0` **ya existe** (creado Sesión 8, apunta a un commit viejo) — no se puede reusar. Bumpear versión en `CMakeLists.txt` líneas 179-181 antes de tagear (ver ESTADO CONSOLIDADO al final para el número exacto pendiente).
+
 ```bash
 cd "/home/pibe/Descargas/Beteliney Launcher [Minecraft]/BetelineyLauncher/source"
+# 1. Editar CMakeLists.txt líneas 179-181 con la versión nueva (ej. 8.4.0)
 git add -A
 git commit -m "descripción del cambio"
-git tag v8.3.0
+git tag v8.4.0   # usar la versión nueva bumpeada, NUNCA repetir un tag existente
 git push && git push --tags
 # El CI compila Linux + Windows y publica la Release en ~15 min automáticamente
 ```
@@ -102,49 +105,24 @@ bash EMPAQUETAR_APPIMAGE.sh
 
 | Servicio | Estado | Detalle |
 |---|---|---|
-| **CurseForge** | 🔴 | Key EXPUESTA públicamente (commits viejos, repo público) — ROTACIÓN PENDIENTE, no hecha aún. Valor sacado de los archivos actuales (ver Sesión 15). El secret `CURSEFORGE_API_KEY` en GitHub Actions NO existe (`gh secret list` vacío) — CI no tiene la key hasta que se rote y se cargue la nueva. |
+| **CurseForge** | ✅ | Key vieja estuvo expuesta públicamente (commits viejos, repo público, ver Sesión 15) — **ya rotada por el usuario y confirmada funcionando en CI** (Sesión 17-18, corrida `28712624812` en verde con el secret `CURSEFORGE_API_KEY` nuevo cargado). Pendiente aparte, no bloqueante: purgar la key vieja del historial de git (`git filter-repo`), decisión del usuario, ver Sesión 15. |
 | **Microsoft Azure** | ✅ | App ID: `4b945c78-d30b-489e-915f-b361bf9c933b` |
 | **Imgur** | ⚠️ | Key vacía. El código de upload existe. Registrar en `api.imgur.com/oauth2/addclient` si se activa. |
 | **META server** | ✅ | Rama `gh-pages` del repo meta tiene todos los JSONs generados. CI corre cada 6h. |
 
 ---
 
-## ACCIONES MANUALES PENDIENTES (requieren navegador con sesión GitHub)
+## ACCIONES MANUALES — ESTADO (histórico, mantenido por trazabilidad; ver ESTADO CONSOLIDADO al final para lo realmente pendiente hoy)
 
-**#1 — Secret CurseForge en CI** (sin esto el build de CI no tiene la key):
-```
-https://github.com/ElPibeCapo/BetelineyLauncher/settings/secrets/actions
-→ New repository secret
-→ Nombre:  CURSEFORGE_API_KEY
-→ Valor:   (la key NUEVA tras rotar en CurseForge — NUNCA la antigua, fue expuesta públicamente, ver Sesión 15)
-```
+**#1 — Secret CurseForge en CI** — ✅ **Resuelto** (Sesión 17-18). Key rotada por el usuario, cargada como `CURSEFORGE_API_KEY` en GitHub Actions, CI confirmado en verde con la key nueva.
 
-**#2 — GitHub Pages del META server** (el contenido ya existe, falta activarlo):
-```
-https://github.com/ElPibeCapo/meta/settings/pages
-→ Source: "Deploy from a branch"
-→ Branch: gh-pages → / (root) → Save
-→ URL resultante: https://elpibecapo.github.io/meta/v1/
-```
+**#2 — GitHub Pages del META server** — ✅ **Resuelto** (Sesión 15). La causa real no era falta de activación sino `build_type` mal configurado (`workflow` en vez de `legacy`) — corregido vía `gh api`, build forzado, las 4 URLs de contenido confirmadas en HTTP 200.
 
-**#3 — Crear feed de noticias** (cuando haya algo que anunciar):
-Crear `gh-pages/v1/news/feed.atom` en el repo meta con formato Atom estándar.
-El `NewsChecker.h` ya lo consume automáticamente.
+**#3 — Feed de noticias** — ✅ **Creado** (Sesión 14): `gh-pages/v1/news/feed.atom`, con la release v8.3.0 anunciada. Persistencia asegurada en Sesión 15 (ver bug de `keep_files:false` más abajo en Sesión 15).
 
-**#4 — Crear packs de BetelineyPacks** (cuando haya packs para publicar):
-- `gh-pages/v1/beteliney-packs/index.json` → `{"formatVersion":1,"ids":["id1","id2"]}`
-- `gh-pages/v1/beteliney-packs/{id}.json` → ver formato en sección Fase 3
+**#4 — Packs de BetelineyPacks** — ✅ **Creados y corregidos** (Sesión 14, con fix de URLs rotas en Sesión 26): 3 presets publicados en `gh-pages/v1/beteliney-packs/`, verificados mod por mod contra la API real de Modrinth.
 
-**#5 — Crear lista negra de malware** (para que MalwareScanner funcione en producción):
-Crear `gh-pages/v1/malware/known-hashes.json`:
-```json
-{
-  "formatVersion": 1,
-  "updated": "2026-06-17",
-  "hashes": { "sha256": [], "sha512": [] },
-  "sources": ["fractureiser"]
-}
-```
+**#5 — Lista negra de malware** — ⚠️ **Parcial, por diseño honesto** (Sesión 14): `gh-pages/v1/malware/known-hashes.json` existe pero con arrays vacíos — no se encontró en su momento una fuente pública real de hashes de Fractureiser. **Esto cambió** (Sesión 25, addendum): existe MalwareBazaar (`abuse.ch`, API pública gratuita) con corpus real etiquetado para Minecraft. Sembrar la lista con datos reales queda como parte de la Fase 1 del plan de sesión 25 — ver ESTADO CONSOLIDADO al final del documento.
 
 ---
 
@@ -407,19 +385,21 @@ JavaPage (global) → JavaSettingsWidget
 | **Minor** x.+1.0 | Feature completo, fase completa |
 | **Major** +1.0.0 | Cambio arquitectural, reescritura de subsistema |
 
-**Actual en código:** v8.3.0
-**Para publicar:** `git tag v8.3.0 && git push --tags`
+**Actual en código:** v8.3.0 (sin bump desde Sesión 8, ver ESTADO CONSOLIDADO al final — Paso 0 pendiente)
+**Para publicar:** bumpear a la versión nueva en `CMakeLists.txt` primero, después `git tag vX.Y.Z && git push --tags` — **nunca** `v8.3.0`, ese tag ya existe (Sesión 8).
 
 ---
 
-## QUÉ SIGUE (IDEAS FUTURAS, NO PLANIFICADAS)
+## QUÉ SIGUE (IDEAS FUTURAS, NO PLANIFICADAS — categoría distinta al plan priorizado de Sesión 25)
+
+Estas son ideas de infraestructura/distribución de largo plazo, sin investigación de comparación con otros launchers detrás (a diferencia del plan de Sesión 24-26, que sí la tiene y está priorizado — ver **ESTADO CONSOLIDADO** al final del documento para ese plan). No se solapan salvo un ítem, marcado abajo.
 
 - **Flathub** — submitear el manifest Flatpak para revisión oficial
 - **macOS** — el código heredado existe (Sparkle updater, entitlements), sin CI activo
 - **Sincronización en nube de instancias** — GDLauncher Carbon lo tiene, requiere backend propio
 - **Verificación de mods en instancias existentes** — escanear mods ya instalados con MalwareScanner
 - **Soporte ARM64** — cambiar `-march=znver1` por detección automática en CI
-- **i18n propio** — el sistema de traducciones de Prism existe, conectar a Weblate o similar
+- ~~i18n propio~~ — **movido al plan priorizado** (Fase 4 de Sesión 25), no duplicar acá.
 
 ---
 
