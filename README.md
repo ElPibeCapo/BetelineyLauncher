@@ -179,7 +179,7 @@ EMPAQUETAR_APPIMAGE.sh Script para generar AppImage
 
 - [x] Activar GitHub Pages en el repo `meta` (causa raíz era `build_type` mal configurado, no falta de activación)
 - [x] 3 BetelineyPacks publicados (Vanilla Optimizado, PvP Competitivo, Pesado NeoForge — mods verificados contra la API de Modrinth)
-- [x] `known-hashes.json` en el meta server — sin lista pública de hashes reales de Fractureiser encontrada tras investigación (el proyecto oficial usa detección por ruta/comportamiento, no hash estático); queda documentado y vacío en vez de con datos inventados
+- [x] `known-hashes.json` en el meta server — publicado vacío por diseño honesto (no había fuente pública de hashes reales de Fractureiser al momento de crearlo). **Actualización:** sí existe una fuente real (MalwareBazaar/abuse.ch, API pública) — sembrar la lista con datos reales queda en el plan priorizado (ver checklist de abajo)
 - [x] Rotación de la CurseForge API key expuesta + secret cargado en CI
 - [x] Capturas de BetelineyPacks y perfiles JVM
 - [ ] Captura del panel de diagnóstico de logs (requiere forzar un crash de lanzamiento para activarlo)
@@ -189,15 +189,17 @@ EMPAQUETAR_APPIMAGE.sh Script para generar AppImage
 - [ ] i18n propio conectado a Weblate o similar
 - [ ] Publicar en r/feedthebeast, r/Minecraft, Discord de Prism Launcher
 
-**Ideas de mejora futuras (investigadas y verificadas, no confirmadas aún — ver ESTADO.md sesión 24 para el detalle):**
+**Ideas de mejora futuras (investigadas y verificadas, no confirmadas aún — ver bloque "ESTADO CONSOLIDADO" al final de `ESTADO.md` para el plan completo y priorizado):**
 
 - [ ] Backup automático de mundos antes de actualizar una instancia
+- [ ] Sembrar `known-hashes.json` con datos reales de MalwareBazaar (ver corrección arriba)
+- [ ] Badge de mods con actualización disponible en la card de instancia (feature fantasma: UI ya lista, falta el disparador)
 - [ ] Servidores favoritos + quick-join desde el dashboard
 - [ ] Búsqueda universal tipo Ctrl+K (instancias, settings)
-- [ ] Badge de mods con actualización disponible en la card de instancia
 - [ ] Discord Rich Presence a nivel de proceso launcher/juego
-- [ ] Preset de BetelineyPacks con fuente CurseForge
+- [ ] Preset de BetelineyPacks con fuente CurseForge (esfuerzo medio — limitado por el "Project Distribution Toggle" de CurseForge)
 - [ ] Sistema de logros ligado a la marca (gamificación)
+- [ ] Tema de alto contraste (accesibilidad — ningún launcher competidor lo tiene)
 - [ ] Búsqueda combinada Modrinth+CurseForge en una sola pestaña (mediano/largo plazo)
 
 ---
