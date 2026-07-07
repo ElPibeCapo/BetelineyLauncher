@@ -1003,3 +1003,43 @@ Archivos copiados a `source/screenshots/`: `betelineypacks.png`, `perfiles-jvm.p
 - Sesión 36+: i18n/Weblate y búsqueda combinada Modrinth+CurseForge, sin fecha fija, no bloquean nada del resto.
 
 **Pendientes reales identificados para sesiones futuras, sin tocar todavía:** todo el plan de arriba, empezando por el Paso 0 (bump de versión y release), que es lo más urgente por ser trabajo ya terminado sin publicar.
+
+
+## Sesión 26 — Auditoría con acceso real al código y a APIs en vivo: correcciones críticas al plan de sesión 24/25
+
+**Contexto:** las sesiones 24 y 25 se hicieron sin acceso al repositorio (solo memoria/razonamiento). Apareció un archivo suelto sin trackear, `PLAN_MEJORAS.md`, generado por una sesión con acceso real al código, que corrige varios supuestos. Esta sesión 26 verifica cada claim de forma independiente (grep sobre el código real + llamadas en vivo a la API de Modrinth) y agrega hallazgos nuevos no detectados antes.
+
+### Correcciones confirmadas al plan de sesión 24/25
+
+1. **El changelog de modpacks NO era un gap.** Sesión 24 identificó `McClient.cpp`/`ManagedPackPage.cpp` como backport prioritario pendiente del gap Prism 11.0.0→11.0.2. Falso: `ManagedPackPage.cpp` ya renderiza el changelog completo tanto de Modrinth (`markdownToHTML(version.changelog)`) como de CurseForge (`m_api.getModFileChangelog(...)`). No hay backport pendiente acá.
+
+2. **Preset CurseForge en BetelineyPacks no es "solo escribir el dato".** El enum `PackProvider::CurseForge` existe, pero `BetelineyPackInstallTask.cpp` salta cualquier mod sin URL con un comentario explícito citando los ToS de CurseForge. Verificado externamente: no es una prohibición general, es el **"Project Distribution Toggle"** — cada autor de mod decide si su proyecto es descargable vía API de terceros. Cuando está desactivado, ningún launcher externo (Prism incluido) tiene la URL directa. El patrón real que usa Prism para esto es un flujo de "abrir navegador → usuario descarga manual → launcher detecta el archivo" — Beteliney no lo implementa, simplemente descarta el mod. Esfuerzo real: medio, no bajo.
+
+3. **Badge de actualización de mods: gap real y verificado, más importante de lo que parecía.** `grep` sobre `launcher/` completo confirma: `setUpdateAvailable(bool)` (`BaseInstance.h`) tiene **un solo match en todo el árbol — su propia definición.** Nadie lo llama. `InstanceDelegate.cpp` sí lee `hasUpdateAvailable()` y pinta el ícono `checkupdate` en la card — la UI y el modelo están 100% listos, es una feature fantasma completa. Los dos puntos de enganche verificados: `ModrinthCheckUpdate`/`FlameCheckUpdate` (ambos vía `CheckUpdateTask`) solo se instancian dentro de `ResourceUpdateDialog.cpp` (el usuario tiene que abrir el diálogo manualmente); y `ManagedPackPage::suggestVersion()` solo corre cuando el usuario abre esa página o cambia el combo de versión. No hay ningún trigger pasivo al cargar `InstanceList`. Para cerrar esto de verdad hace falta un chequeo en background al iniciar el launcher o al refrescar la lista de instancias, no solo cachear un resultado ya existente.
+
+### Hallazgo nuevo — bug crítico activo, no detectado ni por sesión 24/25 ni por PLAN_MEJORAS.md
+
+**Las 5 URLs de descarga hardcodeadas en `BetelineyPresets.h` (los mods de los presets built-in "Vanilla Optimizado" y "PvP Competitivo") están rotas ahora mismo.** Verificado en vivo contra el CDN de Modrinth: las 5 devuelven HTTP 404 (versiones movidas/eliminadas de Modrinth). Esto significa que **hoy, cualquier usuario que instale uno de estos dos presets falla en el 100% de los mods.** No es un problema de seguridad apagada (falta de hash) — es una feature core completamente rota. Prioridad más alta que cualquier otra cosa del plan de sesión 24/25.
+
+También se corrige el conteo: PLAN_MEJORAS.md decía "9 mods sin hash". Contando el archivo real: 7 (Sodium/Lithium/Iris/ModernFix en Vanilla Optimizado, Sodium/Lithium/FerriteCore en PvP Competitivo; el preset NeoForge es base limpia sin mods).
+
+**Datos reales obtenidos en vivo de la API de Modrinth (`api.modrinth.com/v2`), filtrados por `loaders=fabric` + `game_versions=1.21.1`, listos para reemplazar en `BetelineyPresets.h`:**
+
+| Mod | versión | version id | sha512 |
+|---|---|---|---|
+| Sodium | mc1.21.1-0.8.12-fabric | KIRFiWG4 | `8afe411eec65a9f677611ed6390ce656e5a3572f9be473e5dca51ae882a9426a547cd2e8c793278577bb14c17e48158030b11753108926ef33698614bd94ed7f` |
+| Lithium | mc1.21.1-0.15.4-fabric | N08Z8wog | `182064b00e6315e2255b857eaab8eb759e6b042ebd4cc8b855ff0d93f875a5a7188fac49f878d7b29d4ef7e6b6341190ad7f6f6f39f4a6d2c62003468b08e4c6` |
+| Iris | 1.8.14-beta.1+1.21.1-fabric | bAo1Qhte | `a7fbb629793c52f0be8b049f787cb598879239b1ad8e1de62e103c8b9efff140e3232b93ef1f14e505d262897d8cf9505b1126396429ad4056bff969c8674e52` |
+| ModernFix | 5.25.1+mc1.21.1 | NnNX8LBn | `dc67d6e023e1fcdeaf7837917c477cba212c611dfc2463c6ea021319c644087c79b477e0ea8194e113ddd7332fd5c6d82baa47c291eaac7f4a86252507b4e19f` |
+| FerriteCore | 7.0.3-fabric | sOzRw3CG | `3ad31620fac4ff44327dc7dedbe162b2d978f3f246dc16255a6e400ce9592a0d326fe36a626f3c1bf30a11f813093cbb4dcc107af039cff724d0cdf648541fdf` |
+
+### Corrección sobre Discord Rich Presence
+
+La librería `discord-rpc` (C++, MIT) que sesión 24/25 propuso como "la única dependencia externa nueva del plan" está **deprecada oficialmente por Discord**, reemplazada por su GameSDK/Social SDK. El protocolo IPC local sigue funcionando y hay forks comunitarios activos (ej. el que mantienen proyectos como Borked3DS), así que sigue siendo viable técnicamente, pero no es "la oficial mantenida" como se dijo. Confirmado además que no hay nada heredado de Prism para esto — el ícono de Discord en el código actual es solo un link estático.
+
+### Plan de acción inmediato (sesión 26)
+
+1. Aplicar el fix de `BetelineyPresets.h` con las 5 URLs + 7 hashes reales de la tabla de arriba — cierra de raíz el bug de presets rotos y la Prioridad 1 de seguridad (hashes vacíos) en un solo cambio.
+2. Build limpio + `ctest` para confirmar que no rompe nada.
+3. Commit.
+4. El resto del plan de sesión 25 (Paso 0 bump de versión, Fases 1-5) sigue vigente sin cambios salvo las correcciones de arriba.
