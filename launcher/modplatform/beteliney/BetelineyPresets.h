@@ -44,41 +44,41 @@ inline QList<Pack> builtinPresets()
         p.tags            = { "rendimiento", "fabric", "vanilla-plus", "builtin" };
         p.featured        = true;
 
-        // Sodium — AANobbMI en Modrinth
+        // Sodium — AANobbMI en Modrinth (verificado en vivo 2026-07-06)
         p.mods << PackMod{ PackProvider::Modrinth,
                            "AANobbMI",
-                           "mc1.21.1-0.6.4+build.5",
-                           "https://cdn.modrinth.com/data/AANobbMI/versions/PfHePkD4/"
-                           "sodium-fabric-0.6.4%2Bmc1.21.1.jar",
-                           "", // sha512 — rellenar con hash real
-                           "sodium-fabric-0.6.4+mc1.21.1.jar" };
+                           "mc1.21.1-0.8.12-fabric",
+                           "https://cdn.modrinth.com/data/AANobbMI/versions/KIRFiWG4/"
+                           "sodium-fabric-0.8.12%2Bmc1.21.1.jar",
+                           "8afe411eec65a9f677611ed6390ce656e5a3572f9be473e5dca51ae882a9426a547cd2e8c793278577bb14c17e48158030b11753108926ef33698614bd94ed7f",
+                           "sodium-fabric-0.8.12+mc1.21.1.jar" };
 
-        // Lithium — gvQqBUqZ en Modrinth
+        // Lithium — gvQqBUqZ en Modrinth (verificado en vivo 2026-07-06)
         p.mods << PackMod{ PackProvider::Modrinth,
                            "gvQqBUqZ",
-                           "mc1.21.1-0.13.0",
-                           "https://cdn.modrinth.com/data/gvQqBUqZ/versions/le4NLU8p/"
-                           "lithium-fabric-0.13.0%2Bmc1.21.1.jar",
-                           "",
-                           "lithium-fabric-0.13.0+mc1.21.1.jar" };
+                           "mc1.21.1-0.15.4-fabric",
+                           "https://cdn.modrinth.com/data/gvQqBUqZ/versions/N08Z8wog/"
+                           "lithium-fabric-0.15.4%2Bmc1.21.1.jar",
+                           "182064b00e6315e2255b857eaab8eb759e6b042ebd4cc8b855ff0d93f875a5a7188fac49f878d7b29d4ef7e6b6341190ad7f6f6f39f4a6d2c62003468b08e4c6",
+                           "lithium-fabric-0.15.4+mc1.21.1.jar" };
 
-        // Iris — YL57xq9U en Modrinth
+        // Iris — YL57xq9U en Modrinth (verificado en vivo 2026-07-06)
         p.mods << PackMod{ PackProvider::Modrinth,
                            "YL57xq9U",
-                           "1.8.0+mc1.21.1",
-                           "https://cdn.modrinth.com/data/YL57xq9U/versions/6Rq7oRXq/"
-                           "iris-1.8.0%2Bmc1.21.1.jar",
-                           "",
-                           "iris-1.8.0+mc1.21.1.jar" };
+                           "1.8.14-beta.1+1.21.1-fabric",
+                           "https://cdn.modrinth.com/data/YL57xq9U/versions/bAo1Qhte/"
+                           "iris-fabric-1.8.14-beta.1%2Bmc1.21.1.jar",
+                           "a7fbb629793c52f0be8b049f787cb598879239b1ad8e1de62e103c8b9efff140e3232b93ef1f14e505d262897d8cf9505b1126396429ad4056bff969c8674e52",
+                           "iris-fabric-1.8.14-beta.1+mc1.21.1.jar" };
 
-        // ModernFix — nmDcB62a en Modrinth
+        // ModernFix — nmDcB62a en Modrinth (verificado en vivo 2026-07-06)
         p.mods << PackMod{ PackProvider::Modrinth,
                            "nmDcB62a",
-                           "5.19.4+mc1.21.1",
-                           "https://cdn.modrinth.com/data/nmDcB62a/versions/hEOlIRIi/"
-                           "modernfix-fabric-5.19.4%2Bmc1.21.1.jar",
-                           "",
-                           "modernfix-fabric-5.19.4+mc1.21.1.jar" };
+                           "5.25.1+mc1.21.1",
+                           "https://cdn.modrinth.com/data/nmDcB62a/versions/NnNX8LBn/"
+                           "modernfix-fabric-5.25.1%2Bmc1.21.1.jar",
+                           "dc67d6e023e1fcdeaf7837917c477cba212c611dfc2463c6ea021319c644087c79b477e0ea8194e113ddd7332fd5c6d82baa47c291eaac7f4a86252507b4e19f",
+                           "modernfix-fabric-5.25.1+mc1.21.1.jar" };
 
         presets << p;
     }
@@ -102,18 +102,24 @@ inline QList<Pack> builtinPresets()
         p.tags            = { "pvp", "fabric", "competitivo", "builtin" };
         p.featured        = false;
 
-        // Sodium
-        p.mods << PackMod{ PackProvider::Modrinth, "AANobbMI", "mc1.21.1-0.6.4+build.5",
-                           "https://cdn.modrinth.com/data/AANobbMI/versions/PfHePkD4/"
-                           "sodium-fabric-0.6.4%2Bmc1.21.1.jar", "", "sodium-fabric-0.6.4+mc1.21.1.jar" };
-        // Lithium
-        p.mods << PackMod{ PackProvider::Modrinth, "gvQqBUqZ", "mc1.21.1-0.13.0",
-                           "https://cdn.modrinth.com/data/gvQqBUqZ/versions/le4NLU8p/"
-                           "lithium-fabric-0.13.0%2Bmc1.21.1.jar", "", "lithium-fabric-0.13.0+mc1.21.1.jar" };
-        // FerriteCore — uXXizFIs en Modrinth
-        p.mods << PackMod{ PackProvider::Modrinth, "uXXizFIs", "7.0.0",
-                           "https://cdn.modrinth.com/data/uXXizFIs/versions/7Yq5lQ7i/"
-                           "ferritecore-7.0.0-fabric.jar", "", "ferritecore-7.0.0-fabric.jar" };
+        // Sodium (verificado en vivo 2026-07-06)
+        p.mods << PackMod{ PackProvider::Modrinth, "AANobbMI", "mc1.21.1-0.8.12-fabric",
+                           "https://cdn.modrinth.com/data/AANobbMI/versions/KIRFiWG4/"
+                           "sodium-fabric-0.8.12%2Bmc1.21.1.jar",
+                           "8afe411eec65a9f677611ed6390ce656e5a3572f9be473e5dca51ae882a9426a547cd2e8c793278577bb14c17e48158030b11753108926ef33698614bd94ed7f",
+                           "sodium-fabric-0.8.12+mc1.21.1.jar" };
+        // Lithium (verificado en vivo 2026-07-06)
+        p.mods << PackMod{ PackProvider::Modrinth, "gvQqBUqZ", "mc1.21.1-0.15.4-fabric",
+                           "https://cdn.modrinth.com/data/gvQqBUqZ/versions/N08Z8wog/"
+                           "lithium-fabric-0.15.4%2Bmc1.21.1.jar",
+                           "182064b00e6315e2255b857eaab8eb759e6b042ebd4cc8b855ff0d93f875a5a7188fac49f878d7b29d4ef7e6b6341190ad7f6f6f39f4a6d2c62003468b08e4c6",
+                           "lithium-fabric-0.15.4+mc1.21.1.jar" };
+        // FerriteCore — uXXizFIs en Modrinth (verificado en vivo 2026-07-06)
+        p.mods << PackMod{ PackProvider::Modrinth, "uXXizFIs", "7.0.3-fabric",
+                           "https://cdn.modrinth.com/data/uXXizFIs/versions/sOzRw3CG/"
+                           "ferritecore-7.0.3-fabric.jar",
+                           "3ad31620fac4ff44327dc7dedbe162b2d978f3f246dc16255a6e400ce9592a0d326fe36a626f3c1bf30a11f813093cbb4dcc107af039cff724d0cdf648541fdf",
+                           "ferritecore-7.0.3-fabric.jar" };
 
         presets << p;
     }
