@@ -95,6 +95,8 @@
    <addaction name="actionCopy_Seed"/>
    <addaction name="actionRefresh"/>
    <addaction name="actionView_Folder"/>
+   <addaction name="separator"/>
+   <addaction name="actionBackup"/>
   </widget>
   <action name="actionAdd">
    <property name="text">
@@ -155,6 +157,14 @@
    </property>
    <property name="toolTip">
     <string>Manage data packs inside the world.</string>
+   </property>
+  </action>
+  <action name="actionBackup">
+   <property name="text">
+    <string>Backup</string>
+   </property>
+   <property name="toolTip">
+    <string>Save a timestamped zip copy of this world into the instance's backups/worlds folder.</string>
    </property>
   </action>
  </widget>
