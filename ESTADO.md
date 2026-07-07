@@ -1,6 +1,6 @@
 # ESTADO — BetelineyLauncher
 > Documento único y autocontenido. Cualquier chat nuevo lee SOLO esto y puede continuar.
-> Última actualización: sesión 25 (2026-07-06) — plan de ejecución completo para las 10 mejoras de sesión 24, con paso 0 previo (bump de versión + release pendiente desde hace 32 commits). Sin cambios de código todavía, ver sección al final para el plan detallado por fases. Sesión 24: investigación/comparación con otros launchers (sin cambios de código). Sesión 23: acceso directo funcional en Escritorio + `.desktop` roto corregido (apuntaba a una ruta con sufijo de versión vieja inexistente) + confusión de nombres detectada: el binario `beteliney` en el `$PATH` es en realidad del launcher de Roblox (otro proyecto homónimo), no de este. Sesión 22: limpieza de estructura del repo (stubs deprecated eliminados, carpeta `tools/pc` renombrada). Sesión 21: ícono macOS corregido + bug en `genicons.sh`.
+> Última actualización: 2026-07-07 — bloque **ESTADO CONSOLIDADO** agregado al final del documento (leer ese primero en cualquier sesión nueva). Resume sesiones 24-26: plan de 4 fases vigente, 2 correcciones importantes a afirmaciones previas (McClient/ManagedPackPage YA implementado, preset CurseForge es esfuerzo medio no bajo), bug crítico de presets rotos ya arreglado y pusheado (`f92daaf29`), Paso 0 (bump versión + release) pendiente de ejecutar. Árbol de trabajo limpio, sin cambios sin commitear.
 
 ---
 
@@ -1083,3 +1083,35 @@ Esto cierra el ciclo completo: las URLs funcionan (ya no 404), el archivo que se
 - **Gap nuevo — accesibilidad:** no existe ningún tema de alto contraste ni consideración de accesibilidad (confirmado, no hay recursos `contrast`/`access` en `resources/`). Ningún launcher competidor revisado (Prism, Modrinth App, ATLauncher, CurseForge) lo tiene tampoco como feature destacada — sería diferencial original, no copiado, con impacto social real (usuarios con baja visión/daltonismo). Barato de implementar: el sistema de temas (`BetelineyTheme`) ya existe, solo falta una variante de paleta. Entra en **Fase 3** junto a los otros diferenciales de marca.
 
 - **Nota menor de higiene legal:** no hay archivo `NOTICE`/`ATTRIBUTION` explícito (más allá de `COPYING.md`/`LICENSE` y la aclaración "No afiliado con Prism Launcher" en el README). GPLv3 §5(a) técnicamente pide aviso prominente de modificación en archivos cambiados — en la práctica casi ningún fork chico lo cumple al pie de la letra y no es un riesgo legal real hoy, pero queda anotado por si el proyecto crece y se quiere estar prolijo del todo.
+
+
+## ESTADO CONSOLIDADO — leer esto primero en cualquier sesión nueva (actualizado 2026-07-07)
+
+Este bloque resume todo lo relevante de las sesiones 24, 25 y 26 sin necesidad de leer el resto del documento. Si es una sesión nueva o un chat distinto, empezar por acá.
+
+### Qué está resuelto y confirmado en el repo (nada pendiente ahí)
+
+- El bug crítico de los 5 mods con URL rota (404) en los presets built-in "Vanilla Optimizado" y "PvP Competitivo" **ya está arreglado, commiteado y pusheado** (`f92daaf29`). Reemplazadas con versiones vigentes de Sodium/Lithium/Iris/ModernFix/FerriteCore para Fabric 1.21.1, con SHA-512 real en los 7 mods. Testeado end-to-end: build limpio, `ctest` 29/29, descarga real + hash verificado 5/5. CI en verde.
+- El árbol de trabajo está limpio (`git status` confirmado 2026-07-07), sin cambios sin commitear.
+- Último commit en `main`: `03cece889` (docs), con `f92daaf29` (el fix de presets) inmediatamente antes.
+
+### Corrección importante — dos afirmaciones de sesión 24/25 quedaron mal, ya corregidas
+
+1. **`McClient.cpp`/`ManagedPackPage.cpp` NO es un backport pendiente.** Sesión 24/25 lo priorizó como el backport más urgente del gap Prism 11.0.0→11.0.2, basándose en una nota vieja de sesión 20 sin re-verificar el archivo actual. Sesión 26 abrió el archivo real y confirmó que `ManagedPackPage.cpp` ya renderiza el changelog completo (Modrinth vía `markdownToHTML(version.changelog)`, CurseForge vía `m_api.getModFileChangelog(...)`). **No hay nada que backportear acá.**
+2. **El preset de BetelineyPacks con CurseForge no es "bajo esfuerzo".** El enum `PackProvider::CurseForge` existe en `BetelineyPackListModel.cpp`, pero `BetelineyPackInstallTask.cpp` descarta cualquier mod sin URL directa por el "Project Distribution Toggle" de CurseForge (cada autor decide si su mod es descargable por API de terceros). El patrón real que usaría esto (Prism: abrir navegador → descarga manual → detección de archivo) no existe en Beteliney. Es esfuerzo **medio**, no bajo.
+3. **Corrección menor:** la librería `discord-rpc` (propuesta para Discord Rich Presence) está deprecada oficialmente por Discord — sigue siendo viable vía forks comunitarios activos, pero no es "la oficial mantenida".
+
+### Qué sigue vigente sin cambios
+
+Todo el plan de 4 fases + refuerzo de sesión 25 (ver más arriba en este mismo documento para el detalle completo), MENOS los dos ítems corregidos arriba. Los hallazgos nuevos de la investigación sobre MalwareBazaar/jarspect, telemetría (confirmado: no existe, es fortaleza de privacidad no un gap), accesibilidad (gap real, alto contraste ausente) y atribución GPL (nota menor) también siguen vigentes, documentados en la sección justo anterior a esta.
+
+### Próxima acción concreta, en orden, ninguna ejecutada todavía
+
+1. **Paso 0 — bump de versión + release (pendiente, NO ejecutado, se intentó y se revirtió a pedido explícito del 2026-07-07 para no actuar sin confirmación):** `CMakeLists.txt` líneas 179-181, `8.3.0` → `8.4.0`, después `git tag v8.4.0 && git push --tags`, después release notes en GitHub desde las sesiones 9-26 de este documento. Es una operación atómica — hacer los tres pasos juntos, no dejar el bump de versión commiteado sin el tag, para no generar un estado intermedio confuso.
+2. Fase 1 del plan: backup automático de mundos (reusa `BetelineyZip.h`) + sembrar `known-hashes.json` con datos reales de MalwareBazaar (hash SHA-1 `dc43c4685c3f47808ac207d1667cc1eb915b2d82` confirmado públicamente para Fractureiser Stage 1, más lo que devuelva la API filtrada por tags `fractureiser`/`mavenrat`/`maksstealer`/`maksrat`) + badge de actualización de mods (gap real confirmado por sesión 26: `setUpdateAvailable()` sin ningún caller en todo el árbol, feature fantasma completa — UI y modelo ya listos, falta el disparador).
+3. Fase 2: command palette Ctrl+K + servidores favoritos con quick-join.
+4. Fase 3: preset CurseForge (esfuerzo medio, ver corrección arriba) + Discord RPC (ver corrección de librería deprecada arriba) + sistema de logros de marca + tema de alto contraste (gap de accesibilidad).
+5. Fase 4: i18n/Weblate (proceso, no código) + búsqueda combinada Modrinth+CurseForge (alto esfuerzo, mediano/largo plazo, fuera del sprint principal).
+6. Fase 5: refuerzo — tests nuevos por cada feature, capturas de pantalla actualizadas, Roadmap del README limpio, tag de versión final de la tanda.
+
+**Nada de esto está implementado todavía. El punto de partida para la próxima sesión de trabajo real es el Paso 0.**
