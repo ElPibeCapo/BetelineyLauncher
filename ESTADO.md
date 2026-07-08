@@ -1234,3 +1234,51 @@ quedaba escribiendo sobre un puntero colgante. El `if (instance)` no protegía n
 - **Ningún fix aplicado esta sesión** — es documentación de riesgos, no una sesión de código. El código sigue exactamente como quedó al cierre de sesión 29 (commit `5c34af01d`, árbol limpio).
 - **Recomendación #1 si se decide actuar:** firmar los releases del updater — es la única mitigación de esta lista que cambia la categoría del riesgo más grave en vez de solo reducirlo.
 - **Próximo paso recomendado (sin cambios):** Fase 2 del plan (command palette Ctrl+K + servidores favoritos/quick-join), o empezar a resolver algún punto de este threat model si se prioriza seguridad sobre features nuevas.
+
+
+### Sesión 31 — Fase 2 completa: command palette (Ctrl+K) + servidores favoritos con quick-join (2026-07-08)
+
+**Contexto:** sesión anterior había dejado el código de Fase 2 escrito en el filesystem (6 archivos, 4 modificados) pero sin terminar de auditar ni documentar — el estado real en disco iba más adelantado que ESTADO.md. Esta sesión fue de revisión línea por línea contra el código real (no releer la transcripción de la sesión pasada como si fuera la fuente de verdad), completar lo que faltaba, y dejar todo compilado, testeado y commiteado.
+
+**Qué había en disco al empezar (verificado con `git status`/`git diff`, no asumido):**
+- `launcher/FavoriteServers.h/.cpp` (nuevo) — `struct FavoriteServer{name,address}` + `load()/save()` sobre `SettingsObject`, JSON compacto, tolerante a entradas corruptas (una entrada rota no tira toda la lista).
+- `launcher/ui/dialogs/CommandPaletteDialog.h/.cpp` (nuevo) — diálogo Ctrl+K, recorre `QMenuBar` recursivamente + acciones extra que le pase el caller, filtra en vivo, navega con flechas, Enter confirma.
+- `launcher/ui/dialogs/FavoriteServersDialog.h/.cpp` (nuevo) — gestión completa: agregar/editar/eliminar, cada cambio se persiste al toque (sin estado "sin guardar" que perder).
+- `launcher/Application.cpp` — registro del setting `FavoriteServers` (default `"[]"`).
+- `launcher/CMakeLists.txt` — los 6 archivos nuevos agregados a `LAUNCHER_SOURCES`.
+- `launcher/ui/MainWindow.h/.cpp` — shortcut `Ctrl+K` → `openCommandPalette()`, menú "Servidores favoritos" insertado antes de "Ayuda" (repoblado on-demand via `aboutToShow`), `quickJoinFavoriteServer()`, `openManageFavoriteServers()`.
+
+**Auditoria de esta sesion sobre lo que habia en disco (verificado linea por linea contra el codigo real, no releido de memoria ni de la transcripcion pasada):**
+
+- FavoriteServers.h/.cpp: correcto. load() tolera JSON corrupto/vacio (devuelve lista vacia, nunca crashea), descarta entradas sin address sin tirar el resto de la lista, usa name = address como fallback si falta el nombre. save() serializa a JSON compacto sobre SettingsObject. Sin problemas.
+- CommandPaletteDialog.h/.cpp: correcto. Recorre QMenuBar recursivamente incluyendo submenus, filtra separadores y acciones deshabilitadas/invisibles, filtra en vivo por texto (sin mnemonics), navega con flechas y confirma con Enter/doble-click. Diseno explicitamente pensado contra use-after-free: el dialogo nunca dispara la accion elegida internamente, solo guarda el puntero en selectedAction() para que el caller la dispare despues de que exec() retorne y el dialogo ya este cerrado (documentado en el propio header). Es la leccion directa de sesion 29 aplicada de entrada al escribir codigo nuevo, no aplicada despues de encontrar un bug.
+- FavoriteServersDialog.h/.cpp: correcto. Agregar/editar/eliminar con promptServer() (mini-dialogo con validacion: no deja guardar direccion vacia). Cada cambio persiste al toque via persist() - no hay estado sin guardar que se pueda perder al cerrar con la X.
+- Application.cpp: correcto. Registra FavoriteServers con default "[]", mismo patron que el resto de registerSetting() en ese bloque.
+- CMakeLists.txt: correcto. Los 6 archivos nuevos agregados a LAUNCHER_SOURCES en la seccion de migration/, antes de MSALoginDialog.
+- MainWindow.h/.cpp: correcto, verificado contra los signatures reales (no asumidos):
+  - quickJoinFavoriteServer() usa std::make_shared<MinecraftTarget>(MinecraftTarget::parse(address, false)) + APPLICATION->launch(m_selectedInstance, LaunchMode::Normal, target) - es el mismo patron exacto, caracter por caracter, que ya esta en produccion en ui/pages/instance/ServersPage.cpp:761 (quick-join desde la lista de servidores de una instancia). No es una construccion nueva sin precedente, es reutilizar el flujo ya probado.
+  - Application::launch() verificado en Application.h:220 - firma (BaseInstance*, LaunchMode, std::shared_ptr<MinecraftTarget>, ...) coincide exactamente.
+  - MinecraftTarget::parse(fullAddress, useWorld) verificado en MinecraftTarget.h:28 - segundo parametro false es correcto (es una direccion de servidor, no una ruta de mundo).
+  - m_selectedInstance verificado en MainWindow.h:269 - es BaseInstance*, coincide con el primer parametro de launch(). quickJoinFavoriteServer() chequea if (!m_selectedInstance) antes de usarlo (muestra CustomMessageBox de advertencia en vez de crashear).
+  - openCommandPalette(): las acciones sinteticas de quick-join (ownedActions) se crean con this como padre Qt, se le pasan al dialogo solo para listar/filtrar (el dialogo no toma ownership, ver comentario en CommandPaletteDialog.h), se disparan despues de exec() si fueron la elegida, y se destruyen con qDeleteAll() al final - sin fugas ni doble-free, sin importar si la accion elegida fue una sintetica o una real del menu.
+  - populateFavoriteServersMenu(): se repuebla en cada aboutToShow via m_favoriteServersMenu->clear() - verificado que QMenu::clear() borra las QAction de las que el menu es dueno (todas aca, creadas con addAction()), asi que no hay fuga de memoria ni acciones fantasma acumulandose sesion tras sesion de abrir/cerrar el menu.
+  - Insercion del menu (ui->menuBar->insertMenu(ui->helpMenu->menuAction(), ...)) es incondicional (no depende del toggle MenuBarInsteadOfToolBar), correcto porque la barra de menu existe siempre como objeto aunque esa opcion solo controle si se ve o no.
+
+**Ningun bug encontrado.** A diferencia de sesion 29 (donde la auditoria encontro un use-after-free real), esta revision no encontro defectos - el codigo de Fase 2 esta bien disenado desde el vamos, siguiendo tanto los patrones ya probados del codebase (ServersPage.cpp) como las lecciones de la sesion anterior.
+
+**Build y tests verificados por esta sesion (no asumidos de la transcripcion anterior, que se corto antes de confirmarlo):**
+- Timestamps: build/beteliney (14:20) mas nuevo que los 4 archivos fuente modificados mas recientemente (FavoriteServers.cpp, CommandPaletteDialog.cpp, FavoriteServersDialog.cpp, todos a las 13:34) y que MainWindow.cpp (12:31) - el binario esta al dia con el codigo en disco.
+- ctest --output-on-failure corrido directamente esta sesion: **29/29 tests pasando**, 2.86s. Sin fallos.
+- clang-format --dry-run --Werror sobre los 6 archivos nuevos: **limpio, cero violaciones**. Sobre los archivos modificados (Application.cpp, MainWindow.cpp/.h) hay violaciones de formato, pero estan repartidas por todo el archivo (incluido codigo preexistente sin relacion con este diff) - es un desfasaje preexistente entre la version de clang-format instalada aca y estos archivos legados, no algo introducido por Fase 2. No se toco nada de eso: esta fuera de alcance.
+
+**Estado real de git al cierre de esta seccion de la sesion:** nada de esto esta commiteado todavia. git status muestra 6 archivos nuevos sin trackear + Application.cpp/CMakeLists.txt/MainWindow.cpp/MainWindow.h/ESTADO.md modificados sin stagear. Ultimo commit en el arbol es ffb219f69 (threat model de sesion 30).
+
+## ESTADO CONSOLIDADO - leer esto primero en cualquier sesion nueva (actualizado 2026-07-08, sesion 31)
+
+**Todo lo de las sesiones 24-30 sigue vigente.** Actualizacion de esta sesion:
+
+- **Fase 2 del plan (command palette Ctrl+K + servidores favoritos/quick-join) escrita, auditada linea por linea contra los signatures reales, compilada, y verificada con 29/29 tests pasando.** Sin bugs encontrados - el codigo sigue el patron ya probado de ServersPage.cpp:761 para el quick-join, y aplica desde el diseno la leccion de use-after-free de sesion 29 (el CommandPaletteDialog nunca dispara acciones internamente, solo despues de cerrarse).
+- **Pendiente real de esta sesion: falta el git add + git commit + git push.** El codigo esta listo pero sigue solo en el filesystem local, no en el historial de git ni en origin/main.
+- **known-hashes.json sigue bloqueado por falta de API key de abuse.ch** (sin cambios desde sesion 27) - **prueba manual GUI del backup de mundos y badge de mods sigue pendiente** (sin cambios desde sesion 28/29, no automatizable desde este entorno).
+- **Threat model de sesion 30 sigue sin ningun fix aplicado** - sigue siendo la recomendacion #1 si se prioriza seguridad: firmar los releases del updater.
+- **Proximo paso recomendado:** commitear y pushear Fase 2 (ver arriba), despues evaluar si seguir con Fase 3 del plan original o atacar algun punto del threat model.
