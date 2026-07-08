@@ -113,6 +113,7 @@
 #include "ui/themes/ThemeManager.h"
 #include "ui/widgets/LabeledToolButton.h"
 
+#include "minecraft/MinecraftInstance.h"
 #include "minecraft/PackProfile.h"
 #include "minecraft/VersionFile.h"
 #include "minecraft/WorldList.h"
@@ -120,6 +121,7 @@
 #include "minecraft/mod/ResourcePackFolderModel.h"
 #include "minecraft/mod/ShaderPackFolderModel.h"
 #include "minecraft/mod/TexturePackFolderModel.h"
+#include "minecraft/mod/tasks/BackgroundModUpdateCheckTask.h"
 #include "minecraft/mod/tasks/LocalResourceParse.h"
 
 #include "modplatform/ModIndex.h"
@@ -1687,11 +1689,38 @@ void MainWindow::instanceChanged(const QModelIndex& current, [[maybe_unused]] co
 
         connect(m_selectedInstance, &BaseInstance::runningStatusChanged, this, &MainWindow::refreshCurrentInstance);
         connect(m_selectedInstance, &BaseInstance::profilerChanged, this, &MainWindow::refreshCurrentInstance);
+
+        checkModUpdatesInBackground(m_selectedInstance);
     } else {
         APPLICATION->settings()->set("SelectedInstance", QString());
         selectionBad();
         return;
     }
+}
+
+void MainWindow::checkModUpdatesInBackground(BaseInstance* instance)
+{
+    if (!instance)
+        return;
+
+    auto* mc_instance = dynamic_cast<MinecraftInstance*>(instance);
+    if (!mc_instance)
+        return;
+
+    const QString id = instance->id();
+
+    // Only check once per instance per launcher session (selecting it again shouldn't re-hit
+    // Modrinth/CurseForge every time), and never run two checks for the same instance at once.
+    if (m_modUpdateCheckedInstances.contains(id) || m_modUpdateCheckTasks.contains(id))
+        return;
+    m_modUpdateCheckedInstances.insert(id);
+
+    auto task = makeShared<BackgroundModUpdateCheckTask>(mc_instance);
+    m_modUpdateCheckTasks.insert(id, task);
+
+    connect(task.get(), &Task::finished, this, [this, id]() { m_modUpdateCheckTasks.remove(id); });
+
+    task->start();
 }
 
 void MainWindow::instanceSelectRequest(QString id)

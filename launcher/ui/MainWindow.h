@@ -43,11 +43,14 @@
 
 #include <memory>
 
+#include <QHash>
 #include <QMainWindow>
 #include <QProcess>
+#include <QSet>
 #include <QTimer>
 
 #include "BaseInstance.h"
+#include "QObjectPtr.h"
 #include "minecraft/auth/MinecraftAccount.h"
 
 class LaunchController;
@@ -230,6 +233,7 @@ class MainWindow : public QMainWindow {
 
     void runModalTask(Task* task);
     void instanceFromInstanceTask(InstanceTask* task);
+    void checkModUpdatesInBackground(BaseInstance* instance);
 
    private:
     Ui::MainWindow* ui;
@@ -245,6 +249,12 @@ class MainWindow : public QMainWindow {
     KonamiCode* secretEventFilter = nullptr;
 
     std::shared_ptr<Setting> instanceToolbarSetting = nullptr;
+
+    // Instances already checked for mod updates in this launcher session, so we don't re-hit
+    // Modrinth/CurseForge every time the user re-selects the same instance.
+    QSet<QString> m_modUpdateCheckedInstances;
+    // Keeps the silent background check tasks alive while they run; removed once finished.
+    QHash<QString, shared_qobject_ptr<Task>> m_modUpdateCheckTasks;
 
     unique_qobject_ptr<NewsChecker> m_newsChecker;
 
