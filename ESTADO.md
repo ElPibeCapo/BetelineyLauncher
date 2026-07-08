@@ -1194,3 +1194,43 @@ quedaba escribiendo sobre un puntero colgante. El `if (instance)` no protegía n
 - **La auditoría de esta sesión confirmó que el resto del código de sesión 28 (tipado de `ModrinthCheckUpdate`/`FlameCheckUpdate`, el guard `if (m_hasUpdate != value)` en `setUpdateAvailable`, el ícono `checkupdate` presente en todos los temas incluido `beteliney`) es correcto por diseño, no solo "compila".**
 - **Pendiente real, sin cambios:** prueba manual con GUI del backup de mundos y del badge de updates (ninguna automatizable desde este entorno) · `known-hashes.json` bloqueado por API key.
 - **Próximo paso recomendado:** Fase 2 del plan (command palette Ctrl+K + servidores favoritos/quick-join).
+
+### Sesión 30 — Threat model: cómo alguien malicioso podría abusar el código actual (2026-07-07)
+
+**Contexto:** el usuario pidió pensar en todos los ángulos posibles de abuso malicioso del código existente, no un pentest formal. Se verificaron los puntos de mayor impacto contra el código real (no especulación) antes de reportarlos; el resto queda marcado explícitamente como inferencia lógica sin verificar línea por línea, para no mezclar hallazgo confirmado con hipótesis.
+
+**CRÍTICO — confirmado leyendo el código:**
+
+1. **El auto-updater (`BetelineyUpdater.cpp`) no verifica firma ni hash de nada.** Descarga el asset seleccionado de GitHub Releases (`downloadAsset()`) y lo ejecuta directo con `proc.startDetached()`, o lo desempaca y se auto-reemplaza sobre la instalación corriendo (`unpackAndInstall()` → `moveAndFinishUpdate()`). Ninguna verificación criptográfica propia por encima de HTTPS. Quien tenga acceso a publicar/editar un GitHub Release en el repo (cuenta comprometida, CI comprometido, o colaborador malicioso) puede entregar un binario que el updater ejecuta con privilegios de usuario en la máquina de cualquiera con auto-update activo — RCE total, sin necesitar tocar ni una línea del código del launcher. **Es el hallazgo de mayor impacto de toda la revisión.** Heredado de Prism (mismo diseño ahí), pero el riesgo es igual de real acá.
+
+2. **El malware scanner hoy no protege nada en la práctica**, aunque el mensaje de UI sugiera lo contrario. Verificado en `ResourceDownloadTask::downloadSucceeded()`: la comparación contra la blacklist usa `m_pack_version.hash` (el hash declarado por la fuente — Modrinth/CurseForge/BetelineyPack), lo cual está bien diseñado porque `Net::ChecksumValidator` ya garantiza que el archivo descargado coincide con ese hash antes de llegar a este punto (no hay spoofing posible ahí). El problema real: `known-hashes.json` está vacío (bloqueado por API key de MalwareBazaar, ya documentado en sesiones previas) — así que `isMaliciousSha512/Sha256` nunca va a encontrar coincidencia real hoy. El mensaje "⚠ ALERTA DE SEGURIDAD" transmite una protección que actualmente no existe.
+
+3. **La blacklist por hash exacto, una vez poblada, se evade con recompilar/repackear el mod malicioso** (un byte distinto = hash completamente distinto = cero coincidencia). No es un bug de implementación, es la limitación estructural de cualquier detección por hash estático en vez de por comportamiento — pero es exactamente lo primero que alguien que conozca el mecanismo explotaría.
+
+4. **Si un mod/pack no trae hash declarado, se saltan a la vez la verificación de integridad de descarga Y la blacklist de malware.** Mismo `if (!m_pack_version.hash.isEmpty())` gatea ambas protecciones en `ResourceDownloadTask.cpp`. Un BetelineyPack malicioso o comprometido que omita el hash pasa sin ningún control.
+
+**ALTO IMPACTO — no verificado línea por línea esta sesión, inferencia lógica razonable, pendiente de confirmar si se quiere profundizar:**
+
+5. El meta server propio (`ElPibeCapo/meta`, GitHub Pages) es la fuente de verdad de presets/packs. Comprometerlo permite publicar un preset con un mod real (hash real, pasa todos los controles de integridad) pero elegido a propósito para ser dañino — el problema no sería la integridad del archivo sino que el índice mismo mentiría sobre qué instalar.
+6. JVM args provenientes de un pack/instancia importada (BetelineyPack, importador GDLauncher, compartir instancia) — si se aplican sin mostrarle al usuario qué argumentos trae antes de instalar, es ejecución de código arbitraria disfrazada de "solo tunear memoria".
+7. El importador de GDLauncher lee una base SQLite ajena — si construye rutas de archivo a partir de campos de esa base sin sanitizar, hay riesgo de path traversal (`../../../`) durante la migración. No verificado en código esta sesión.
+
+**RIESGOS DE SUPERFICIE (ya documentados antes, reforzados acá con la lógica de "cómo se explotarían"):**
+
+8. API key vieja de CurseForge sigue en el historial de git (sesión anterior ya lo marcó pendiente) — bots escanean GitHub 24/7 buscando exactamente esto; si la clave se reusó en algún otro lado, sigue siendo explotable ahí aunque esté rotada acá.
+9. Sin firma de código en Windows (SmartScreen bypass ya documentado) — el riesgo real no es solo el bypass, es que enseña al usuario a ignorar la advertencia de Windows, lo que también protege a un clon malicioso del launcher distribuido con nombre parecido.
+10. Tokens de auth de Microsoft — si se guardan en texto plano en INI/settings en vez del keychain del SO, cualquier otro malware ya presente en la máquina puede robar la sesión de Minecraft directamente. Heredado de Prism/MultiMC, no específico de este fork.
+11. `AnonymizeLog` depende de regex — cualquier formato de token futuro que el regex no contemple se filtra tal cual si el usuario comparte un log para pedir ayuda.
+
+**Mitigación de mayor apalancamiento identificada:** firmar los releases (firma detached, verificada por el updater antes de ejecutar/desempacar) es la única acción de esta lista que cambia la *categoría* del riesgo #1 en vez de solo mitigarlo parcialmente — pasa de "quien comprometa mi cuenta de GitHub tiene RCE en todos los usuarios" a "necesita además mi clave de firma privada, que no vive en GitHub". Recomendado como prioridad #1 de seguridad si se decide actuar sobre esta lista.
+
+**Nada de esto se corrigió esta sesión** — es threat model puro, a pedido explícito del usuario, no una sesión de fixes. Ningún commit de código en esta sesión, solo esta documentación.
+
+## ESTADO CONSOLIDADO — leer esto primero en cualquier sesión nueva (actualizado 2026-07-07, sesión 30)
+
+**Todo lo de las sesiones 24-29 sigue vigente.** Actualización de esta sesión:
+
+- **Threat model completo del proyecto documentado en la sección "Sesión 30" arriba** — 4 hallazgos críticos confirmados en código (updater sin verificación criptográfica es el de mayor impacto por lejos; malware scanner actualmente sin efecto real por `known-hashes.json` vacío; blacklist por hash evadible por diseño; hash opcional salta ambas protecciones a la vez), 3 de alto impacto sin verificar línea por línea (meta server como fuente de verdad, JVM args de packs importados, path traversal en importador GDLauncher), 4 de superficie ya conocidos reforzados con el ángulo de explotación.
+- **Ningún fix aplicado esta sesión** — es documentación de riesgos, no una sesión de código. El código sigue exactamente como quedó al cierre de sesión 29 (commit `5c34af01d`, árbol limpio).
+- **Recomendación #1 si se decide actuar:** firmar los releases del updater — es la única mitigación de esta lista que cambia la categoría del riesgo más grave en vez de solo reducirlo.
+- **Próximo paso recomendado (sin cambios):** Fase 2 del plan (command palette Ctrl+K + servidores favoritos/quick-join), o empezar a resolver algún punto de este threat model si se prioriza seguridad sobre features nuevas.
