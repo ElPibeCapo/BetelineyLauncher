@@ -1159,3 +1159,38 @@ Todo el plan de 4 fases + refuerzo de sesión 25 (ver más arriba en este mismo 
 - **Badge de actualización de mods: implementado, compilado, testeado (29/29) y pusheado.** Commit `5c7eaa702`. `BackgroundModUpdateCheckTask` nuevo + hook en `MainWindow::instanceChanged()`. Cierra la "feature fantasma" identificada en sesión 26 (`setUpdateAvailable()` sin callers). Único pendiente: prueba manual con la GUI real (no automatizable desde este entorno).
 - **Fase 1 del plan de sesión 25 queda así:** backup de mundos ✅ (código) / prueba manual pendiente · badge de updates ✅ (código) / prueba manual pendiente · `known-hashes.json` ❌ bloqueado por API key de `abuse.ch`.
 - **Próximo paso recomendado:** Fase 2 (command palette Ctrl+K + servidores favoritos/quick-join) — no depende de ninguna API key ni de la prueba manual pendiente, se puede seguir en código sin bloqueos.
+
+### Sesión 29 — Auditoría del código real (no solo "compila"): use-after-free encontrado y corregido en el badge de mods (2026-07-07)
+
+**Contexto:** el usuario pidió una revisión a fondo de todo lo hecho hasta acá, no solo confirmar que compilaba y pasaban los tests. Se releyó el diff completo de la sesión 28 línea por línea contra los archivos reales (no de memoria), y se verificaron los signatures reales de las clases usadas (`ModrinthCheckUpdate`, `FlameCheckUpdate`, `PackProfile::getModLoadersList()`, `BaseInstance::setUpdateAvailable/hasUpdateAvailable`, `InstanceDelegate.cpp`) para confirmar que el tipado coincidía por diseño y no por conversión implícita casual.
+
+**Hallazgo real — use-after-free potencial en `BackgroundModUpdateCheckTask`:** `m_instance` era `MinecraftInstance*` (puntero crudo). Verificado en `InstanceList.cpp`: las instancias viven en `std::vector<std::unique_ptr<BaseInstance>>`, sin refconteo compartido — `MainWindow::m_selectedInstance` es solo una vista raw sobre ese vector. Si el usuario borra la instancia seleccionada mientras el chequeo de mods en background sigue corriendo (la parte de red — `ModrinthCheckUpdate`/`FlameCheckUpdate` vía `ConcurrentTask` — puede tardar varios segundos reales), el callback final:
+
+```cpp
+connect(check_task.get(), &Task::finished, this, [this, check_task, found_update, instance]() {
+    if (instance)
+        instance->setUpdateAvailable(*found_update);
+```
+
+quedaba escribiendo sobre un puntero colgante. El `if (instance)` no protegía nada porque es una copia de un puntero crudo, no se vuelve `nullptr` solo porque el objeto original murió. Es un crash real y alcanzable en uso normal (seleccionar instancia → dispara el chequeo automático → borrar esa misma instancia dentro de la ventana de tiempo que tarda el chequeo de red), no un edge case teórico.
+
+**Por qué la otra conexión (`mod_list->updateFinished`) sí estaba a salvo:** su `connect()` usa `this` (la propia Task) como contexto — Qt desconecta automáticamente esa conexión si el emisor (`mod_list`, que vive dentro de la instancia) es destruido, así que esa mitad del flujo nunca llegaba a ejecutarse sobre memoria inválida. El problema estaba específicamente en el segundo tramo (después de que arranca el chequeo de red), cuyo contexto de conexión es la propia Task, no la instancia — ahí Qt no tenía forma de saber que debía invalidar el puntero capturado.
+
+**Fix aplicado:** `MinecraftInstance* m_instance` → `QPointer<MinecraftInstance> m_instance`. `QPointer` se pone en `nullptr` automáticamente en el momento exacto en que Qt destruye el objeto trackeado, sin importar cuántas copias del `QPointer` existan (incluida la copia capturada por valor en la lambda del callback final) — resuelve la carrera de forma correcta, no solo cosmética. Se agregó además un guard defensivo al inicio de `onModListReady()` por si el objeto muriera justo antes de esa llamada puntual.
+
+**Verificación del fix:** build incremental (`ninja -C build -j$(nproc)`) — terminó solo en background (mismo patrón que sesión 27/28: la herramienta de terminal se colgó esperando el resultado, pero el proceso siguió corriendo del lado del servidor; confirmado con `stat` que `build/beteliney` (22:21) es más nuevo que ambos archivos editados (22:05), sin necesidad de re-lanzar el build). `-Werror` activo, sin warnings. `ctest --output-on-failure`: **29/29 tests pasando**, 2.85s.
+
+**Commit y push confirmados:** `6b2395ee6` ("fix(mods): usar QPointer en BackgroundModUpdateCheckTask para evitar use-after-free"), sobre `1eabc46b6`, pusheado a `main`. 2 archivos, 14 inserciones, 1 eliminación.
+
+**Nota operativa para sesiones futuras:** el servidor de Desktop Commander se sigue colgando de forma consistente en builds largos con LTO (ya van 3 sesiones seguidas con el mismo síntoma — 20, 27, 29). El proceso en sí termina bien del lado del servidor; el problema es solo que la herramienta de terminal no devuelve el resultado a tiempo. Patrón de recuperación que funciona: verificar con `stat` el timestamp del binario contra los archivos fuente modificados, en vez de asumir que el build falló o quedó a medias.
+
+**Resto del estado sin cambios respecto a sesión 28** (ver bloque consolidado arriba): Fase 1 completa en código (backup de mundos + badge de mods), pendiente de prueba manual GUI para ambas; `known-hashes.json` bloqueado por API key de `abuse.ch`; Fase 2 en adelante sin empezar.
+
+## ESTADO CONSOLIDADO — leer esto primero en cualquier sesión nueva (actualizado 2026-07-07, sesión 29)
+
+**Todo lo de las sesiones 24-28 sigue vigente.** Actualización de esta sesión:
+
+- **Bug real de use-after-free encontrado y corregido en `BackgroundModUpdateCheckTask`** (puntero crudo a la instancia → `QPointer`, protege contra el usuario borrando la instancia mientras el chequeo de mods sigue corriendo en background). Commit `6b2395ee6`, build limpio, 29/29 tests, pusheado.
+- **La auditoría de esta sesión confirmó que el resto del código de sesión 28 (tipado de `ModrinthCheckUpdate`/`FlameCheckUpdate`, el guard `if (m_hasUpdate != value)` en `setUpdateAvailable`, el ícono `checkupdate` presente en todos los temas incluido `beteliney`) es correcto por diseño, no solo "compila".**
+- **Pendiente real, sin cambios:** prueba manual con GUI del backup de mundos y del badge de updates (ninguna automatizable desde este entorno) · `known-hashes.json` bloqueado por API key.
+- **Próximo paso recomendado:** Fase 2 del plan (command palette Ctrl+K + servidores favoritos/quick-join).
