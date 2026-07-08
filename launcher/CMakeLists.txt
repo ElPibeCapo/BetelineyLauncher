@@ -1112,6 +1112,15 @@ SET(LAUNCHER_SOURCES
 
     migration/GDLauncherMigrator.h
     migration/GDLauncherMigrator.cpp
+
+    # Beteliney Fase 2: command palette + servidores favoritos
+    FavoriteServers.h
+    FavoriteServers.cpp
+    ui/dialogs/CommandPaletteDialog.cpp
+    ui/dialogs/CommandPaletteDialog.h
+    ui/dialogs/FavoriteServersDialog.cpp
+    ui/dialogs/FavoriteServersDialog.h
+
     ui/dialogs/MSALoginDialog.cpp
     ui/dialogs/MSALoginDialog.h
     ui/dialogs/NewComponentDialog.cpp

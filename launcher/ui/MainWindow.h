@@ -59,6 +59,7 @@ class QToolButton;
 class InstanceProxyModel;
 class LabeledToolButton;
 class QLabel;
+class QMenu;
 class MinecraftLauncher;
 class BaseProfilerFactory;
 class InstanceView;
@@ -235,6 +236,12 @@ class MainWindow : public QMainWindow {
     void instanceFromInstanceTask(InstanceTask* task);
     void checkModUpdatesInBackground(BaseInstance* instance);
 
+    // Beteliney Fase 2: command palette + servidores favoritos
+    void openCommandPalette();
+    void populateFavoriteServersMenu();
+    void openManageFavoriteServers();
+    void quickJoinFavoriteServer(const QString& address);
+
    private:
     Ui::MainWindow* ui;
     // these are managed by Qt's memory management model!
@@ -247,6 +254,7 @@ class MainWindow : public QMainWindow {
     LabeledToolButton* renameButton = nullptr;
     QToolButton* helpMenuButton = nullptr;
     KonamiCode* secretEventFilter = nullptr;
+    QMenu* m_favoriteServersMenu = nullptr;  // Beteliney Fase 2
 
     std::shared_ptr<Setting> instanceToolbarSetting = nullptr;
 
