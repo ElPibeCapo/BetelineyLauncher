@@ -72,6 +72,13 @@ void BackgroundModUpdateCheckTask::executeTask()
 
 void BackgroundModUpdateCheckTask::onModListReady()
 {
+    if (!m_instance) {
+        // Instance was deleted/invalidated while updateFinished() was queued but not yet
+        // delivered. m_instance is a QPointer, so this check is reliable (not a dangling read).
+        emitSucceeded();
+        return;
+    }
+
     auto* mod_list = m_instance->loaderModList();
     auto* profile = m_instance->getPackProfile();
     auto loaders = profile->getModLoadersList();
