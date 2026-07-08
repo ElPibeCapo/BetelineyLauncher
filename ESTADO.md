@@ -1128,3 +1128,34 @@ Todo el plan de 4 fases + refuerzo de sesión 25 (ver más arriba en este mismo 
 6. Fase 5: refuerzo — tests nuevos por cada feature, capturas de pantalla actualizadas, Roadmap del README limpio, tag de versión final de la tanda.
 
 **Estado real, actualizado sesión 27: Paso 0 completo. Backup manual de mundos implementado, build/test/commit pendiente de confirmación (ver sección "Sesión 27" arriba). Resto de Fase 1 (badge de updates, known-hashes.json) y Fases 2-5 sin empezar.**
+
+### Sesión 28 — Badge de actualización de mods: cerrado de punta a punta (2026-07-07)
+
+**Contexto:** continuación directa de la sesión 27. En la sesión anterior se había escrito e integrado el código del chequeo silencioso de actualizaciones de mods (`BackgroundModUpdateCheckTask` + hook en `MainWindow::instanceChanged()`), pero el servidor de Desktop Commander se colgó justo antes de poder compilar y testear — quedó sin confirmar. Esta sesión retomó desde ese punto exacto.
+
+**Verificación del estado real antes de tocar nada:** `git status` confirmó que el diff de la sesión 27 seguía intacto en el árbol de trabajo, sin commitear (`MainWindow.cpp/.h`, `CMakeLists.txt` modificados; `BackgroundModUpdateCheckTask.h/.cpp` sin trackear). Se releyó el diff completo y el contenido de los dos archivos nuevos línea por línea antes de compilar, para confirmar que lo aplicado coincidía con lo documentado (sí coincidía).
+
+**Build:** `cmake -S . -B build` reconfiguró sin errores (confirmó que `BackgroundModUpdateCheckTask.cpp/.h` quedaron agregados a `MINECRAFT_SOURCES` en `CMakeLists.txt`). Al correr `ninja -C build -j$(nproc)` el resultado fue sospechosamente rápido (1 solo paso, "Copiando JARs") — se verificó con `stat` que no era un falso positivo: el binario `build/beteliney` (18:58) es más nuevo que ambos archivos fuente modificados (18:41 y 18:28), y existen los `.o` compilados de `BackgroundModUpdateCheckTask.cpp` y `MainWindow.cpp` con moc generado. Conclusión real: el build había quedado corriendo en background en la sesión anterior pese a que la herramienta de terminal se colgó y no pudo confirmar el resultado en su momento — terminó solo, exit 0, sin errores ni warnings pese a `-Werror` activo en ambos targets. Este `ninja` de esta sesión fue un no-op porque ya estaba todo compilado.
+
+**`ctest --output-on-failure`: 29/29 tests pasando**, 2.88s total. Ningún test nuevo dedicado a esta feature (igual que con el backup de mundos de sesión 27) — confirma que no rompió nada existente, la validación funcional de la feature en sí queda para prueba manual con la app corriendo (ver pendiente abajo).
+
+**Commit y push confirmados:** `5c7eaa702` ("feat(mods): chequeo silencioso de actualizaciones en background al seleccionar instancia"), sobre `f7aaad0c5`, pusheado a `main`. Incluye los 5 archivos: `CMakeLists.txt`, `MainWindow.cpp`, `MainWindow.h`, `BackgroundModUpdateCheckTask.cpp`, `BackgroundModUpdateCheckTask.h` — 220 líneas insertadas.
+
+**Qué hace la feature, en concreto:** al seleccionar una instancia (`instanceChanged()`), si es una `MinecraftInstance` y no se chequeó ya en esta sesión del launcher, se lanza `BackgroundModUpdateCheckTask` en background: escanea los mods que ya tienen metadata (nunca genera metadata nueva — eso requiere elegir provider a mano, terreno de `ResourceUpdateDialog`), corre `ModrinthCheckUpdate`/`FlameCheckUpdate` sin ningún diálogo visible, y al terminar llama `MinecraftInstance::setUpdateAvailable(bool)`. Esa función ya existía desde antes (confirmado en sesión 26 que no tenía ningún caller en todo el árbol — feature fantasma: la UI en `InstanceDelegate.cpp` ya pintaba el ícono `checkupdate` en la card, y el modelo ya emitía `propertiesChanged` al llamarla, solo faltaba quién la disparara). Timeout de seguridad de 30s por si `updateFinished()` del mod list nunca llega. `m_modUpdateCheckedInstances` evita re-pegarle a las APIs de Modrinth/CurseForge cada vez que el usuario reselecciona la misma instancia dentro de la misma sesión del launcher.
+
+**Pendiente real, sin completar todavía (igual que el backup de mundos de sesión 27):** prueba funcional manual con la app corriendo — seleccionar una instancia con mods desactualizados y confirmar visualmente que el badge `checkupdate` aparece en la card sin haber abierto el diálogo de update manual. No se hizo en esta sesión (requiere GUI interactiva, fuera del alcance de este entorno de herramientas).
+
+**Con esto, Fase 1 del plan (sesión 25) queda:**
+- Backup manual de mundos — hecho (sesión 27), falta prueba manual GUI.
+- Badge de actualización de mods — hecho (esta sesión), falta prueba manual GUI.
+- `known-hashes.json` — sigue bloqueado por falta de API key de `abuse.ch` (sesión 27), sin cambios.
+
+**Siguiente paso real:** Fase 2 del plan (command palette Ctrl+K + servidores favoritos con quick-join), o conseguir la API key de MalwareBazaar para cerrar el punto de `known-hashes.json` que sigue pendiente. Ambas fases 1-completadas-en-código quedan a la espera de que el usuario haga la prueba manual con la app corriendo cuando tenga oportunidad — no es bloqueante para seguir avanzando en código.
+
+## ESTADO CONSOLIDADO — leer esto primero en cualquier sesión nueva (actualizado 2026-07-07, sesión 28)
+
+**Todo lo de las sesiones 24-27 sigue vigente tal como está documentado arriba.** Actualización puntual de esta sesión:
+
+- **Badge de actualización de mods: implementado, compilado, testeado (29/29) y pusheado.** Commit `5c7eaa702`. `BackgroundModUpdateCheckTask` nuevo + hook en `MainWindow::instanceChanged()`. Cierra la "feature fantasma" identificada en sesión 26 (`setUpdateAvailable()` sin callers). Único pendiente: prueba manual con la GUI real (no automatizable desde este entorno).
+- **Fase 1 del plan de sesión 25 queda así:** backup de mundos ✅ (código) / prueba manual pendiente · badge de updates ✅ (código) / prueba manual pendiente · `known-hashes.json` ❌ bloqueado por API key de `abuse.ch`.
+- **Próximo paso recomendado:** Fase 2 (command palette Ctrl+K + servidores favoritos/quick-join) — no depende de ninguna API key ni de la prueba manual pendiente, se puede seguir en código sin bloqueos.
