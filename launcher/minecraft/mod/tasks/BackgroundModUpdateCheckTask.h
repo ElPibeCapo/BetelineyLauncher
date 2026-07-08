@@ -1,5 +1,7 @@
 #pragma once
 
+#include <QPointer>
+
 #include "tasks/Task.h"
 
 class MinecraftInstance;
@@ -29,7 +31,11 @@ class BackgroundModUpdateCheckTask : public Task {
    private:
     void onModListReady();
 
-    MinecraftInstance* m_instance;
+    // QPointer (not a raw pointer): if the user deletes/removes the instance while the
+    // background network check is still in flight, this must become null automatically
+    // instead of dangling, since instances are unique_ptr-owned in InstanceList (no shared
+    // refcounting to keep them alive for us).
+    QPointer<MinecraftInstance> m_instance;
     QMetaObject::Connection m_updateFinishedConn;
     bool m_aborted = false;
 };
