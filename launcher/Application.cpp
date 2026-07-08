@@ -660,6 +660,9 @@ Application::Application(int& argc, char** argv) : QApplication(argc, argv)
         // Remembered state
         m_settings->registerSetting("LastUsedGroupForNewInstance", QString());
 
+        // Beteliney Fase 2: lista global de servidores favoritos (JSON), independiente de instancia
+        m_settings->registerSetting("FavoriteServers", QString("[]"));
+
         m_settings->registerSetting("MenuBarInsteadOfToolBar", false);
 
         // Beteliney: tasks concurrentes (extracción, verificación, etc.) adaptativo según cores.

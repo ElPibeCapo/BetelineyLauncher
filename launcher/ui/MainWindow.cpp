@@ -138,6 +138,12 @@
 #include "BetelineyTime.h"
 #include "ui/dialogs/GDLauncherMigrateDialog.h"
 
+// Beteliney Fase 2: command palette + servidores favoritos
+#include "FavoriteServers.h"
+#include "minecraft/launch/MinecraftTarget.h"
+#include "ui/dialogs/CommandPaletteDialog.h"
+#include "ui/dialogs/FavoriteServersDialog.h"
+
 namespace {
 QString profileInUseFilter(const QString& profile, bool used)
 {
@@ -287,6 +293,17 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWi
         // FIXME: This is kinda weird. and bad. We need some kind of managed shutdown.
         auto q = new QShortcut(QKeySequence::Quit, this);
         connect(q, &QShortcut::activated, APPLICATION, &Application::quit);
+
+        // Beteliney Fase 2: paleta de comandos (Ctrl+K)
+        auto* paletteShortcut = new QShortcut(QKeySequence(tr("Ctrl+K")), this);
+        connect(paletteShortcut, &QShortcut::activated, this, &MainWindow::openCommandPalette);
+
+        // Beteliney Fase 2: menú de servidores favoritos, insertado antes de "Ayuda".
+        // Se repuebla cada vez que se abre (aboutToShow) para no arrastrar acciones
+        // colgando cuando el usuario edita la lista en otro lado (ManageFavoriteServersDialog).
+        m_favoriteServersMenu = new QMenu(tr("Servidores &favoritos"), this);
+        connect(m_favoriteServersMenu, &QMenu::aboutToShow, this, &MainWindow::populateFavoriteServersMenu);
+        ui->menuBar->insertMenu(ui->helpMenu->menuAction(), m_favoriteServersMenu);
     }
 
     // Konami Code
@@ -1721,6 +1738,80 @@ void MainWindow::checkModUpdatesInBackground(BaseInstance* instance)
     connect(task.get(), &Task::finished, this, [this, id]() { m_modUpdateCheckTasks.remove(id); });
 
     task->start();
+}
+
+// ---------------------------------------------------------------------------
+// Beteliney Fase 2: paleta de comandos + servidores favoritos
+// ---------------------------------------------------------------------------
+
+void MainWindow::openCommandPalette()
+{
+    // Acciones sintéticas de quick-join, una por favorito. Son propiedad de este
+    // método: se crean acá, se le pasan al diálogo sólo para que las liste y las
+    // filtre, y se destruyen acá abajo, *después* de haber sido disparadas si
+    // corresponde. El diálogo mismo nunca las dispara ni las toca más allá de
+    // leer su texto/estado: ver el comentario en CommandPaletteDialog.h sobre
+    // por qué la acción elegida se dispara siempre después de exec().
+    auto favorites = Beteliney::FavoriteServers::load(APPLICATION->settings());
+    QList<QAction*> ownedActions;
+    for (const auto& server : favorites) {
+        auto* action = new QAction(tr("Unirse a %1 (%2)").arg(server.name, server.address), this);
+        QString address = server.address;
+        connect(action, &QAction::triggered, this, [this, address] { quickJoinFavoriteServer(address); });
+        ownedActions.append(action);
+    }
+
+    Beteliney::CommandPaletteDialog dlg(ui->menuBar, ownedActions, this);
+    dlg.exec();
+
+    // El diálogo ya cerró. selected() apunta o bien a una QAction real del menú
+    // (dueño: ui/MainWindow, sigue viva) o a una de las nuestras (todavía no la
+    // borramos). En ambos casos es seguro dispararla acá.
+    if (auto* selected = dlg.selectedAction())
+        selected->trigger();
+
+    qDeleteAll(ownedActions);
+}
+
+void MainWindow::populateFavoriteServersMenu()
+{
+    m_favoriteServersMenu->clear();
+
+    auto favorites = Beteliney::FavoriteServers::load(APPLICATION->settings());
+    if (favorites.isEmpty()) {
+        auto* empty = m_favoriteServersMenu->addAction(tr("(sin favoritos todavía)"));
+        empty->setEnabled(false);
+    } else {
+        for (const auto& server : favorites) {
+            QString address = server.address;
+            auto* action = m_favoriteServersMenu->addAction(tr("Unirse a %1 (%2)").arg(server.name, server.address));
+            connect(action, &QAction::triggered, this, [this, address] { quickJoinFavoriteServer(address); });
+        }
+    }
+
+    m_favoriteServersMenu->addSeparator();
+    connect(m_favoriteServersMenu->addAction(tr("Gestionar favoritos...")), &QAction::triggered, this,
+            &MainWindow::openManageFavoriteServers);
+}
+
+void MainWindow::openManageFavoriteServers()
+{
+    Beteliney::FavoriteServersDialog dlg(APPLICATION->settings(), this);
+    dlg.exec();
+}
+
+void MainWindow::quickJoinFavoriteServer(const QString& address)
+{
+    if (!m_selectedInstance) {
+        CustomMessageBox::selectable(this, tr("Ninguna instancia seleccionada"),
+                                      tr("Seleccioná una instancia antes de unirte a un servidor favorito."),
+                                      QMessageBox::Warning)
+            ->exec();
+        return;
+    }
+
+    auto target = std::make_shared<MinecraftTarget>(MinecraftTarget::parse(address, false));
+    APPLICATION->launch(m_selectedInstance, LaunchMode::Normal, target);
 }
 
 void MainWindow::instanceSelectRequest(QString id)
