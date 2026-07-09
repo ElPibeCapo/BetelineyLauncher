@@ -1278,7 +1278,48 @@ quedaba escribiendo sobre un puntero colgante. El `if (instance)` no protegía n
 **Todo lo de las sesiones 24-30 sigue vigente.** Actualizacion de esta sesion:
 
 - **Fase 2 del plan (command palette Ctrl+K + servidores favoritos/quick-join) escrita, auditada linea por linea contra los signatures reales, compilada, y verificada con 29/29 tests pasando.** Sin bugs encontrados - el codigo sigue el patron ya probado de ServersPage.cpp:761 para el quick-join, y aplica desde el diseno la leccion de use-after-free de sesion 29 (el CommandPaletteDialog nunca dispara acciones internamente, solo despues de cerrarse).
-- **Pendiente real de esta sesion: falta el git add + git commit + git push.** El codigo esta listo pero sigue solo en el filesystem local, no en el historial de git ni en origin/main.
+- **Git add + commit + push de esta seccion: hecho** (commit `e33726d16`, confirmado contra origin/main al empezar sesion 32 con `git log`/`git status` reales, no releido de una transcripcion vieja). La frase anterior quedo mal cerrada porque se escribio antes de hacer el commit y nadie la corrigio despues - se corrige aca.
 - **known-hashes.json sigue bloqueado por falta de API key de abuse.ch** (sin cambios desde sesion 27) - **prueba manual GUI del backup de mundos y badge de mods sigue pendiente** (sin cambios desde sesion 28/29, no automatizable desde este entorno).
-- **Threat model de sesion 30 sigue sin ningun fix aplicado** - sigue siendo la recomendacion #1 si se prioriza seguridad: firmar los releases del updater.
-- **Proximo paso recomendado:** commitear y pushear Fase 2 (ver arriba), despues evaluar si seguir con Fase 3 del plan original o atacar algun punto del threat model.
+- **Threat model de sesion 30: recomendacion #1 (firma criptografica del updater) implementada en sesion 32** - ver seccion de abajo.
+- **Proximo paso recomendado:** ver "Pendiente real" al final de la seccion de sesion 32.
+
+
+### Sesion 32 - Firma criptografica Ed25519 del updater + correccion de metodologia de verificacion (2026-07-08)
+
+**Contexto de arranque:** la sesion anterior se corto (MCP colgado) en medio del build de verificacion, dejando el codigo escrito en disco pero sin confirmar compilacion, sin tests, sin commit. Esta sesion arranco reconciliando el estado real del repo (git status/log/diff contra el arbol, no contra la transcripcion) antes de tocar nada.
+
+**Hallazgo #1 - por que el build anterior se colgo sin verificar nada util:** `ninja -C build -j$(nproc)` sin argumentos de target compila el launcher completo, que tiene LTO activado (`IPO / LTO enabled`, confirmado en el log de cmake) y tarda minutos - el mismo patron de cuelgue ya documentado en sesiones 20/27/29. Pero ademas, y esto es lo que importa: **ese build ni siquiera iba a tocar el codigo del updater**. `Launcher_BUILD_UPDATER` (CMakeLists.txt:404) solo se activa si `Launcher_BUILD_ARTIFACT` (CMakeLists.txt:209) no esta vacio, y por defecto esta vacio en un build local. Confirmado con `ninja -C build -t targets | grep updater` antes de reconfigurar: cero resultados, el target `prism_updater_logic` no existia en el grafo de build. La sesion anterior podria haber esperado horas al build completo sin haber compilado ni una linea de `UpdateVerify.cpp`.
+
+**Fix de metodologia:** reconfigure con `cmake -S . -B build -DLauncher_BUILD_ARTIFACT="linux-x86_64"` (reconfiguracion incremental, no reset del build existente), lo que habilito los targets `prism_updater_logic` y `BetelineyLauncher_updater`. Confirmado en el log de cmake: `Enabling all warnings as errors for target 'prism_updater_logic'` y `'BetelineyLauncher_updater'` - mismo nivel de rigor (`-Werror`) que el resto del proyecto.
+
+**Build real, en background para no repetir el cuelgue de la herramienta:** `ninja -C build -j8 prism_updater_logic BetelineyLauncher_updater` lanzado con `nohup ... & disown`, log a archivo, sondeado con `cat`/`pgrep` sin bloquear la conexion del tool. **40/40, sin un solo warning ni error** (grep sobre el log completo: cero coincidencias de "error"/"warning"). `UpdateVerify.cpp.o` compilo en el paso 8/40. Link final: `build/beteliney_updater` generado y confirmado con `find`.
+
+**Lo que esto confirma de lo que dejo la sesion anterior (auditado, no asumido):**
+- La logica de verificacion Ed25519 fail-closed en `UpdateVerify.cpp/h` (32 bytes de clave publica embebida, borra el archivo descargado y aborta si falta `.sig` o no valida) compila limpio contra libsodium.
+- El wiring en `launcher/CMakeLists.txt` (PRISMUPDATER_SOURCES + link condicional `PkgConfig::libsodium` o fallback `find_library`) esta correcto - se verifico linea por linea con `git diff`, no solo confiando en que "deberia estar bien".
+- El `find_package`/`pkg_check_modules` de libsodium en el CMakeLists.txt raiz resuelve bien (`Checking for module 'libsodium' -- Found libsodium, version 1.0.22`).
+- `vcpkg.json` y `.github/workflows/build.yml` (dependencias apt/msys2, paso de firma Ed25519 del release con secret `RELEASE_SIGNING_KEY`) quedan sin verificar en esta sesion - no hay forma de correr el workflow de GitHub Actions localmente; la revision fue solo de sintaxis/logica leyendo el YAML.
+
+**No verificado en esta sesion (pendiente real):**
+- No se corrio `ctest` sobre el nuevo codigo - no existen tests unitarios para el updater en el proyecto (los 29/29 tests de sesion 31 son del launcher principal, target distinto).
+- `clang-format --dry-run` sobre `UpdateVerify.h/.cpp` no se pudo correr: el archivo `.clang-format` no existe en la raiz del repo en este checkout (buscado con `find`, no aparece), pese a que el custom target de clang-format en `build.ninja` lo referencia por ruta absoluta. Es una condicion preexistente del entorno, no algo introducido por este cambio - queda anotado pero fuera de alcance arreglarlo ahora.
+- El paso de firma real en CI (`RELEASE_SIGNING_KEY` -> firmar assets del release) sigue sin probarse end-to-end porque requiere que subas el secret a GitHub y se dispare un release real.
+
+**Clave privada:** sigue en `/tmp/beteliney_signing/release_signing_key.pem` (permisos 600, solo pibe), sin commitear, confirmado que sigue ahi. **Segue pendiente que la subas vos a Settings -> Secrets and variables -> Actions -> New repository secret con el nombre exacto `RELEASE_SIGNING_KEY`, pegando el PEM completo, y borres el archivo de /tmp despues.**
+
+**Pregunta sin resolver de sesiones anteriores, sigue sin tocarse:** reescribir el historial de git para purgar la API key vieja de CurseForge - irreversible, rompe forks/clones existentes. No se hizo, esperando tu confirmacion explicita.
+
+**Estado de git al cierre de esta seccion:** `git add` + `commit` hecho sobre los 8 archivos (6 modificados + 2 nuevos) con el fix de ESTADO.md incluido. Push a origin/main pendiente de confirmar en el mensaje de cierre de sesion (ver abajo si ya se hizo).
+
+## ESTADO CONSOLIDADO - leer esto primero en cualquier sesion nueva (actualizado 2026-07-08, sesion 32)
+
+**Todo lo de las sesiones 24-31 sigue vigente.** Actualizacion de esta sesion:
+
+- **Firma criptografica Ed25519 del updater (recomendacion #1 del threat model de sesion 30): implementada, compilada limpia (40/40, cero warnings con -Werror), linkeada. Commiteada.**
+- **Metodologia de verificacion corregida:** un build completo del launcher (`ninja -C build` sin targets) NUNCA compila el updater salvo que se pase `-DLauncher_BUILD_ARTIFACT=<algo>` al configurar. Para verificar cambios del updater a futuro, compilar solo los targets `prism_updater_logic` y `BetelineyLauncher_updater` - es rapido (no dispara LTO del launcher completo) y evita el cuelgue de la herramienta documentado en sesiones 20/27/29/31.
+- **Pendiente real:**
+  1. Vos: subir `RELEASE_SIGNING_KEY` a GitHub Actions secrets (contenido de `/tmp/beteliney_signing/release_signing_key.pem`) y borrar el archivo de /tmp despues.
+  2. Vos: confirmar si queres purgar la API key vieja de CurseForge del historial de git (irreversible, pendiente desde sesiones anteriores, nunca confirmado).
+  3. known-hashes.json bloqueado por API key de abuse.ch (sin cambios).
+  4. Prueba manual GUI de backup de mundos + badge de mods (sin cambios, no automatizable).
+  5. `.clang-format` falta en la raiz del repo - preexistente, no introducido esta sesion, sin decidir si se restaura.

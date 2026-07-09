@@ -28,7 +28,7 @@ jobs:
             qt6-base-dev qt6-base-private-dev \
             libqt6networkauth6-dev libqt6svg6-dev \
             libarchive-dev libcmark-dev libqrencode-dev \
-            zlib1g-dev default-jdk-headless appstream \
+            zlib1g-dev libsodium-dev default-jdk-headless appstream \
             libgl-dev libgles-dev gettext
           sudo apt-get install -y libtomlplusplus-dev 2>/dev/null || \
           sudo apt-get install -y libtomlplusplus3-dev 2>/dev/null || \
@@ -147,6 +147,7 @@ jobs:
             mingw-w64-x86_64-qrencode
             mingw-w64-x86_64-zstd
             mingw-w64-x86_64-zlib
+            mingw-w64-x86_64-libsodium
             mingw-w64-x86_64-tomlplusplus
             mingw-w64-x86_64-libxml2
             mingw-w64-x86_64-extra-cmake-modules
@@ -216,6 +217,7 @@ jobs:
                      /mingw64/bin/zlib1.dll /mingw64/bin/libzstd.dll \
                      /mingw64/bin/libbz2*.dll /mingw64/bin/liblzma*.dll \
                      /mingw64/bin/liblz4*.dll /mingw64/bin/libssl*.dll \
+                     /mingw64/bin/libsodium*.dll \
                      /mingw64/bin/libcrypto*.dll /mingw64/bin/libxml2*.dll \
                      /mingw64/bin/libiconv*.dll /mingw64/bin/libcharset*.dll; do
             cp "$dll" "dist/$PKG/" 2>/dev/null || true
@@ -243,6 +245,24 @@ jobs:
         with: { name: linux-build,   path: artifacts/ }
       - uses: actions/download-artifact@v4
         with: { name: windows-build, path: artifacts/ }
+
+      - name: Firmar assets del release (Ed25519)
+        env:
+          RELEASE_SIGNING_KEY: ${{ secrets.RELEASE_SIGNING_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${RELEASE_SIGNING_KEY:-}" ]; then
+            echo "::error::Falta el secret RELEASE_SIGNING_KEY - no se puede firmar el release. Abortando para no publicar assets sin firma (el updater los rechazaria igual, pero es mejor fallar aca que confundir al usuario final)."
+            exit 1
+          fi
+          echo "$RELEASE_SIGNING_KEY" > /tmp/release_signing_key.pem
+          chmod 600 /tmp/release_signing_key.pem
+          for f in artifacts/*; do
+            [ -f "$f" ] || continue
+            openssl pkeyutl -sign -inkey /tmp/release_signing_key.pem -rawin -in "$f" -out "$f.sig"
+            echo "Firmado: $f -> $f.sig"
+          done
+          shred -u /tmp/release_signing_key.pem 2>/dev/null || rm -f /tmp/release_signing_key.pem
 
       - uses: softprops/action-gh-release@v2
         with:

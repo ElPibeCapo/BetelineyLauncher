@@ -66,6 +66,7 @@ namespace fs = std::filesystem;
 #include "net/RawHeaderProxy.h"
 
 #include "BetelineyZip.h"
+#include "UpdateVerify.h"
 
 /** output to the log file */
 void appDebugOutput(QtMsgType type, const QMessageLogContext& context, const QString& msg)
@@ -782,6 +783,45 @@ void BetelineyUpdaterApp::performUpdate(const GitHubRelease& release)
         return showFatalErrorMessage(tr("Error al descargar"), tr("No se pudo descargar el asset seleccionado."));
     }
 
+    // Verificacion criptografica obligatoria (fail-closed): sin firma valida, no se instala nada.
+    // Ver UpdateVerify.h para el diseno completo (Ed25519, clave publica embebida, firma
+    // generada en CI a partir de un secret que nunca esta en el repo).
+    auto signature = downloadSignatureFor(selected_asset, release.assets);
+    if (!signature.has_value()) {
+        FS::deletePath(file.absoluteFilePath());
+        return showFatalErrorMessage(
+            tr("Actualización rechazada por seguridad"),
+            tr("El archivo descargado (%1) no trae una firma de publicación verificable.\n\n"
+               "Por seguridad, Beteliney Launcher se niega a ejecutar o instalar archivos sin firma "
+               "criptográfica válida. Esto puede deberse a un release publicado incorrectamente, o a un "
+               "intento de entregar un archivo no autorizado.\n\n"
+               "No se instaló nada. El archivo descargado fue eliminado.")
+                .arg(selected_asset.name));
+    }
+
+    QFile downloaded_file(file.absoluteFilePath());
+    if (!downloaded_file.open(QIODevice::ReadOnly)) {
+        FS::deletePath(file.absoluteFilePath());
+        return showFatalErrorMessage(tr("Error de verificación"),
+                                      tr("No se pudo reabrir el archivo descargado (%1) para verificar su firma.").arg(selected_asset.name));
+    }
+    QByteArray file_bytes = downloaded_file.readAll();
+    downloaded_file.close();
+
+    if (!UpdateVerify::verifyReleaseSignature(file_bytes, signature.value())) {
+        FS::deletePath(file.absoluteFilePath());
+        return showFatalErrorMessage(
+            tr("Firma inválida — actualización rechazada"),
+            tr("La firma del archivo descargado (%1) no coincide con la clave pública de Beteliney "
+               "Launcher.\n\n"
+               "Esto puede indicar un release comprometido o un ataque en curso contra el mecanismo de "
+               "actualización. El archivo fue eliminado y no se instaló nada.\n\n"
+               "No reintentes con esta misma versión. Si el problema persiste, reportalo en el repositorio "
+               "del proyecto antes de volver a intentar actualizar.")
+                .arg(selected_asset.name));
+    }
+
+    qDebug() << "Firma verificada correctamente, procediendo con la instalación de" << selected_asset.name;
     performInstall(file);
 }
 
@@ -803,6 +843,43 @@ QFileInfo BetelineyUpdaterApp::downloadAsset(const GitHubReleaseAsset& asset)
 
     QFileInfo out_file(out_file_path);
     return out_file;
+}
+
+std::optional<QByteArray> BetelineyUpdaterApp::downloadSignatureFor(const GitHubReleaseAsset& asset, const QList<GitHubReleaseAsset>& release_assets)
+{
+    auto expected_sig_name = asset.name + ".sig";
+
+    GitHubReleaseAsset sig_asset = {};
+    bool found = false;
+    for (auto candidate : release_assets) {
+        if (candidate.name == expected_sig_name) {
+            sig_asset = candidate;
+            found = true;
+            break;
+        }
+    }
+
+    if (!found) {
+        qCritical() << "No se encontró asset de firma" << expected_sig_name << "para" << asset.name
+                    << "- el release no incluye verificación criptográfica para este archivo";
+        return std::nullopt;
+    }
+
+    // Una firma Ed25519 son 64 bytes: descarga trivial, no hace falta ProgressDialog visible.
+    auto file_url = QUrl(sig_asset.browser_download_url);
+    auto [download, response] = Net::Download::makeByteArray(file_url);
+    download->setNetwork(m_network.get());
+
+    auto progress_dialog = ProgressDialog();
+    progress_dialog.adjustSize();
+    progress_dialog.execWithTask(download.get());
+
+    if (response->isEmpty()) {
+        qCritical() << "El asset de firma" << expected_sig_name << "se descargó vacío";
+        return std::nullopt;
+    }
+
+    return *response;
 }
 
 bool BetelineyUpdaterApp::callAppImageUpdate()
