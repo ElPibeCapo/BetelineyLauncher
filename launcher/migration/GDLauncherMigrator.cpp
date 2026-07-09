@@ -19,6 +19,30 @@
 
 namespace Beteliney {
 
+// ── Sanitizacion contra path traversal ─────────────────────────────────────
+// shortpath/id vienen de data.sqlite de GDLauncher, un archivo que el usuario
+// puede haber recibido de un tercero (o una instalacion de GDLauncher
+// comprometida). No son confiables: si contienen "../", el codigo original
+// copiaba archivos de fuera del directorio "instances/" esperado hacia la
+// nueva instancia. Esta funcion devuelve una ruta vacia si el candidato
+// intenta escapar del directorio base.
+static QString safeChildPath(const QString& baseDir, const QString& childRelative)
+{
+    if (childRelative.isEmpty())
+        return {};
+
+    const QString base  = QDir(baseDir).absolutePath();
+    const QString joined = base + "/" + childRelative;
+    const QString cleaned = QDir::cleanPath(joined);
+
+    // cleanPath resuelve los ".." logicamente (sin tocar el filesystem), asi
+    // que alcanza para detectar el escape sin necesitar que el path exista.
+    if (cleaned != base && !cleaned.startsWith(base + "/"))
+        return {};
+
+    return cleaned;
+}
+
 // ── Detección del directorio GDLauncher ───────────────────────────────────
 
 QString gdlauncherDataDir()
@@ -136,11 +160,14 @@ QList<GDInstance> readGDInstances(const QString& dataDir, QString* errorOut)
             if (inst.name.isEmpty())
                 continue;
 
-            // Construir ruta de origen
+            // Construir ruta de origen — shortpath/id vienen de la DB de
+            // GDLauncher sin sanitizar; safeChildPath() rechaza cualquier
+            // intento de escapar de "<dataDir>/instances/" via "../".
+            const QString instancesRoot = dataDir + "/instances";
             if (!inst.shortpath.isEmpty())
-                inst.sourcePath = dataDir + "/instances/" + inst.shortpath;
+                inst.sourcePath = safeChildPath(instancesRoot, inst.shortpath);
             else if (!inst.id.isEmpty())
-                inst.sourcePath = dataDir + "/instances/" + inst.id;
+                inst.sourcePath = safeChildPath(instancesRoot, inst.id);
 
             result << inst;
         }
@@ -184,7 +211,12 @@ QString importGDInstance(const GDInstance& inst, const QString& destInstancesDir
     // Crear directorio destino con nombre sanitizado
     QString safeName = inst.name;
     safeName.replace(QRegularExpression(R"([\\/:*?"<>|])"), "_");
-    if (safeName.isEmpty())
+    // Bloquear caracteres no alcanza: un nombre igual a ".." no tiene ningun
+    // caracter prohibido pero, concatenado como destInstancesDir + "/" + "..",
+    // resuelve al directorio padre (escritura de instance.cfg/mmc-pack.json
+    // fuera de la carpeta de instancias). Rechazar explicitamente cualquier
+    // nombre compuesto solo por puntos.
+    if (safeName.isEmpty() || QRegularExpression(R"(^\.+$)").match(safeName).hasMatch())
         safeName = "GDL_" + inst.id;
 
     QString destPath = destInstancesDir + "/" + safeName;

@@ -1323,3 +1323,42 @@ quedaba escribiendo sobre un puntero colgante. El `if (instance)` no protegía n
   3. known-hashes.json bloqueado por API key de abuse.ch (sin cambios).
   4. Prueba manual GUI de backup de mundos + badge de mods (sin cambios, no automatizable).
   5. `.clang-format` falta en la raiz del repo - preexistente, no introducido esta sesion, sin decidir si se restaura.
+
+
+### Continuacion sesion 32 - fixes reales aplicados sobre el threat model, antes de cierre por limite de tokens
+
+**Contexto:** el usuario pidio avanzar todo lo posible sobre la lista de pendientes antes de que la sesion se corte. De los items marcados "sin verificar linea por linea" en el threat model de sesion 30, se resolvieron dos de forma concreta:
+
+**1. Path traversal en el importador de GDLauncher - CONFIRMADO y ARREGLADO.**
+
+`GDLauncherMigrator.cpp` lee `shortpath`/`id` desde `data.sqlite` de GDLauncher (un archivo que el usuario puede recibir de un tercero, o de una instalacion de GDLauncher comprometida) y los concatenaba sin sanitizar para construir `sourcePath = dataDir + "/instances/" + shortpath`. Un `shortpath` como `"../../../../home/usuario/.ssh"` hacia que `copyDirRecursive()` copiara esos archivos hacia el `.minecraft/` de la instancia recien creada - lectura arbitraria de archivos del sistema, disfrazada de "importar una instancia".
+
+Ademas, `inst.name` (tambien de la DB) se usaba para el nombre del directorio destino sanitizando solo `\/:*?"<>|` - un nombre literal `".."` no tiene ninguno de esos caracteres, y `destInstancesDir + "/" + ".."` resuelve al directorio padre: escritura de `instance.cfg`/`mmc-pack.json` fuera de la carpeta de instancias (blast radius menor que el de lectura, porque no hay forma de encadenar mas niveles sin `/`, pero real).
+
+**Fix aplicado:** funcion `safeChildPath()` que usa `QDir::cleanPath()` para resolver logicamente los `../` y verificar que el resultado siga dentro del directorio base; si no, devuelve vacio (la instancia cae al camino ya existente de "no se encontraron los archivos", sin crashear). Para el nombre del directorio destino: rechazo explicito de nombres compuestos solo por puntos (`^\.+$`), fallback a `GDL_<id>` igual que el caso de nombre vacio que ya existia.
+
+**Verificado que compila:** extraido el comando exacto de `build/compile_commands.json` para `GDLauncherMigrator.cpp` y corrido standalone (sin disparar el link/LTO del launcher completo) - **compila limpio con `-Werror`**, objeto generado.
+
+**No se corrio el build completo del launcher ni ctest sobre este cambio** - se prioriza dejar esto documentado con precision sobre simular una verificacion mas completa de la que hubo tiempo de hacer. Pendiente para la proxima sesion: build completo + `ctest` antes de dar esto por definitivamente cerrado (aunque el archivo compila aislado, un cambio en `migration/` podria interactuar con algo que solo aparece en el link completo - improbable dado que no toca ninguna interfaz externa, pero no confirmado).
+
+**2. JVM args de packs importados (FTB legacy) - VERIFICADO, sin fix separado (decision razonada).**
+
+Confirmado en `PackInstallTask.cpp:61-63`: el `JvmArgs` del manifiesto del pack importado se aplica tal cual via `OverrideJavaArgs`, sin sanitizar. Pero se concluye que esto no es una escalada de privilegios *adicional* real: un modpack ya ejecuta codigo arbitrario en cuanto se lanza (los mods son codigo Java arbitrario) - inyectar `-javaagent` u otro flag no le da a un pack malicioso mas poder del que ya tiene. Es el mismo modelo de confianza que existe en cualquier launcher de modpacks (este proyecto, el original del que viene, CurseForge, etc.) - no un bug introducido aca. No se aplico ningun fix para no crear una falsa sensacion de seguridad arreglando el sintoma sin tocar el problema real (confiar en packs de fuentes no verificadas).
+
+**3. `RELEASE_SIGNING_KEY` subido a GitHub Actions - HECHO.**
+
+`gh` estaba autenticado con scope `repo` (`gh auth status` confirmo cuenta `ElPibeCapo`, token con scopes `gist, read:org, repo, workflow`). Se subio el secret directamente con `gh secret set RELEASE_SIGNING_KEY --repo ElPibeCapo/BetelineyLauncher < /tmp/beteliney_signing/release_signing_key.pem`, confirmado con `gh secret list` (aparece con fecha de esta sesion). **La clave privada temporal en `/tmp/beteliney_signing/release_signing_key.pem` fue borrada de forma segura (`shred -u`) despues de subirla.** Solo queda la clave publica en `/tmp/beteliney_signing/release_signing_pub.pem` (sin riesgo, es publica por diseno).
+
+**4. `.clang-format` faltante - investigado, no es un bug.**
+
+`git log --all --diff-filter=D -- .clang-format` muestra que se borro a proposito en un commit del proyecto (`ffe84d6ec "remove some dead things"`). No se restauro - fue una decision deliberada previa, no algo perdido por error. Queda como esta salvo que se pida explicitamente restaurarlo.
+
+**Estado de git al cierre de esta seccion:** el fix de `GDLauncherMigrator.cpp` + esta documentacion quedan commiteados y pusheados junto con esta seccion (ver hash de commit en el mensaje de cierre de sesion si ya se hizo el push).
+
+**Pendiente real que queda, actualizado:**
+1. Meta server (`ElPibeCapo/meta`) como fuente de verdad - **sigue sin verificar linea por linea**, es mas arquitectural (requeriria firmar el indice del meta server tambien, cambio grande) - no se ataco esta sesion por alcance/tiempo.
+2. `known-hashes.json` bloqueado por API key de abuse.ch/MalwareBazaar - sin cambios, requiere que consigas la key vos.
+3. Purga del historial de git de la API key vieja de CurseForge - **sigue esperando tu confirmacion explicita**, irreversible.
+4. Pruebas manuales GUI (backup de mundos, badge de mods) - sin cambios, no automatizables desde este entorno.
+5. Build completo + ctest sobre el fix de GDLauncherMigrator - pendiente para proxima sesion (se verifico compilacion aislada, no el link completo ni tests).
+6. Paso de firma real en CI nunca probado end-to-end - ahora que el secret esta subido, falta que se dispare un release real para confirmar que firma bien.
