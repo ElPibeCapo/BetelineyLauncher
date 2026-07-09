@@ -642,6 +642,8 @@ set(PRISMUPDATER_SOURCES
     updater/betelineyupdater/UpdaterDialogs.cpp
     updater/betelineyupdater/GitHubRelease.h
     updater/betelineyupdater/GitHubRelease.cpp
+    updater/betelineyupdater/UpdateVerify.h
+    updater/betelineyupdater/UpdateVerify.cpp
 
     Json.h
     Json.cpp
@@ -1524,6 +1526,14 @@ if(Launcher_BUILD_UPDATER)
         target_link_libraries(prism_updater_logic PkgConfig::libarchive)
     else()
         target_link_libraries(prism_updater_logic LibArchive::LibArchive)
+    endif()
+
+    # libsodium: verificacion Ed25519 de firmas de release (ver UpdateVerify.cpp)
+    if(TARGET PkgConfig::libsodium)
+        target_link_libraries(prism_updater_logic PkgConfig::libsodium)
+    else()
+        target_include_directories(prism_updater_logic PRIVATE ${LIBSODIUM_INCLUDE_DIR})
+        target_link_libraries(prism_updater_logic ${LIBSODIUM_LIBRARIES})
     endif()
 
     add_executable("${Launcher_Name}_updater" WIN32 updater/betelineyupdater/updater_main.cpp)

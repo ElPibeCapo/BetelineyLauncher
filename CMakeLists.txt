@@ -374,6 +374,20 @@ endif()
 
 find_package(ZLIB REQUIRED)
 
+# Find libsodium (verificacion Ed25519 de firmas de release en el updater)
+if(WIN32)
+    find_path(LIBSODIUM_INCLUDE_DIR sodium.h REQUIRED)
+    find_library(LIBSODIUM_LIBRARY_RELEASE sodium REQUIRED)
+    find_library(LIBSODIUM_LIBRARY_DEBUG sodiumd)
+    if(NOT LIBSODIUM_LIBRARY_DEBUG)
+        # mismo criterio que qrencode: vcpkg/msys2 no siempre generan suffix 'd' de debug
+        set(LIBSODIUM_LIBRARY_DEBUG ${LIBSODIUM_LIBRARY_RELEASE})
+    endif()
+    set(LIBSODIUM_LIBRARIES optimized ${LIBSODIUM_LIBRARY_RELEASE} debug ${LIBSODIUM_LIBRARY_DEBUG})
+else()
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(libsodium REQUIRED IMPORTED_TARGET libsodium)
+endif()
 
 include(ECMQtDeclareLoggingCategory)
 

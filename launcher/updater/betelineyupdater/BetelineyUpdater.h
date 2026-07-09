@@ -85,6 +85,7 @@ class BetelineyUpdaterApp : public QApplication {
     std::optional<QDir> unpackArchive(QFileInfo file);
 
     QFileInfo downloadAsset(const GitHubReleaseAsset& asset);
+    std::optional<QByteArray> downloadSignatureFor(const GitHubReleaseAsset& asset, const QList<GitHubReleaseAsset>& release_assets);
     bool callAppImageUpdate();
 
     void moveAndFinishUpdate(QDir target);
