@@ -1,6 +1,6 @@
 # ESTADO — BetelineyLauncher
-> Documento único y autocontenido. Cualquier chat nuevo lee SOLO esto y puede continuar.
-> Última actualización: 2026-07-07 — bloque **ESTADO CONSOLIDADO** agregado al final del documento (leer ese primero en cualquier sesión nueva). Resume sesiones 24-26: plan de 4 fases vigente, 2 correcciones importantes a afirmaciones previas (McClient/ManagedPackPage YA implementado, preset CurseForge es esfuerzo medio no bajo), bug crítico de presets rotos ya arreglado y pusheado (`f92daaf29`), Paso 0 (bump versión + release) pendiente de ejecutar. Árbol de trabajo limpio, sin cambios sin commitear.
+> Documento único y autocontenido. Cualquier chat nuevo lee SOLO la sección '## ESTADO ACTUAL' de abajo y puede continuar. El resto es historial detallado por sesión: útil para auditar, no necesario para arrancar.
+> Última reorganización: 2026-07-08 (sesión 33) — se consolidaron 7 bloques repetidos de 'ESTADO CONSOLIDADO' en uno solo, movido al tope. Ningún contenido técnico de ninguna sesión fue eliminado ni modificado, solo la repetición boilerplate entre bloques.
 
 ---
 
@@ -9,8 +9,8 @@
 | | |
 |---|---|
 | **Nombre** | BetelineyLauncher |
-| **Versión actual en código** | 8.3.0 (`CMakeLists.txt` líneas 179-181, sin bump desde sesión 8) |
-| **Próxima release** | **v8.3.0 YA existe como tag** (creado sesión 8, 19/06, apunta al commit `78adefe`) — hay 32 commits reales sin tagear desde entonces (3 backports de Prism, fix ícono macOS, limpieza de estructura, esta investigación). Pendiente: bump a `8.4.0` en `CMakeLists.txt` + `git tag v8.4.0 && git push --tags` + release notes en GitHub (ver Sesión 25 al final)
+| **Versión actual en código** | 8.4.0 (`CMakeLists.txt` líneas 179-181) |
+| **Última release** | `v8.4.0`, tageada y publicada en GitHub Releases (sesión 27, 2026-07-07) — https://github.com/ElPibeCapo/BetelineyLauncher/releases/tag/v8.4.0. Commits sin tagear desde entonces: ver `## HISTORIAL DE COMMITS` para el último hash real en `main`. |
 | **Base** | Prism Launcher (GPL-3.0), fork extensamente modificado |
 | **Autor** | El_PibeCapo — `elpibecapoofficial@gmail.com` |
 | **Repo launcher** | https://github.com/ElPibeCapo/BetelineyLauncher |
@@ -18,6 +18,22 @@
 | **Rama principal** | `main` |
 | **META server** | https://ElPibeCapo.github.io/meta/v1/ |
 | **Código fuente local** | `/home/pibe/Descargas/Beteliney Launcher [Minecraft]/BetelineyLauncher/source/` |
+
+---
+
+## ESTADO ACTUAL — LEER ESTO PRIMERO (actualizado 2026-07-08, sesión 34)
+> El detalle completo de cada sesión (auditorías, hallazgos, código, decisiones) está en `## HISTORIAL DE SESIONES` más abajo. Esta sección de arriba es lo único que hace falta leer para continuar el trabajo.
+
+
+**Todo lo de las sesiones 24-32 sigue vigente.** Esta sesion no cambio codigo, solo verifico externamente (GitHub real via `gh`, no solo el repo local) lo que sesion 32 dejo documentado:
+
+- **CI confirma que el build completo pasa** para los commits de firma Ed25519 y fix de path traversal (`completed success` en ambos, via `gh run list`) - evidencia mas fuerte que el intento de build local, que se colgo por el problema de LTO ya conocido (sesiones 20/27/29/31/32), no por el codigo.
+- **`RELEASE_SIGNING_KEY` confirmado presente en GitHub Actions secrets** con `gh secret list` (no solo confiando en el commit anterior).
+- **Correccion de la correccion (sesion 34):** lo que decia sesion 33 aca era imprecision propia, no un hallazgo real. `known-hashes.json` SI existe — vive en el repo `meta` (`~/Descargas/meta_beteliney`, rama `gh-pages`), no en el repo del launcher. Sesion 33 busco solo en el repo equivocado. Contenido verificado sesion 34: arrays `sha256`/`sha512` vacios por diseno (documentado desde sesion 14), con MD5 de Bitdefender aparte y `sourcesChecked` con las 5 fuentes revisadas — sin cambios de fondo desde entonces, sigue bloqueado por la API key de abuse.ch.
+- **Hallazgo nuevo:** CI tiene `BUILD_TESTING=OFF` (`.github/workflows/build.yml:80,164`) - `ctest` nunca corre en CI, solo se puede correr localmente, y localmente el build completo se cuelga con LTO. Este es el unico camino real para cerrar el pendiente de "verificar tests sobre el fix de GDLauncher".
+- **Git: confirmado limpio y sincronizado** (`status`, `stash`, `branch -vv`, `log` local vs `origin/main` - todos verificados con comandos directos).
+- **Pendiente real sin cambios de fondo:** ver lista completa arriba en "Sesion 33". Nada nuevo se resolvio esta sesion - fue puramente verificacion externa para confirmar (o corregir con precision) lo que sesiones anteriores afirmaban.
+- **Proximo paso recomendado:** intentar compilar + correr `ctest` local restringiendo targets (evitar LTO completo del launcher) para cerrar de una vez el pendiente #5; o resolver alguno de los pendientes que dependen del usuario (purga de historial, key de abuse.ch, subir key).
 
 ---
 
@@ -77,14 +93,15 @@ ae1ddd6  fix: Q_INIT_RESOURCE dup, BUILD_TESTING OFF, CurseForge env, BUILD_ARTI
 
 ## CÓMO HACER UNA RELEASE
 
-⚠️ El tag `v8.3.0` **ya existe** (creado Sesión 8, apunta a un commit viejo) — no se puede reusar. Bumpear versión en `CMakeLists.txt` líneas 179-181 antes de tagear (ver ESTADO CONSOLIDADO al final para el número exacto pendiente).
+⚠️ Los tags `v8.3.0` y `v8.4.0` **ya existen** — no se pueden reusar. Antes de tagear, correr `git tag --list` para confirmar cuál es el último y bumpear a uno mayor en `CMakeLists.txt` líneas 179-181.
 
 ```bash
 cd "/home/pibe/Descargas/Beteliney Launcher [Minecraft]/BetelineyLauncher/source"
-# 1. Editar CMakeLists.txt líneas 179-181 con la versión nueva (ej. 8.4.0)
+git tag --list   # confirmar el último tag antes de elegir el numero nuevo
+# 1. Editar CMakeLists.txt líneas 179-181 con la versión nueva (ej. 8.5.0)
 git add -A
 git commit -m "descripción del cambio"
-git tag v8.4.0   # usar la versión nueva bumpeada, NUNCA repetir un tag existente
+git tag v8.5.0   # usar la versión nueva bumpeada, NUNCA repetir un tag existente
 git push && git push --tags
 # El CI compila Linux + Windows y publica la Release en ~15 min automáticamente
 ```
@@ -112,7 +129,7 @@ bash EMPAQUETAR_APPIMAGE.sh
 
 ---
 
-## ACCIONES MANUALES — ESTADO (histórico, mantenido por trazabilidad; ver ESTADO CONSOLIDADO al final para lo realmente pendiente hoy)
+## ACCIONES MANUALES — ESTADO (histórico, mantenido por trazabilidad; ver ESTADO ACTUAL al principio del documento para lo realmente pendiente hoy)
 
 **#1 — Secret CurseForge en CI** — ✅ **Resuelto** (Sesión 17-18). Key rotada por el usuario, cargada como `CURSEFORGE_API_KEY` en GitHub Actions, CI confirmado en verde con la key nueva.
 
@@ -385,8 +402,8 @@ JavaPage (global) → JavaSettingsWidget
 | **Minor** x.+1.0 | Feature completo, fase completa |
 | **Major** +1.0.0 | Cambio arquitectural, reescritura de subsistema |
 
-**Actual en código:** v8.3.0 (sin bump desde Sesión 8, ver ESTADO CONSOLIDADO al final — Paso 0 pendiente)
-**Para publicar:** bumpear a la versión nueva en `CMakeLists.txt` primero, después `git tag vX.Y.Z && git push --tags` — **nunca** `v8.3.0`, ese tag ya existe (Sesión 8).
+**Actual en código:** v8.4.0 (bump y release ejecutados en Sesión 27, tag `v8.4.0` publicado en GitHub Releases)
+**Para publicar:** bumpear a la versión nueva en `CMakeLists.txt` primero, después `git tag vX.Y.Z && git push --tags` — **nunca** reusar `v8.3.0` ni `v8.4.0`, ambos tags ya existen.
 
 ---
 
@@ -985,7 +1002,7 @@ Archivos copiados a `source/screenshots/`: `betelineypacks.png`, `perfiles-jvm.p
 **Pendientes reales identificados para sesiones futuras, sin tocar todavía:** todo el plan de arriba, empezando por el Paso 0 (bump de versión y release), que es lo más urgente por ser trabajo ya terminado sin publicar.
 
 
-## Sesión 26 — Auditoría con acceso real al código y a APIs en vivo: correcciones críticas al plan de sesión 24/25
+### Sesión 26 — Auditoría con acceso real al código y a APIs en vivo: correcciones críticas al plan de sesión 24/25
 
 **Contexto:** las sesiones 24 y 25 se hicieron sin acceso al repositorio (solo memoria/razonamiento). Apareció un archivo suelto sin trackear, `PLAN_MEJORAS.md`, generado por una sesión con acceso real al código, que corrige varios supuestos. Esta sesión 26 verifica cada claim de forma independiente (grep sobre el código real + llamadas en vivo a la API de Modrinth) y agrega hallazgos nuevos no detectados antes.
 
@@ -1090,45 +1107,6 @@ Esto cierra el ciclo completo: las URLs funcionan (ya no 404), el archivo que se
 2. Seguir con el resto de Fase 1: badge de updates de mods (gap real confirmado en sesión 26, `setUpdateAvailable()` sin ningún caller en todo el árbol) y, si el usuario consigue una API key de `abuse.ch`, retomar el sembrado de `known-hashes.json`.
 
 
-## ESTADO CONSOLIDADO — leer esto primero en cualquier sesión nueva (actualizado 2026-07-07)
-
-Este bloque resume todo lo relevante de las sesiones 24, 25 y 26 sin necesidad de leer el resto del documento. Si es una sesión nueva o un chat distinto, empezar por acá.
-
-### Qué está resuelto y confirmado en el repo (nada pendiente ahí)
-
-- El bug crítico de los 5 mods con URL rota (404) en los presets built-in "Vanilla Optimizado" y "PvP Competitivo" **ya está arreglado, commiteado y pusheado** (`f92daaf29`). Reemplazadas con versiones vigentes de Sodium/Lithium/Iris/ModernFix/FerriteCore para Fabric 1.21.1, con SHA-512 real en los 7 mods. Testeado end-to-end: build limpio, `ctest` 29/29, descarga real + hash verificado 5/5. CI en verde.
-- El árbol de trabajo está limpio (`git status` confirmado 2026-07-07), sin cambios sin commitear.
-- Último commit en `main`: `03cece889` (docs), con `f92daaf29` (el fix de presets) inmediatamente antes.
-
-### Corrección importante — dos afirmaciones de sesión 24/25 quedaron mal, ya corregidas
-
-1. **`McClient.cpp`/`ManagedPackPage.cpp` NO es un backport pendiente.** Sesión 24/25 lo priorizó como el backport más urgente del gap Prism 11.0.0→11.0.2, basándose en una nota vieja de sesión 20 sin re-verificar el archivo actual. Sesión 26 abrió el archivo real y confirmó que `ManagedPackPage.cpp` ya renderiza el changelog completo (Modrinth vía `markdownToHTML(version.changelog)`, CurseForge vía `m_api.getModFileChangelog(...)`). **No hay nada que backportear acá.**
-2. **El preset de BetelineyPacks con CurseForge no es "bajo esfuerzo".** El enum `PackProvider::CurseForge` existe en `BetelineyPackListModel.cpp`, pero `BetelineyPackInstallTask.cpp` descarta cualquier mod sin URL directa por el "Project Distribution Toggle" de CurseForge (cada autor decide si su mod es descargable por API de terceros). El patrón real que usaría esto (Prism: abrir navegador → descarga manual → detección de archivo) no existe en Beteliney. Es esfuerzo **medio**, no bajo.
-3. **Corrección menor:** la librería `discord-rpc` (propuesta para Discord Rich Presence) está deprecada oficialmente por Discord — sigue siendo viable vía forks comunitarios activos, pero no es "la oficial mantenida".
-
-### Qué sigue vigente sin cambios
-
-Todo el plan de 4 fases + refuerzo de sesión 25 (ver más arriba en este mismo documento para el detalle completo), MENOS los dos ítems corregidos arriba. Los hallazgos nuevos de la investigación sobre MalwareBazaar/jarspect, telemetría (confirmado: no existe, es fortaleza de privacidad no un gap), accesibilidad (gap real, alto contraste ausente) y atribución GPL (nota menor) también siguen vigentes, documentados en la sección justo anterior a esta.
-
-### ACTUALIZACIÓN 2026-07-07 (sesión 27) — Paso 0 completo, Fase 1 en curso
-
-**Paso 0: hecho, no pendiente.** Bump a `8.4.0` (commit `7a3dbf14b`), tag `v8.4.0` pusheado, release publicado: https://github.com/ElPibeCapo/BetelineyLauncher/releases/tag/v8.4.0. La sección "Próxima acción concreta" de más abajo, en la parte que dice "Paso 0 — pendiente", **ya no es cierta** — queda como registro histórico de lo que se planeó, no como estado actual. Ver detalle completo en la sección "Sesión 27" un poco más arriba en este documento.
-
-**`known-hashes.json`: sigue vacío, a propósito, por un bloqueo real nuevo.** El hash SHA-1 de Fractureiser que esta misma sección daba por "confirmado públicamente" (línea del punto 2 de abajo) se intentó verificar en vivo contra la API de MalwareBazaar antes de usarlo — la API ahora exige `Auth-Key` para **cualquier** query, no solo para descargar la muestra completa. No se pudo verificar el hash ni conseguir el SHA-256/SHA-512 real (los únicos algoritmos que soporta el scanner). No se escribió nada al archivo. Pendiente real: conseguir una API key de `abuse.ch`.
-
-**Feature completa — backup manual de mundos (botón en WorldListPage):** implementado, build limpio (`-Werror`, sin warnings), `ctest` 29/29, commiteado y pusheado (`523027d18`). Reusa `BetelineyZip::ExportToZipTask` (mismo mecanismo que ya usa `ExportInstanceDialog.cpp`). **Pendiente real:** prueba manual con la app corriendo (no hecha esta sesión). No confundir con el "backup automático antes de actualizar el pack" de la lista de abajo (punto 2) — eso sigue sin implementar, es un trabajo aparte y más grande (hook en cada proveedor de pack).
-
-### Próxima acción concreta (histórico de sesión 25/26 — ver arriba para el estado real actualizado)
-
-1. **Paso 0 — bump de versión + release (pendiente, NO ejecutado, se intentó y se revirtió a pedido explícito del 2026-07-07 para no actuar sin confirmación):** `CMakeLists.txt` líneas 179-181, `8.3.0` → `8.4.0`, después `git tag v8.4.0 && git push --tags`, después release notes en GitHub desde las sesiones 9-26 de este documento. Es una operación atómica — hacer los tres pasos juntos, no dejar el bump de versión commiteado sin el tag, para no generar un estado intermedio confuso.
-2. Fase 1 del plan: backup automático de mundos (reusa `BetelineyZip.h`) + sembrar `known-hashes.json` con datos reales de MalwareBazaar (hash SHA-1 `dc43c4685c3f47808ac207d1667cc1eb915b2d82` confirmado públicamente para Fractureiser Stage 1, más lo que devuelva la API filtrada por tags `fractureiser`/`mavenrat`/`maksstealer`/`maksrat`) + badge de actualización de mods (gap real confirmado por sesión 26: `setUpdateAvailable()` sin ningún caller en todo el árbol, feature fantasma completa — UI y modelo ya listos, falta el disparador).
-3. Fase 2: command palette Ctrl+K + servidores favoritos con quick-join.
-4. Fase 3: preset CurseForge (esfuerzo medio, ver corrección arriba) + Discord RPC (ver corrección de librería deprecada arriba) + sistema de logros de marca + tema de alto contraste (gap de accesibilidad).
-5. Fase 4: i18n/Weblate (proceso, no código) + búsqueda combinada Modrinth+CurseForge (alto esfuerzo, mediano/largo plazo, fuera del sprint principal).
-6. Fase 5: refuerzo — tests nuevos por cada feature, capturas de pantalla actualizadas, Roadmap del README limpio, tag de versión final de la tanda.
-
-**Estado real, actualizado sesión 27: Paso 0 completo. Backup manual de mundos implementado, build/test/commit pendiente de confirmación (ver sección "Sesión 27" arriba). Resto de Fase 1 (badge de updates, known-hashes.json) y Fases 2-5 sin empezar.**
-
 ### Sesión 28 — Badge de actualización de mods: cerrado de punta a punta (2026-07-07)
 
 **Contexto:** continuación directa de la sesión 27. En la sesión anterior se había escrito e integrado el código del chequeo silencioso de actualizaciones de mods (`BackgroundModUpdateCheckTask` + hook en `MainWindow::instanceChanged()`), pero el servidor de Desktop Commander se colgó justo antes de poder compilar y testear — quedó sin confirmar. Esta sesión retomó desde ese punto exacto.
@@ -1151,14 +1129,6 @@ Todo el plan de 4 fases + refuerzo de sesión 25 (ver más arriba en este mismo 
 - `known-hashes.json` — sigue bloqueado por falta de API key de `abuse.ch` (sesión 27), sin cambios.
 
 **Siguiente paso real:** Fase 2 del plan (command palette Ctrl+K + servidores favoritos con quick-join), o conseguir la API key de MalwareBazaar para cerrar el punto de `known-hashes.json` que sigue pendiente. Ambas fases 1-completadas-en-código quedan a la espera de que el usuario haga la prueba manual con la app corriendo cuando tenga oportunidad — no es bloqueante para seguir avanzando en código.
-
-## ESTADO CONSOLIDADO — leer esto primero en cualquier sesión nueva (actualizado 2026-07-07, sesión 28)
-
-**Todo lo de las sesiones 24-27 sigue vigente tal como está documentado arriba.** Actualización puntual de esta sesión:
-
-- **Badge de actualización de mods: implementado, compilado, testeado (29/29) y pusheado.** Commit `5c7eaa702`. `BackgroundModUpdateCheckTask` nuevo + hook en `MainWindow::instanceChanged()`. Cierra la "feature fantasma" identificada en sesión 26 (`setUpdateAvailable()` sin callers). Único pendiente: prueba manual con la GUI real (no automatizable desde este entorno).
-- **Fase 1 del plan de sesión 25 queda así:** backup de mundos ✅ (código) / prueba manual pendiente · badge de updates ✅ (código) / prueba manual pendiente · `known-hashes.json` ❌ bloqueado por API key de `abuse.ch`.
-- **Próximo paso recomendado:** Fase 2 (command palette Ctrl+K + servidores favoritos/quick-join) — no depende de ninguna API key ni de la prueba manual pendiente, se puede seguir en código sin bloqueos.
 
 ### Sesión 29 — Auditoría del código real (no solo "compila"): use-after-free encontrado y corregido en el badge de mods (2026-07-07)
 
@@ -1185,15 +1155,6 @@ quedaba escribiendo sobre un puntero colgante. El `if (instance)` no protegía n
 **Nota operativa para sesiones futuras:** el servidor de Desktop Commander se sigue colgando de forma consistente en builds largos con LTO (ya van 3 sesiones seguidas con el mismo síntoma — 20, 27, 29). El proceso en sí termina bien del lado del servidor; el problema es solo que la herramienta de terminal no devuelve el resultado a tiempo. Patrón de recuperación que funciona: verificar con `stat` el timestamp del binario contra los archivos fuente modificados, en vez de asumir que el build falló o quedó a medias.
 
 **Resto del estado sin cambios respecto a sesión 28** (ver bloque consolidado arriba): Fase 1 completa en código (backup de mundos + badge de mods), pendiente de prueba manual GUI para ambas; `known-hashes.json` bloqueado por API key de `abuse.ch`; Fase 2 en adelante sin empezar.
-
-## ESTADO CONSOLIDADO — leer esto primero en cualquier sesión nueva (actualizado 2026-07-07, sesión 29)
-
-**Todo lo de las sesiones 24-28 sigue vigente.** Actualización de esta sesión:
-
-- **Bug real de use-after-free encontrado y corregido en `BackgroundModUpdateCheckTask`** (puntero crudo a la instancia → `QPointer`, protege contra el usuario borrando la instancia mientras el chequeo de mods sigue corriendo en background). Commit `6b2395ee6`, build limpio, 29/29 tests, pusheado.
-- **La auditoría de esta sesión confirmó que el resto del código de sesión 28 (tipado de `ModrinthCheckUpdate`/`FlameCheckUpdate`, el guard `if (m_hasUpdate != value)` en `setUpdateAvailable`, el ícono `checkupdate` presente en todos los temas incluido `beteliney`) es correcto por diseño, no solo "compila".**
-- **Pendiente real, sin cambios:** prueba manual con GUI del backup de mundos y del badge de updates (ninguna automatizable desde este entorno) · `known-hashes.json` bloqueado por API key.
-- **Próximo paso recomendado:** Fase 2 del plan (command palette Ctrl+K + servidores favoritos/quick-join).
 
 ### Sesión 30 — Threat model: cómo alguien malicioso podría abusar el código actual (2026-07-07)
 
@@ -1225,16 +1186,6 @@ quedaba escribiendo sobre un puntero colgante. El `if (instance)` no protegía n
 **Mitigación de mayor apalancamiento identificada:** firmar los releases (firma detached, verificada por el updater antes de ejecutar/desempacar) es la única acción de esta lista que cambia la *categoría* del riesgo #1 en vez de solo mitigarlo parcialmente — pasa de "quien comprometa mi cuenta de GitHub tiene RCE en todos los usuarios" a "necesita además mi clave de firma privada, que no vive en GitHub". Recomendado como prioridad #1 de seguridad si se decide actuar sobre esta lista.
 
 **Nada de esto se corrigió esta sesión** — es threat model puro, a pedido explícito del usuario, no una sesión de fixes. Ningún commit de código en esta sesión, solo esta documentación.
-
-## ESTADO CONSOLIDADO — leer esto primero en cualquier sesión nueva (actualizado 2026-07-07, sesión 30)
-
-**Todo lo de las sesiones 24-29 sigue vigente.** Actualización de esta sesión:
-
-- **Threat model completo del proyecto documentado en la sección "Sesión 30" arriba** — 4 hallazgos críticos confirmados en código (updater sin verificación criptográfica es el de mayor impacto por lejos; malware scanner actualmente sin efecto real por `known-hashes.json` vacío; blacklist por hash evadible por diseño; hash opcional salta ambas protecciones a la vez), 3 de alto impacto sin verificar línea por línea (meta server como fuente de verdad, JVM args de packs importados, path traversal en importador GDLauncher), 4 de superficie ya conocidos reforzados con el ángulo de explotación.
-- **Ningún fix aplicado esta sesión** — es documentación de riesgos, no una sesión de código. El código sigue exactamente como quedó al cierre de sesión 29 (commit `5c34af01d`, árbol limpio).
-- **Recomendación #1 si se decide actuar:** firmar los releases del updater — es la única mitigación de esta lista que cambia la categoría del riesgo más grave en vez de solo reducirlo.
-- **Próximo paso recomendado (sin cambios):** Fase 2 del plan (command palette Ctrl+K + servidores favoritos/quick-join), o empezar a resolver algún punto de este threat model si se prioriza seguridad sobre features nuevas.
-
 
 ### Sesión 31 — Fase 2 completa: command palette (Ctrl+K) + servidores favoritos con quick-join (2026-07-08)
 
@@ -1273,17 +1224,6 @@ quedaba escribiendo sobre un puntero colgante. El `if (instance)` no protegía n
 
 **Estado real de git al cierre de esta seccion de la sesion:** nada de esto esta commiteado todavia. git status muestra 6 archivos nuevos sin trackear + Application.cpp/CMakeLists.txt/MainWindow.cpp/MainWindow.h/ESTADO.md modificados sin stagear. Ultimo commit en el arbol es ffb219f69 (threat model de sesion 30).
 
-## ESTADO CONSOLIDADO - leer esto primero en cualquier sesion nueva (actualizado 2026-07-08, sesion 31)
-
-**Todo lo de las sesiones 24-30 sigue vigente.** Actualizacion de esta sesion:
-
-- **Fase 2 del plan (command palette Ctrl+K + servidores favoritos/quick-join) escrita, auditada linea por linea contra los signatures reales, compilada, y verificada con 29/29 tests pasando.** Sin bugs encontrados - el codigo sigue el patron ya probado de ServersPage.cpp:761 para el quick-join, y aplica desde el diseno la leccion de use-after-free de sesion 29 (el CommandPaletteDialog nunca dispara acciones internamente, solo despues de cerrarse).
-- **Git add + commit + push de esta seccion: hecho** (commit `e33726d16`, confirmado contra origin/main al empezar sesion 32 con `git log`/`git status` reales, no releido de una transcripcion vieja). La frase anterior quedo mal cerrada porque se escribio antes de hacer el commit y nadie la corrigio despues - se corrige aca.
-- **known-hashes.json sigue bloqueado por falta de API key de abuse.ch** (sin cambios desde sesion 27) - **prueba manual GUI del backup de mundos y badge de mods sigue pendiente** (sin cambios desde sesion 28/29, no automatizable desde este entorno).
-- **Threat model de sesion 30: recomendacion #1 (firma criptografica del updater) implementada en sesion 32** - ver seccion de abajo.
-- **Proximo paso recomendado:** ver "Pendiente real" al final de la seccion de sesion 32.
-
-
 ### Sesion 32 - Firma criptografica Ed25519 del updater + correccion de metodologia de verificacion (2026-07-08)
 
 **Contexto de arranque:** la sesion anterior se corto (MCP colgado) en medio del build de verificacion, dejando el codigo escrito en disco pero sin confirmar compilacion, sin tests, sin commit. Esta sesion arranco reconciliando el estado real del repo (git status/log/diff contra el arbol, no contra la transcripcion) antes de tocar nada.
@@ -1310,20 +1250,6 @@ quedaba escribiendo sobre un puntero colgante. El `if (instance)` no protegía n
 **Pregunta sin resolver de sesiones anteriores, sigue sin tocarse:** reescribir el historial de git para purgar la API key vieja de CurseForge - irreversible, rompe forks/clones existentes. No se hizo, esperando tu confirmacion explicita.
 
 **Estado de git al cierre de esta seccion:** `git add` + `commit` hecho sobre los 8 archivos (6 modificados + 2 nuevos) con el fix de ESTADO.md incluido. Push a origin/main pendiente de confirmar en el mensaje de cierre de sesion (ver abajo si ya se hizo).
-
-## ESTADO CONSOLIDADO - leer esto primero en cualquier sesion nueva (actualizado 2026-07-08, sesion 32)
-
-**Todo lo de las sesiones 24-31 sigue vigente.** Actualizacion de esta sesion:
-
-- **Firma criptografica Ed25519 del updater (recomendacion #1 del threat model de sesion 30): implementada, compilada limpia (40/40, cero warnings con -Werror), linkeada. Commiteada.**
-- **Metodologia de verificacion corregida:** un build completo del launcher (`ninja -C build` sin targets) NUNCA compila el updater salvo que se pase `-DLauncher_BUILD_ARTIFACT=<algo>` al configurar. Para verificar cambios del updater a futuro, compilar solo los targets `prism_updater_logic` y `BetelineyLauncher_updater` - es rapido (no dispara LTO del launcher completo) y evita el cuelgue de la herramienta documentado en sesiones 20/27/29/31.
-- **Pendiente real:**
-  1. Vos: subir `RELEASE_SIGNING_KEY` a GitHub Actions secrets (contenido de `/tmp/beteliney_signing/release_signing_key.pem`) y borrar el archivo de /tmp despues.
-  2. Vos: confirmar si queres purgar la API key vieja de CurseForge del historial de git (irreversible, pendiente desde sesiones anteriores, nunca confirmado).
-  3. known-hashes.json bloqueado por API key de abuse.ch (sin cambios).
-  4. Prueba manual GUI de backup de mundos + badge de mods (sin cambios, no automatizable).
-  5. `.clang-format` falta en la raiz del repo - preexistente, no introducido esta sesion, sin decidir si se restaura.
-
 
 ### Continuacion sesion 32 - fixes reales aplicados sobre el threat model, antes de cierre por limite de tokens
 
@@ -1381,9 +1307,9 @@ El commit `350227d48` (fix de path traversal) corrio en CI y termino `completed 
 
 Aparece en la lista de secrets del repo, fecha `2026-07-09T01:02:19Z`, coincide con lo que dice sesion 32. Confirmado tambien que `CURSEFORGE_API_KEY` (el secret actual, rotado) sigue presente desde `2026-07-04T16:33:10Z` - no se toco, sigue activo para CI.
 
-**4. `known-hashes.json` - CORRECCION a como estaba documentado: no esta "vacio", literalmente NO EXISTE.**
+**4. `known-hashes.json` - CORRECCION DE ESTA MISMA SESION (era un error propio, corregido en sesion 34): SI EXISTE, esta en el repo equivocado de busqueda.**
 
-`find . -name "known-hashes.json"` en todo el repo no devolvio ningun resultado. Las sesiones anteriores lo describian como "vacio" (dando a entender que el archivo existe pero sin contenido, esperando que se llene). La realidad verificada es mas basica: el archivo no esta creado en ningun lado del checkout. El malware scanner no solo no tiene hashes conocidos - no tiene ni el archivo que su propio codigo espera leer. No cambia la conclusion de sesiones previas (el scanner no protege nada en la practica hoy), pero corrige la descripcion exacta del estado.
+`find . -name "known-hashes.json"` no devolvio resultado porque se corrio dentro del checkout de `BetelineyLauncher` (el launcher). El archivo nunca vivio ahi — vive en `~/Descargas/meta_beteliney`, el clon local del repo `meta` (rama `gh-pages`), tal como ya documentaba correctamente la sesion 27. Verificado en sesion 34 leyendo el archivo real: existe, arrays `sha256`/`sha512` vacios por diseno honesto (sesion 14), `comment` con la investigacion completa, MD5 de Bitdefender documentados aparte sin usar por el scanner, y `sourcesChecked` con las 5 fuentes revisadas. No cambia la conclusion de fondo (el scanner sigue sin proteger nada en la practica porque los arrays reales estan vacios), pero la sesion 33 se equivoco al decir que el archivo no existia — solo busco en el repo que no correspondia.
 
 **5. `.clang-format` - reconfirmado ausente.** `ls .clang-format` en la raiz: no existe. Sigue siendo la misma condicion preexistente documentada en sesion 32 (borrado a proposito en `ffe84d6ec`), sin cambios.
 
@@ -1397,21 +1323,36 @@ Aparece en la lista de secrets del repo, fecha `2026-07-09T01:02:19Z`, coincide 
 
 **Pendiente real, actualizado y sin cambios de fondo respecto a sesion 32 (solo mas evidencia, ninguno de estos items se cerro):**
 1. Meta server (`ElPibeCapo/meta`) como fuente de verdad - sigue sin verificar linea por linea.
-2. `known-hashes.json` - ahora confirmado que ni siquiera existe como archivo (no solo "vacio") - bloqueado por API key de abuse.ch/MalwareBazaar, requiere que el usuario la consiga.
+2. `known-hashes.json` - existe en `~/Descargas/meta_beteliney` (repo `meta`, no el launcher), arrays vacios por diseno, sin cambios de fondo desde sesion 27 - bloqueado por API key de abuse.ch/MalwareBazaar, requiere que el usuario la consiga. (Correccion sesion 34: la afirmacion de que "no existe" en esta misma sesion 33 fue un error de busqueda en el repo equivocado.)
 3. Purga del historial de git de las 4 API keys viejas de CurseForge (confirmadas por hash en sesion anterior) - **sigue esperando confirmacion explicita del usuario**, irreversible.
 4. Pruebas manuales GUI (backup de mundos, badge de mods) - sin cambios, no automatizables desde este entorno.
 5. `ctest` local sobre el fix de GDLauncherMigrator - **ahora confirmado que CI nunca lo va a correr** (`BUILD_TESTING=OFF` en el workflow), la unica via es local, y local se cuelga con LTO en un build sin restringir targets. Pendiente: intentar con targets restringidos (patron ya usado en sesion 32 para el updater) para evitar el cuelgue y poder correr ctest.
 6. Paso de firma real en CI nunca probado end-to-end - secret confirmado presente, falta que se dispare un release real.
 7. **Nuevo:** causa raiz del cuelgue del build completo local con LTO - no investigada, solo reconfirmada su existencia. No bloqueante (CI cubre la verificacion de build), pero afecta la capacidad de correr ctest localmente (ver punto 5).
 
-## ESTADO CONSOLIDADO - leer esto primero en cualquier sesion nueva (actualizado 2026-07-08, sesion 33)
+### Sesión 34 — Corrección: `known-hashes.json` sí existe, sesión 33 buscó en el repo equivocado (2026-07-08)
 
-**Todo lo de las sesiones 24-32 sigue vigente.** Esta sesion no cambio codigo, solo verifico externamente (GitHub real via `gh`, no solo el repo local) lo que sesion 32 dejo documentado:
+**Contexto:** el usuario pidió actualizar toda la información del documento. Al revisar el pendiente #2 de sesión 33 antes de tocar nada, se detectó que la afirmación "`known-hashes.json` no existe como archivo en ningún lado del repo" era un error de esa misma sesión, no un hallazgo real.
 
-- **CI confirma que el build completo pasa** para los commits de firma Ed25519 y fix de path traversal (`completed success` en ambos, via `gh run list`) - evidencia mas fuerte que el intento de build local, que se colgo por el problema de LTO ya conocido (sesiones 20/27/29/31/32), no por el codigo.
-- **`RELEASE_SIGNING_KEY` confirmado presente en GitHub Actions secrets** con `gh secret list` (no solo confiando en el commit anterior).
-- **Correccion de precision:** `known-hashes.json` no esta vacio, directamente no existe como archivo en el repo.
-- **Hallazgo nuevo:** CI tiene `BUILD_TESTING=OFF` (`.github/workflows/build.yml:80,164`) - `ctest` nunca corre en CI, solo se puede correr localmente, y localmente el build completo se cuelga con LTO. Este es el unico camino real para cerrar el pendiente de "verificar tests sobre el fix de GDLauncher".
-- **Git: confirmado limpio y sincronizado** (`status`, `stash`, `branch -vv`, `log` local vs `origin/main` - todos verificados con comandos directos).
-- **Pendiente real sin cambios de fondo:** ver lista completa arriba en "Sesion 33". Nada nuevo se resolvio esta sesion - fue puramente verificacion externa para confirmar (o corregir con precision) lo que sesiones anteriores afirmaban.
-- **Proximo paso recomendado:** intentar compilar + correr `ctest` local restringiendo targets (evitar LTO completo del launcher) para cerrar de una vez el pendiente #5; o resolver alguno de los pendientes que dependen del usuario (purga de historial, key de abuse.ch, subir key).
+**Causa del error:** sesión 33 corrió `find . -name "known-hashes.json"` dentro del checkout de `BetelineyLauncher` (el repo del launcher). El archivo nunca vivió ahí. Vive en el repo separado `meta` (rama `gh-pages`), clonado localmente en `~/Descargas/meta_beteliney` — exactamente como ya documentaba correctamente la sesión 27 (`Repo: /home/pibe/Descargas/meta_beteliney (clon local separado del repo principal)`). Sesión 33 tenía esa info disponible en el mismo documento y no la cruzó antes de afirmar que el archivo "no existe".
+
+**Verificación real hecha esta sesión:** se localizó y leyó el archivo completo en `~/Descargas/meta_beteliney/v1/malware/known-hashes.json`. Confirma exactamente lo documentado en sesiones 14 y 26-27, sin cambios de fondo:
+- `hashes.sha256` y `hashes.sha512`: arrays vacíos, `"status": "no-public-hash-source-found"`.
+- `comment` con la investigación completa (Fractureiser, junio 2023) documentada en el propio JSON.
+- `knownSamplesMd5_notUsedByScanner`: los 2 MD5 de Bitdefender (Stage 0 y Stage 2), marcados explícitamente como no usados por el scanner (que solo soporta SHA-256/512).
+- `sourcesChecked`: las 5 URLs revisadas en su momento (repo oficial fractureiser, docs/users.md, blog de Bitdefender, anuncio de Prism Launcher, artículo de soporte de CurseForge).
+- Sigue bloqueado exactamente por lo mismo desde sesión 27: falta la API key de `abuse.ch`/MalwareBazaar para poder consultar o verificar hashes reales sin fabricar datos.
+
+**Correcciones aplicadas en este documento:** 3 puntos donde sesión 33 afirmaba "no existe" (bloque `ESTADO ACTUAL` arriba, sección de detalle de sesión 33, y su lista de pendientes) corregidos con nota explícita de que fue un error de búsqueda, no un hallazgo nuevo.
+
+**Nada de código se tocó esta sesión** — fue puramente corrección de documentación. El resto del estado (git limpio, CI verde en ambos commits, secret de firma presente, cuelgue del build local con LTO, `.clang-format` ausente, 4 keys viejas de CurseForge en el historial) sigue exactamente igual que al cierre de sesión 33, sin novedad.
+
+**Pendiente real, sin cambios de fondo respecto a sesión 33 (misma lista, punto 2 con la ubicación correcta del archivo):**
+1. Meta server (`ElPibeCapo/meta`) como fuente de verdad - sigue sin verificar línea por línea.
+2. `known-hashes.json` (en `~/Descargas/meta_beteliney`, repo `meta`) - bloqueado por API key de abuse.ch/MalwareBazaar, requiere que el usuario la consiga.
+3. Purga del historial de git de las 4 API keys viejas de CurseForge - **sigue esperando confirmación explícita del usuario**, irreversible.
+4. Pruebas manuales GUI (backup de mundos, badge de mods) - sin cambios, no automatizables desde este entorno.
+5. `ctest` local sobre el fix de GDLauncherMigrator - bloqueado por el cuelgue del build completo con LTO; camino recomendado: restringir targets como en sesión 32.
+6. Paso de firma real en CI nunca probado end-to-end - secret presente, falta que se dispare un release real.
+7. Causa raíz del cuelgue del build completo local con LTO - no investigada.
+
