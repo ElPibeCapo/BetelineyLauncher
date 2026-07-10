@@ -17,3 +17,5 @@ compile_commands.json
 *.exe
 dist/
 *.bak
+tools/dev/.buildlogs/
+tools/dev/__pycache__/
