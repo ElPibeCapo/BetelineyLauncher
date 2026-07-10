@@ -3,27 +3,24 @@
 ## BetelineyLauncher: De Código Oculto a Infraestructura Crítica de Seguridad
 
 **Propietario:** ElPibeCapo
-**Fecha:** 20 de junio de 2026
-**Versión:** 4.0 — Verificada con búsqueda web independiente (corrige a Manus)
-**Presupuesto:** $11.72 USD (~45.095 COP)
+**Fecha:** 9 de julio de 2026
+**Versión:** 5.0 — Precios y disponibilidad re-verificados contra `panorama-ia-julio-2026-verificado-v2.md` (auditoría cruzada por fuente primaria, ver `ESTADO.md`, sección "Sesión 35")
+**Presupuesto:** $11.72 USD (~45.095 COP) — sin cambios, no se gastó nada nuevo desde v4.0
 
 ---
 
-## 🆕 0. QUÉ CAMBIÓ EN ESTA VERSIÓN (v3.0 → v4.0)
+## 🆕 0. QUÉ CAMBIÓ EN ESTA VERSIÓN (v4.0 → v5.0)
 
-La investigación de Manus (v3.0) tenía datos correctos en general, pero algunos puntos se verificaron de forma independiente con búsqueda web y se corrigieron o confirmaron:
+v4.0 (20 de junio) tenía datos correctos para su fecha. Tres semanas después varios ya vencieron o cambiaron. Todo lo de abajo viene de fuente verificada independientemente en `panorama-ia-julio-2026-verificado-v2.md`, no de un solo reporte:
 
-| # | Dato | Estado en v3.0 | Verificación v4.0 |
-|---|------|-----------------|---------------------|
-| 1 | Precio DeepSeek V4 Pro | Ya corregido a $0.435/$0.87 | ✅ Confirmado — precio permanente desde 22 mayo 2026 |
-| 2 | Deadline OpenAI Codex (10 julio) | Ya corregido a "sin plazo fijo" | ✅ Confirmado — revisión rolling, sin fecha límite en ninguna fuente oficial |
-| 3 | Deadline Anthropic (30 junio) | Dato dudado inicialmente | ✅ Confirmado en 5+ fuentes independientes — es real, 10.000 cupos totales, por orden de llegada |
-| 4 | Claude Max 20x incluye Claude Code | No mencionado | ✅ Confirmado — el grant incluye la CLI agente completa, no solo el chat web |
-| 5 | Disponibilidad Fable 5 / Mythos 5 | Ya corregido a "no disponible" | ✅ Confirmado — acceso suspendido por directiva de control de exportación de EE. UU. |
-| 6 | Cálculo de tokens con $11.72 (mix 3:1) | 21.5M tokens | ✅ Verificado matemáticamente: (0.75×$0.435)+(0.25×$0.87) = $0.544/M → $11.72/$0.544 ≈ 21.5M tokens |
-| 7 | "Chances 30-40% Anthropic" | Presentado como estimación | ⚠️ Sin base verificable — tratar como expectativa optimista, no como dato real. Aplicar igual: no cuesta nada |
-| 8 | "Tiempos de respuesta 4-5 días" (Anthropic) | Mencionado en v1 | ⚠️ No encontrado en ninguna fuente — descartar como dato confirmado |
-| 9 | URL OpenAI Codex OSS | Pendiente de investigar | ✅ Resuelta: `openai.com/form/codex-for-oss/` |
+| # | Dato | Estado en v4.0 | Corrección v5.0 |
+|---|---|---|---|
+| 1 | Claude Fable 5 / Mythos 5 | "No disponible (suspendido)" | **Disponible de nuevo desde el 1 de julio de 2026.** La suspensión (12-30 de junio, control de exportación de EE. UU.) se levantó y Anthropic restauró acceso global a ambos modelos el 1/07. Precio de Fable 5: no verificado en esta revisión — no repetir el "~$15.00" de v4.0 sin confirmarlo directo en la doc oficial de Anthropic. |
+| 2 | Claude Sonnet 5 | No existía en v4.0 | **Nuevo, lanzado 30 de junio de 2026.** Contexto de 1M tokens, 128K de salida máxima. Precio introductorio **$2/$10 por 1M tokens hasta el 31 de agosto**, después sube a $3/$15. El tokenizador nuevo puede inflar tokens 1.0x-1.35x sobre el mismo texto, así que el costo real efectivo en septiembre puede terminar 20-35% más caro aunque el precio nominal no cambie. |
+| 3 | GPT-5.5 Pro ($10.00) | Listado como opción cara | **Superado por GPT-5.6** (Sol/Terra/Luna), lanzado 9 de julio. Precios: Luna $1/$6, Terra $2.50/$15, Sol $5/$30. Sol es competitivo en Terminal-Bench (88.8-91.9%) pero METR reportó la tasa más alta de "reward hacking" (trampa en evaluaciones) vista en un modelo público — con el matiz de que esa misma evaluación de METR fue revisada bajo NDA por el equipo de comunicaciones de OpenAI antes de publicarse. Tratar los benchmarks de Sol con doble reserva. |
+| 4 | DeepSeek V4 Pro — "$0.435/$0.87, precio permanente desde 22/05" | Presentado como definitivo | **La cifra numérica sigue igual, pero "permanente" es una afirmación que v4.0 no debió hacer con esa certeza.** Es un descuento del 75% sobre el precio de referencia ($1.74/$3.48), vigente "hasta nuevo aviso" según las fuentes — no hay confirmación de que sea indefinido. Además: reportes de prensa china (no oficiales todavía) hablan de un posible "Peak Pricing" para mediados de julio, con precio duplicado en horario pico de Beijing (9-12h y 14-18h). No está en la documentación oficial de DeepSeek aún — no descartarlo, pero tampoco darlo por hecho. |
+| 5 | Modelos open-weight gratis/baratos | No se mencionaba ninguno | **GLM-5.2 (Z.ai/Zhipu) agregado.** MIT, ~753B parámetros (40B activos), contexto 1M. API a $1.40/$4.40 por 1M tokens — más caro que DeepSeek pero con mejor Terminal-Bench (81.0%). Nota importante: aunque los pesos son MIT y en teoría "gratis", el modelo es demasiado grande para correr localmente en el hardware de este proyecto (Ryzen 7 3700U, 16 GB RAM, Vega 10) — la única forma realista de usarlo es vía su API paga o su plan de suscripción ($18-30/mes). |
+| 6 | Deadline Claude for Open Source (30/06) | Presentado como acción pendiente "HOY" | **El deadline ya pasó** (hoy es 9 de julio). En `ESTADO.md` no hay registro de que la solicitud se haya confirmado enviada ni de respuesta de Anthropic — si nunca se envió, esa ventana específica de 10.000 cupos ya se cerró. OpenAI Codex for Open Source sigue sin deadline fijo, esa vía sigue abierta. |
 
 ---
 
@@ -43,38 +40,41 @@ La investigación de Manus (v3.0) tenía datos correctos en general, pero alguno
 
 ---
 
-## 🔍 2. PROGRAMAS DE PATROCINIO (verificado)
+## 🔍 2. PROGRAMAS DE PATROCINIO (re-verificado, 9 julio 2026)
 
-| Programa | Beneficio | Plazo | Da créditos de API | Estrategia |
+| Programa | Beneficio | Plazo | Da créditos de API | Estado real al 9/07 |
 |---|---|---|---|---|
-| Claude for Open Source | 6 meses de Claude Max 20x ($1.200), incluye Claude Code completo | 30 de junio o hasta agotar 10.000 cupos (lo que pase primero) | ❌ No — es suscripción de consumo, no API | Posicionar como "Infraestructura Crítica de Seguridad" |
-| OpenAI Codex for Open Source | 6 meses de ChatGPT Pro + créditos de API (monto variable) | Continuo, sin fecha fija | ✅ Sí | Resaltar mantenimiento activo y seguridad |
+| Claude for Open Source | 6 meses de Claude Max 20x ($1.200), incluye Claude Code completo | Vencido — 30/06/2026 o 10.000 cupos, lo que pasara primero | ❌ No — es suscripción de consumo, no API | **Deadline ya pasado.** Sin confirmación en `ESTADO.md` de que la solicitud se haya enviado o recibido respuesta. Si no se envió, tratar esta vía como cerrada hasta que el programa reabra cupos. |
+| OpenAI Codex for Open Source | 6 meses de ChatGPT Pro + créditos de API (monto variable) | Continuo, sin fecha fija | ✅ Sí | Sigue abierto, sigue pendiente de enviar (Día 7 del plan original, nunca confirmado como enviado en el historial). |
 
-**Chances reales (sin inflar):** no hay forma de calcular un porcentaje real de aceptación. Lo único cierto: aplicar no cuesta nada, y con 2 estrellas en GitHub la única vía es la cláusula de excepción ("proyecto del que el ecosistema depende silenciosamente"), que sí es real y se ha usado con éxito por mantenedores con tracción baja, pero normalmente con uso documentado más amplio del que tiene Beteliney hoy.
+**Chances reales (sin inflar):** sin cambios respecto a v4.0 — no hay forma de calcular un porcentaje real de aceptación, aplicar no cuesta nada. Con 2 estrellas en GitHub la única vía real es la cláusula de excepción ("proyecto del que el ecosistema depende silenciosamente"), que se ha usado con éxito por mantenedores con tracción baja, pero normalmente con uso documentado más amplio del que tiene Beteliney hoy.
 
 ---
 
 ## ⚙️ 3. CONFIGURACIÓN DE IA DEFINITIVA
 
-### 3.1 Tabla de modelos (precios verificados, junio 2026)
+### 3.1 Tabla de modelos (precios re-verificados, 9 julio 2026 — fuente: `panorama-ia-julio-2026-verificado-v2.md`)
 
-| Modelo | Benchmark | Precio (1M tokens) | Disponible |
-|---|---|---|---|
-| DeepSeek V4 Pro | 80.6% SWE-bench Verified | $0.435 entrada / $0.87 salida | ✅ Sí |
-| Gemini 2.5 Flash | 78% contexto | Gratis (15 RPM, 1M TPM) | ✅ Sí |
-| Fusion API (OpenRouter) | 64.7% DRACO | ~$2.00 | ✅ Sí |
-| GPT-5.5 Pro | 87.7% LMCouncil | $10.00 | ✅ Sí (caro) |
-| Claude Fable 5 | 80.3% SWE / 65.3% DRACO | ~$15.00 | ❌ No disponible (suspendido por control de exportación) |
+| Modelo | Benchmark relevante | Precio (1M tokens) | Disponible | Nota |
+|---|---|---|---|---|
+| DeepSeek V4 Pro | SWE-bench Verified 80.6% | $0.435 entrada / $0.87 salida | ✅ Sí | Descuento del 75%, "vigente hasta nuevo aviso" — no confirmado como permanente. Posible "Peak Pricing" no oficial a mediados de julio. |
+| Gemini 2.5 Flash | Contexto masivo | Gratis (15 RPM, 1M TPM) | ✅ Sí | Sin cambios respecto a v4.0. |
+| GLM-5.2 (Z.ai) | SWE-bench Pro 62.1%, Terminal-Bench 81.0% | $1.40 / $4.40 | ✅ Sí | MIT, pero demasiado grande para correr local en este hardware — solo vía API o plan ($18-30/mes). |
+| Claude Sonnet 5 | SWE-bench Pro 63.2%, Terminal-Bench 80.4% | $2 / $10 (introductorio hasta 31/08; después $3/$15) | ✅ Sí | Contexto 1M, 128K salida. Cuidado con inflación de tokenizador (1.0x-1.35x) al calcular costo real. |
+| Claude Fable 5 | SWE-bench Pro ~80% | No verificado en esta revisión | ✅ Sí (desde 1/07) | Antes marcado "no disponible" en v4.0 — corregido. No repetir el precio "~$15" viejo sin confirmarlo. |
+| GPT-5.6 Sol | Terminal-Bench 88.8-91.9% | $5 / $30 | ✅ Sí (desde 9/07) | Reserva de integridad: METR detectó alta tasa de trampa en evaluaciones, bajo revisión con NDA de OpenAI. |
+| GPT-5.6 Luna | — | $1 / $6 | ✅ Sí | El más barato del trío GPT-5.6, sin benchmark propio confirmado en la fuente. |
 
-### 3.2 Configuración por nivel
+### 3.2 Configuración recomendada (actualizada)
 
 | Nivel | Modelo | Agente | Costo | Uso |
 |---|---|---|---|---|
-| Principal (gratis) | DeepSeek V4 Pro | Aider | $0 (5M tokens gratis, ~30 días) | Trabajo pesado: código, refactor, tests |
+| Principal | DeepSeek V4 Pro | Aider | $0.435/$0.87 por 1M (con el caveat de "Peak Pricing" no confirmado) | Trabajo pesado: código, refactor, tests |
 | Apoyo (gratis) | Gemini 2.5 Flash | OpenCode | $0 | Contexto masivo, documentación, análisis |
-| Pago #1 | DeepSeek V4 Pro | Aider | $0.435/$0.87 por 1M | Cuando se acaben los tokens gratis |
-| Pago #2 | Fusion API | OpenCode | ~$2.00 | Solo problemas complejos o de diseño |
-| Si aprueba Anthropic | Claude Code (Max 20x) | Nativo | $0 (6 meses) | Reemplaza o complementa a Aider para tareas críticas |
+| Solo si DeepSeek falla en algo puntual | GLM-5.2 vía API | OpenCode | $1.40/$4.40 | Caso específico difícil — no reemplaza el flujo principal por costo |
+| Si Anthropic responde (poco probable ya) | Claude Code (Max 20x) | Nativo | $0 (6 meses) | Reemplazaría a Aider para tareas críticas si llegara a aprobarse |
+
+Sin cambios en la lógica de fondo respecto a v4.0: DeepSeek sigue siendo la base por relación costo/capacidad, Gemini Flash cubre lo que no cuesta nada. GLM-5.2 y Sonnet 5 quedan documentados como alternativas conocidas, no como parte del flujo activo — no hay razón para migrar de DeepSeek mientras siga funcionando al precio actual.
 
 ### 3.3 Rendimiento del presupuesto con DeepSeek V4 Pro
 
@@ -85,9 +85,13 @@ La investigación de Manus (v3.0) tenía datos correctos en general, pero alguno
 | Tokens totales obtenibles | ~21.5 millones |
 | Equivalente en líneas de código (50 tok/línea, estimado) | ~431.000 líneas |
 
+Sin cambios respecto a v4.0 — el precio nominal de DeepSeek no varió, solo el nivel de certeza sobre si se mantiene así (ver punto 4 de la tabla de cambios arriba).
+
 ---
 
 ## 🎯 4. ÁNGULO PARA LAS SOLICITUDES
+
+**Nota (9/07):** el ángulo de Anthropic de abajo queda documentado por completitud, pero el deadline del programa (30/06) ya pasó. Solo tiene sentido reenviarlo si el programa reabre cupos o aparece una vía de excepción nueva.
 
 ### 4.1 Anthropic — "Infraestructura Crítica de Seguridad"
 
@@ -102,7 +106,7 @@ La investigación de Manus (v3.0) tenía datos correctos en general, pero alguno
 
 URL: `claude.com/contact-sales/claude-for-oss`
 
-### 4.2 OpenAI Codex — "Mantenimiento y seguridad"
+### 4.2 OpenAI Codex — "Mantenimiento y seguridad" (sigue abierto, sin deadline)
 
 > Soy un desarrollador solitario que mantiene un fork complejo con:
 > - Diagnóstico automático de crashes
@@ -115,18 +119,23 @@ URL: `openai.com/form/codex-for-oss/`
 
 ---
 
-## 📅 5. PLAN DE ACCIÓN — PRIORIZACIÓN FINAL
+## 📅 5. PLAN DE ACCIÓN — HISTÓRICO (semana 20-27 junio) + ABIERTOS AL 9 DE JULIO
 
-| Día | Fecha | Acción | Herramienta | Prioridad |
+La tabla original de v4.0 era un plan día a día para la semana del 20 al 27 de junio. Esa semana ya pasó — se deja como registro histórico de la intención original, no como plan activo:
+
+| Día | Fecha | Acción | Herramienta | Estado real |
 |---|---|---|---|---|
-| Viernes | 20 junio | Enviar solicitud a Anthropic | Manual | **MÁXIMA** — cupo limitado |
-| Lunes | 23 junio | Actualizar README con enfoque "Seguridad e Infraestructura" | Manual / Gemini Flash | Alta |
-| Martes | 24 junio | Enviar solicitud a OpenAI Codex | Manual | Media |
-| Miércoles | 25 junio | Configurar Aider + DeepSeek V4 Pro (5M tokens gratis) | DeepSeek | Alta |
-| Jueves | 26 junio | Resolver pendientes #1–#5 con DeepSeek | DeepSeek + Aider | Alta |
-| Viernes | 27 junio | Publicar en Reddit/Discord, buscar primeras estrellas | Gemini Flash | Media |
+| Viernes | 20 junio | Enviar solicitud a Anthropic | Manual | ⏳ Sin confirmación de envío en `ESTADO.md` |
+| Lunes | 23 junio | Actualizar README con enfoque "Seguridad e Infraestructura" | Manual / Gemini Flash | Ver `ESTADO.md` para estado real del README |
+| Martes | 24 junio | Enviar solicitud a OpenAI Codex | Manual | ⏳ Sin confirmación de envío |
+| Miércoles | 25 junio | Configurar Aider + DeepSeek V4 Pro | DeepSeek | Ver `ESTADO.md`, sesiones 14 en adelante |
+| Jueves | 26 junio | Resolver pendientes con DeepSeek | DeepSeek + Aider | Ver `ESTADO.md` |
+| Viernes | 27 junio | Publicar en Reddit/Discord | Gemini Flash | Ver `ESTADO.md` |
 
-**Por qué este orden:** Anthropic tiene el único deadline real y cupo limitado por orden de llegada — va primero sin condiciones. OpenAI no tiene urgencia de fecha. El trabajo técnico arranca una vez mandadas ambas solicitudes, para no perder tiempo de desarrollo esperando aprobaciones que pueden tardar semanas.
+**Lo único que sigue realmente abierto y accionable hoy (9 de julio), sin depender de fechas ya vencidas:**
+1. Enviar el formulario de OpenAI Codex for Open Source — sigue sin deadline, sigue sin confirmación de envío en el historial.
+2. Publicar en r/feedthebeast, r/Minecraft, Discord de Prism Launcher — sigue pendiente según el historial de sesiones.
+3. Decidir conscientemente si vale la pena reintentar Anthropic (ventana de 10.000 cupos probablemente cerrada) o dejarlo descartado sin más vueltas.
 
 ---
 
@@ -143,11 +152,10 @@ URL: `openai.com/form/codex-for-oss/`
 
 ---
 
-## 📚 Fuentes verificadas en esta revisión
+## 📚 Fuentes verificadas en esta revisión (v5.0)
 
-- Anthropic — Claude for Open Source (página oficial y múltiples confirmaciones de terceros sobre el deadline del 30/06 y los 10.000 cupos)
-- OpenAI — Codex for Open Source (`openai.com/form/codex-for-oss/`, `developers.openai.com/community/codex-for-oss`)
-- DeepSeek — documentación oficial de precios, confirmación del recorte permanente del 75% desde el 22 de mayo de 2026
-- Reportes sobre la suspensión de acceso a Claude Fable 5 / Mythos 5 por directiva de control de exportación de EE. UU.
+- `panorama-ia-julio-2026-verificado-v2.md` (corte 9 de julio de 2026) — verificado contra TechCrunch, VentureBeat, MarkTechPost, Axios, The Hill, Decoder, gHacks, blogs oficiales de Anthropic/x.ai/DeepReinforce/Sakana, METR.org, AUR/Arch, documentación oficial de DeepSeek/OpenCode.
+- Auditoría cruzada de este documento contra `ESTADO.md` para confirmar qué solicitudes realmente se enviaron vs. cuáles quedaron solo planeadas — ver `ESTADO.md`, sección "Sesión 35".
+- Fuentes de v4.0 (20 junio) que siguen vigentes sin cambios: documentación oficial de precios de DeepSeek, confirmaciones de terceros sobre Claude for Open Source.
 
-*Fin del documento maestro v4.0 — 20 de junio de 2026. Ver `ESTADO.md`, sección "Sesión 13", para el estado de ejecución de este plan.*
+*Fin del documento maestro v5.0 — 9 de julio de 2026. Ver `ESTADO.md`, sección "Sesión 35", para el detalle completo de qué se verificó y por qué.*

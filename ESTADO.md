@@ -21,19 +21,20 @@
 
 ---
 
-## ESTADO ACTUAL — LEER ESTO PRIMERO (actualizado 2026-07-08, sesión 34)
+## ESTADO ACTUAL — LEER ESTO PRIMERO (actualizado 2026-07-09, sesión 35)
 > El detalle completo de cada sesión (auditorías, hallazgos, código, decisiones) está en `## HISTORIAL DE SESIONES` más abajo. Esta sección de arriba es lo único que hace falta leer para continuar el trabajo.
 
+**Todo el estado técnico de sesiones 24-34 sigue vigente sin cambios de fondo** (ver lista de pendientes reales al final de sesión 34, sin novedad). Sesión 35 fue documentación/planificación pura, sin tocar código ni correr build/test — auditó 3 documentos externos (estrategia de IA, plan de UI/web, roadmap técnico) contra el código real y contra ESTADO.md, en vez de asumirlos ciertos por venir de un LLM. Resultado: 1 ítem nuevo real agregado al backlog (sandboxing con Bubblewrap), 3 propuestas descartadas con razón documentada (LLM local para logs, rediseño completo de UI, "Wayland nativo para el juego" — este último directamente incorrecto, ya bloqueado por LWJGL, no por el launcher), y `ESTRATEGIA_IA.md` actualizado a v5.0 con precios de modelos de IA corregidos a julio 2026. Ver detalle completo en "Sesión 35" en el historial.
 
-**Todo lo de las sesiones 24-32 sigue vigente.** Esta sesion no cambio codigo, solo verifico externamente (GitHub real via `gh`, no solo el repo local) lo que sesion 32 dejo documentado:
-
-- **CI confirma que el build completo pasa** para los commits de firma Ed25519 y fix de path traversal (`completed success` en ambos, via `gh run list`) - evidencia mas fuerte que el intento de build local, que se colgo por el problema de LTO ya conocido (sesiones 20/27/29/31/32), no por el codigo.
-- **`RELEASE_SIGNING_KEY` confirmado presente en GitHub Actions secrets** con `gh secret list` (no solo confiando en el commit anterior).
-- **Correccion de la correccion (sesion 34):** lo que decia sesion 33 aca era imprecision propia, no un hallazgo real. `known-hashes.json` SI existe — vive en el repo `meta` (`~/Descargas/meta_beteliney`, rama `gh-pages`), no en el repo del launcher. Sesion 33 busco solo en el repo equivocado. Contenido verificado sesion 34: arrays `sha256`/`sha512` vacios por diseno (documentado desde sesion 14), con MD5 de Bitdefender aparte y `sourcesChecked` con las 5 fuentes revisadas — sin cambios de fondo desde entonces, sigue bloqueado por la API key de abuse.ch.
-- **Hallazgo nuevo:** CI tiene `BUILD_TESTING=OFF` (`.github/workflows/build.yml:80,164`) - `ctest` nunca corre en CI, solo se puede correr localmente, y localmente el build completo se cuelga con LTO. Este es el unico camino real para cerrar el pendiente de "verificar tests sobre el fix de GDLauncher".
-- **Git: confirmado limpio y sincronizado** (`status`, `stash`, `branch -vv`, `log` local vs `origin/main` - todos verificados con comandos directos).
-- **Pendiente real sin cambios de fondo:** ver lista completa arriba en "Sesion 33". Nada nuevo se resolvio esta sesion - fue puramente verificacion externa para confirmar (o corregir con precision) lo que sesiones anteriores afirmaban.
-- **Proximo paso recomendado:** intentar compilar + correr `ctest` local restringiendo targets (evitar LTO completo del launcher) para cerrar de una vez el pendiente #5; o resolver alguno de los pendientes que dependen del usuario (purga de historial, key de abuse.ch, subir key).
+**Pendientes reales sin cambios de fondo desde sesión 34 (7 puntos), más el nuevo ítem 11 del backlog de mejoras:**
+1. Meta server (`ElPibeCapo/meta`) como fuente de verdad — sigue sin verificar línea por línea.
+2. `known-hashes.json` (en `~/Descargas/meta_beteliney`, repo `meta`) — bloqueado por API key de abuse.ch/MalwareBazaar, requiere que el usuario la consiga.
+3. Purga del historial de git de las 4 API keys viejas de CurseForge — sigue esperando confirmación explícita del usuario, irreversible.
+4. Pruebas manuales GUI (backup de mundos, badge de mods) — sin cambios, no automatizables desde este entorno.
+5. `ctest` local sobre el fix de GDLauncherMigrator — bloqueado por el cuelgue del build completo con LTO; camino recomendado: restringir targets como en sesión 32.
+6. Paso de firma real en CI nunca probado end-to-end — secret presente, falta que se dispare un release real.
+7. Causa raíz del cuelgue del build completo local con LTO — no investigada.
+8. **Nuevo (sesión 35):** sandboxing con Bubblewrap (`bwrap`) para aislar el proceso de Minecraft — ítem 11 del backlog de mejoras, cola después de la Fase 4 del plan de sesión 25 (ver detalle en sesión 35).
 
 ---
 
@@ -1355,4 +1356,34 @@ Aparece en la lista de secrets del repo, fecha `2026-07-09T01:02:19Z`, coincide 
 5. `ctest` local sobre el fix de GDLauncherMigrator - bloqueado por el cuelgue del build completo con LTO; camino recomendado: restringir targets como en sesión 32.
 6. Paso de firma real en CI nunca probado end-to-end - secret presente, falta que se dispare un release real.
 7. Causa raíz del cuelgue del build completo local con LTO - no investigada.
+
+### Sesión 35 — Auditoría de 3 documentos externos (estrategia de IA, plan de UI/web, roadmap técnico) contra el código real (2026-07-09)
+
+**Contexto:** el usuario pasó 3 documentos generados por otra IA, sin relación directa con ninguna sesión previa de este proyecto: `panorama-ia-julio-2026-verificado-v2.md` (comparación de modelos de IA para desarrollo), `Master Plan Beteliney 2026` (landing page con v0, rediseño de UI con Google Stitch/Recraft, "AI Chat Log Assistant" con LLM local) y `BetelineyLauncher: Hoja de Ruta de Excelencia Técnica 2026` (Qt 6.11, GraalVM, ZGC, sandboxing, Wayland nativo). Pidió documentar todo y mejorar todo. Metodología: no asumir ningún dato de los 3 documentos como cierto solo por venir de una IA — verificar cada afirmación relevante contra el código real, contra `README.md` y contra este mismo `ESTADO.md` antes de aceptarla o rechazarla, mismo estándar de rigor que sesiones 26/32/33/34.
+
+**Verificaciones hechas y resultado, punto por punto:**
+
+1. **ZGC como recolector por defecto (propuesto en el Roadmap Técnico como pendiente):** ya implementado desde el commit inicial — es el perfil 6 ("iGPU ZGC Java21+") de `BetelineyProfiles.h`. El documento estaba desactualizado, no hace falta ninguna acción.
+
+2. **"Integración con Wayland Nativo" para el juego (Roadmap Técnico):** verificado contra `README.md`/`lanzar.sh` del propio proyecto — **el documento está directamente equivocado.** LWJGL (la librería que usa Minecraft para OpenGL/input) no soporta Wayland nativo hoy, por eso `lanzar.sh` fuerza `GLFW_PLATFORM=x11` explícitamente para el proceso del juego. Es una limitación upstream de LWJGL, no una decisión pendiente del launcher — el launcher Qt6 en sí ya corre sobre Wayland nativo sin problema. Descartado, con esta nota para no volver a proponerlo hasta que LWJGL lo soporte.
+
+3. **"AI Chat Log Assistant" con LLM local (Llama 3.3 8B / Mistral Small 7B vía llama.cpp), propuesto en el Master Plan:** descartado por conflicto directo con el hardware target del propio proyecto. `BetelineyLogAnalyzer` ya cubre 18 tipos de error de forma determinista, sin costo de RAM, sin red, sin latencia. Correr un LLM local de 7-8B (aun cuantizado, ~4-5GB de RAM) en una máquina de 16GB compartidos con la Vega 10 — la misma RAM que los perfiles JVM del propio launcher ya reservan hasta 12GB en el perfil extremo — compite por el recurso más escaso del sistema para reemplazar algo que ya funciona gratis y sin fallos conocidos. No se agrega al backlog.
+
+4. **Rediseño completo de UI con Google Stitch + Recraft (Master Plan):** descartado como reescritura total. `BetelineyTheme.cpp` ya tiene ~810 líneas de QSS custom con estética neón coherente, verificada con captura real en sesión 19. Recraft queda como herramienta válida solo para assets puntuales nuevos (íconos faltantes), no para regenerar el theme desde cero.
+
+5. **Landing page con v0 by Vercel (Master Plan):** idea válida, sin conflicto técnico con nada del código. Prioridad baja — no reemplaza ni se mete en medio de las Fases 1-5 del backlog ya decidido en sesión 25, queda anotada para después de cerrarlas.
+
+6. **Qt 6.11 "Canvas Painter" (Roadmap Técnico):** no verificable con la información disponible en esta sesión (sin acceso a documentación oficial de Qt para confirmarlo). No se incorpora como hecho ni se actúa sobre esto sin verificarlo directamente contra `doc.qt.io` primero.
+
+7. **GraalVM con "+15-20% de FPS" (Roadmap Técnico):** la cifra no tiene fuente verificable — mismo patrón de dato de vendor sin auditar que el propio `panorama-ia-julio-2026-verificado-v2.md` marca como red flag en otros contextos (ej. los benchmarks de METR sobre GPT-5.6 revisados bajo NDA). La idea en sí (GraalVM como motor de ejecución alternativo a OpenJDK) es técnicamente real y no descabellada, pero queda como investigación futura sin comprometerse con ninguna cifra de mejora hasta medirlo en el hardware real del proyecto.
+
+8. **Sandboxing con Bubblewrap (`bwrap`), propuesto en el Roadmap Técnico:** la única idea genuinamente nueva de los 3 documentos que no estaba ya cubierta ni descartada por lo anterior. `bwrap` ya es parte del ecosistema del sistema (mismo mecanismo de sandboxing que usa Flatpak, que el proyecto ya empaqueta). Aislar el proceso de Minecraft con `bwrap` para que un mod malicioso no pueda leer tokens de sesión de Discord/navegador es una mejora de seguridad real y no trivial, coherente con el threat model completo de sesión 30 (que no la había contemplado). **Se agrega como ítem 11 al backlog de mejoras**, en cola después de la Fase 4 del plan de sesión 25 — no se reordena nada de lo ya decidido, solo se suma al final.
+
+9. **Precios de modelos de IA (`panorama-ia-julio-2026-verificado-v2.md`) vs. tabla 3.1 de `ESTRATEGIA_IA.md` v4.0 (20 jun 2026):** la tabla de precios de `ESTRATEGIA_IA.md` quedó desactualizada frente a los datos de julio (Sonnet 5 con precio introductorio $2/$10 hasta el 31 de agosto en vez de $3/$15 fijo, GLM-5.2 a $1.40/$4.40 en vez de $1.20/$4.10, etc.). Se actualizó `ESTRATEGIA_IA.md` a v5.0 en esta misma sesión — ver ese archivo para el detalle completo, no se duplica la tabla acá para no crear una segunda fuente de verdad sobre lo mismo.
+
+**Qué NO se hizo esta sesión, honestamente:** no se tocó ni una línea de código C++/Qt, no se corrió build ni `ctest` — no había ningún cambio de código que ameritara verificación de compilación. Es sesión de documentación/planificación pura, mismo tipo que sesiones 24, 25 y 30.
+
+**Pendiente real, sin cambios de fondo respecto a sesión 34 (los mismos 7 puntos siguen exactamente igual), más lo nuevo de esta sesión:**
+8. Backlog de mejoras: ítem 11 agregado — sandboxing con Bubblewrap para el proceso de Minecraft, esfuerzo estimado medio (requiere mapear qué directorios necesita ver el juego en runtime — assets, saves, mods, Java — sin romper nada), sin empezar.
+9. Si en algún momento se quiere retomar la idea de landing page (v0) o investigar GraalVM como motor alternativo, quedan anotadas como opcionales de baja prioridad, no urgentes ni bloqueantes de nada.
 
