@@ -40,6 +40,7 @@
 #include <QStandardPaths>
 
 #include "Application.h"
+#include "BubblewrapSandbox.h"
 #include "Commandline.h"
 #include "FileSystem.h"
 #include "launch/LaunchTask.h"
@@ -135,6 +136,9 @@ void LauncherPartLaunch::executeTask()
     qDebug() << args.join(' ');
 
     QString wrapperCommandStr = instance->getWrapperCommand().trimmed();
+
+    QString launchCommand;
+    QStringList launchArgs;
     if (!wrapperCommandStr.isEmpty()) {
         wrapperCommandStr = m_parent->substituteVariables(wrapperCommandStr);
         auto wrapperArgs = Commandline::splitArgs(wrapperCommandStr);
@@ -148,10 +152,37 @@ void LauncherPartLaunch::executeTask()
         }
         emit logLine("Wrapper command is:\n" + wrapperCommandStr + "\n\n", MessageLevel::Launcher);
         args.prepend(javaPath);
-        m_process.start(wrapperCommand, wrapperArgs + args);
+        launchCommand = wrapperCommand;
+        launchArgs = wrapperArgs + args;
     } else {
-        m_process.start(javaPath, args);
+        launchCommand = javaPath;
+        launchArgs = args;
     }
+
+#ifdef Q_OS_LINUX
+    // Beteliney: sandboxing opcional con Bubblewrap. Envuelve el comando final
+    // (java o el wrapper del usuario, lo que corresponda) en un namespace
+    // aislado que no expone el $HOME real, para que un mod malicioso no pueda
+    // leer tokens de sesión de Discord/navegador. Ver BubblewrapSandbox.h.
+    if (instance->settings()->get("EnableBubblewrapSandbox").toBool()) {
+        if (Beteliney::BubblewrapSandbox::isAvailable()) {
+            QString sandboxHome = FS::PathCombine(instance->gameRoot(), ".bwrap_home");
+            QStringList bwrapArgs = Beteliney::BubblewrapSandbox::buildArgs(instance->gameRoot(), javaPath, sandboxHome);
+            bwrapArgs << launchCommand << launchArgs;
+            emit logLine("Sandboxing con Bubblewrap activado para esta instancia.\n\n", MessageLevel::Launcher);
+            m_process.start("bwrap", bwrapArgs);
+        } else {
+            emit logLine(
+                "El aislamiento con Bubblewrap está activado pero 'bwrap' no se encontró en el sistema. Lanzando sin aislar.\n\n",
+                MessageLevel::Warning);
+            m_process.start(launchCommand, launchArgs);
+        }
+    } else {
+        m_process.start(launchCommand, launchArgs);
+    }
+#else
+    m_process.start(launchCommand, launchArgs);
+#endif
 
 #ifdef BETELINEY_HAVE_GAMEMODE
     if (instance->settings()->get("EnableFeralGamemode").toBool() && APPLICATION->capabilities() & Application::SupportsGameMode) {
