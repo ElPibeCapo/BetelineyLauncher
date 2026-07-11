@@ -149,6 +149,17 @@ if(ENABLE_LTO)
         else()
             message(STATUS "IPO / LTO will only be enabled for release builds")
         endif()
+
+        # Sesión 37: cada link con LTO (-flto=auto en GCC) ya paraleliza internamente
+        # hasta nproc() hilos de LTRANS por su cuenta. Sin este pool, Ninja además
+        # corre varios de esos links en simultáneo (uno por target: beteliney +
+        # las ~16 herramientas chicas), multiplicando el paralelismo real muy por
+        # encima de los cores/RAM disponibles y generando swap thrashing que se
+        # veía como un cuelgue del build completo (sesiones 20/27/29/31/32/33/36).
+        # Limitar a 2 links simultáneos deja que cada uno use sus propios hilos
+        # de LTRANS sin pisarse con los demás.
+        set_property(GLOBAL PROPERTY JOB_POOLS lto_link_pool=2)
+        set(CMAKE_JOB_POOL_LINK lto_link_pool)
     else()
         message(STATUS "IPO / LTO not supported: <${ipo_error}>")
     endif()
