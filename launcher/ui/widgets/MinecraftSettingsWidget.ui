@@ -763,6 +763,16 @@ It is most likely you will need to change the path - please refer to the mod's w
                </widget>
               </item>
               <item>
+               <widget class="QCheckBox" name="enableBubblewrapSandboxCheck">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Run Minecraft inside a Bubblewrap (bwrap) sandbox to restrict filesystem and process access. Improves security in exchange for a small startup overhead. Linux only.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <property name="text">
+                 <string>Enable Bubblewrap sandbox</string>
+                </property>
+               </widget>
+              </item>
+              <item>
                <widget class="QCheckBox" name="useDiscreteGpuCheck">
                 <property name="toolTip">
                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Use the discrete GPU instead of the primary GPU.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -886,6 +896,7 @@ It is most likely you will need to change the path - please refer to the mod's w
   <tabstop>lineEditOpenALPath</tabstop>
   <tabstop>enableFeralGamemodeCheck</tabstop>
   <tabstop>enableMangoHud</tabstop>
+  <tabstop>enableBubblewrapSandboxCheck</tabstop>
   <tabstop>useDiscreteGpuCheck</tabstop>
   <tabstop>useZink</tabstop>
  </tabstops>

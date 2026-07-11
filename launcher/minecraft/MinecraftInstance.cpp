@@ -225,6 +225,7 @@ void MinecraftInstance::loadSpecificSettings()
         auto performanceOverride = m_settings->registerSetting("OverridePerformance", false);
         m_settings->registerOverride(global_settings->getSetting("EnableFeralGamemode"), performanceOverride);
         m_settings->registerOverride(global_settings->getSetting("EnableMangoHud"), performanceOverride);
+        m_settings->registerOverride(global_settings->getSetting("EnableBubblewrapSandbox"), performanceOverride);
         m_settings->registerOverride(global_settings->getSetting("UseDiscreteGpu"), performanceOverride);
         m_settings->registerOverride(global_settings->getSetting("UseZink"), performanceOverride);
 

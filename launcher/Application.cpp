@@ -813,6 +813,12 @@ Application::Application(int& argc, char** argv) : QApplication(argc, argv)
         m_settings->registerSetting("EnableFeralGamemode", false);
 #endif
         m_settings->registerSetting("EnableMangoHud", false);
+        // Beteliney: sandboxing opcional del proceso de Minecraft con Bubblewrap
+        // (bwrap), aislando el $HOME real para que un mod malicioso no pueda leer
+        // tokens de sesión de Discord/navegador (threat model sesión 30/35).
+        // Desactivado por defecto: requiere testing real del usuario antes de
+        // recomendarlo como default, y solo aplica en Linux.
+        m_settings->registerSetting("EnableBubblewrapSandbox", false);
         m_settings->registerSetting("UseDiscreteGpu", false);
         m_settings->registerSetting("UseZink", false);
         m_settings->registerSetting("LowMemWarning", true);

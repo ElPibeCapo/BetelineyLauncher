@@ -221,6 +221,13 @@ void MinecraftSettingsWidget::loadSettings()
     m_ui->perfomanceGroupBox->setChecked(m_instance == nullptr || settings->get("OverridePerformance").toBool());
     m_ui->enableFeralGamemodeCheck->setChecked(settings->get("EnableFeralGamemode").toBool());
     m_ui->enableMangoHud->setChecked(settings->get("EnableMangoHud").toBool());
+#ifdef Q_OS_LINUX
+    m_ui->enableBubblewrapSandboxCheck->setChecked(settings->get("EnableBubblewrapSandbox").toBool());
+#else
+    m_ui->enableBubblewrapSandboxCheck->setChecked(false);
+    m_ui->enableBubblewrapSandboxCheck->setEnabled(false);
+    m_ui->enableBubblewrapSandboxCheck->setToolTip(tr("Solo disponible en Linux."));
+#endif
     m_ui->useDiscreteGpuCheck->setChecked(settings->get("UseDiscreteGpu").toBool());
     m_ui->useZink->setChecked(settings->get("UseZink").toBool());
 
@@ -411,11 +418,15 @@ void MinecraftSettingsWidget::saveSettings()
         if (performance) {
             settings->set("EnableFeralGamemode", m_ui->enableFeralGamemodeCheck->isChecked());
             settings->set("EnableMangoHud", m_ui->enableMangoHud->isChecked());
+#ifdef Q_OS_LINUX
+            settings->set("EnableBubblewrapSandbox", m_ui->enableBubblewrapSandboxCheck->isChecked());
+#endif
             settings->set("UseDiscreteGpu", m_ui->useDiscreteGpuCheck->isChecked());
             settings->set("UseZink", m_ui->useZink->isChecked());
         } else {
             settings->reset("EnableFeralGamemode");
             settings->reset("EnableMangoHud");
+            settings->reset("EnableBubblewrapSandbox");
             settings->reset("UseDiscreteGpu");
             settings->reset("UseZink");
         }

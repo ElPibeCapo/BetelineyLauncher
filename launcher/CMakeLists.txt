@@ -92,6 +92,10 @@ set(CORE_SOURCES
     Commandline.h
     Commandline.cpp
 
+    # Sandboxing opcional del proceso de Minecraft (solo Linux)
+    BubblewrapSandbox.h
+    BubblewrapSandbox.cpp
+
     # Version number string support
     Version.h
     Version.cpp
