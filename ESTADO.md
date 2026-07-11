@@ -21,20 +21,24 @@
 
 ---
 
-## ESTADO ACTUAL — LEER ESTO PRIMERO (actualizado 2026-07-11, sesión 36)
+## ESTADO ACTUAL — LEER ESTO PRIMERO (actualizado 2026-07-11, sesión 37)
 > El detalle completo de cada sesión (auditorías, hallazgos, código, decisiones) está en `## HISTORIAL DE SESIONES` más abajo. Esta sección de arriba es lo único que hace falta leer para continuar el trabajo.
 
-**Todo el estado técnico de sesiones 24-35 sigue vigente sin cambios de fondo** (ver lista de pendientes reales al final de sesión 34, más ítem 11 agregado en sesión 35). Sesión 36 cerró el sistema de logros de marca (Fase 3 del plan de sesión 25, commit `b49a3cbc8`, 288 líneas, build 35/35 sin warnings, 29/29 tests) y corrigió en el momento un incidente de `clang-format` que reformateó de más 2 archivos existentes antes de comitear (diff acotado a lo realmente tocado, detalle completo y lección operativa en "Sesión 36" del historial). De paso corrigió un header de licencia mal copiado (Apache-2.0 → GPL-3.0-only) en los 2 archivos nuevos del widget de toast. Nada de esto toca los pendientes de abajo.
+**Sesión 37 resolvió la causa raíz del cuelgue histórico del build local con LTO (pendientes 5 y 7)**, commit `3bba3a54c`. Diagnóstico: cada link con `-flto=auto` (GCC) paraleliza internamente hasta `nproc()` hilos de LTRANS por su cuenta; sin límite, Ninja corría varios links en simultáneo (beteliney + ~16 herramientas chicas) multiplicando el paralelismo muy por encima de cores/RAM disponibles (8 cores / 13GB), causando swap thrashing que se veía como cuelgue total. Fix: `JOB_POOLS lto_link_pool=2` + `CMAKE_JOB_POOL_LINK`, limitando a 2 links simultáneos. Verificado con rebuild forzado completo: 72/72 targets sin cuelgue, memoria estable 6.3-7.5GB de 13GB (nunca tocó swap). `ctest` 29/29 pasan, incluyendo GDLauncherMigrator (bloqueado desde sesión 32 por este mismo cuelgue, pendiente 5 ahora cerrado). De paso se limpiaron 2 archivos `.h.in` vacíos y huérfanos (`buildconfig/BuildConfig.h.in`, `launcher/BuildConfig.h.in`) que habían quedado sin trackear de una sesión anterior — no correspondían a ningún artefacto real del build (el trackeado es `BuildConfig.h`, no `.h.in`).
 
-**Pendientes reales sin cambios de fondo desde sesión 34 (7 puntos), más el ítem 11 del backlog de mejoras (sesión 35):**
+**Todo el estado técnico de sesiones 24-36 sigue vigente sin cambios de fondo** salvo los dos pendientes cerrados arriba.
+
+**Pendientes reales restantes (6 puntos), más el ítem 8 del backlog de mejoras (sesión 35):**
 1. Meta server (`ElPibeCapo/meta`) como fuente de verdad — sigue sin verificar línea por línea.
 2. `known-hashes.json` (en `~/Descargas/meta_beteliney`, repo `meta`) — bloqueado por API key de abuse.ch/MalwareBazaar, requiere que el usuario la consiga.
 3. Purga del historial de git de las 4 API keys viejas de CurseForge — sigue esperando confirmación explícita del usuario, irreversible.
 4. Pruebas manuales GUI (backup de mundos, badge de mods) — sin cambios, no automatizables desde este entorno.
-5. `ctest` local sobre el fix de GDLauncherMigrator — bloqueado por el cuelgue del build completo con LTO; camino recomendado: restringir targets como en sesión 32.
+5. ~~`ctest` local sobre el fix de GDLauncherMigrator~~ — **cerrado en sesión 37**, 29/29 pasan.
 6. Paso de firma real en CI nunca probado end-to-end — secret presente, falta que se dispare un release real.
-7. Causa raíz del cuelgue del build completo local con LTO — no investigada.
-8. **Nuevo (sesión 35):** sandboxing con Bubblewrap (`bwrap`) para aislar el proceso de Minecraft — ítem 11 del backlog de mejoras, cola después de la Fase 4 del plan de sesión 25 (ver detalle en sesión 35).
+7. ~~Causa raíz del cuelgue del build completo local con LTO~~ — **cerrado en sesión 37**, ver arriba.
+8. Sandboxing con Bubblewrap (`bwrap`) para aislar el proceso de Minecraft — ítem 11 del backlog de mejoras (sesión 35), cola después de la Fase 4 del plan de sesión 25.
+
+**De los 6 restantes, solo el 2 y el 3 dependen 100% del usuario (API key externa e irreversibilidad, respectivamente). El resto (1, 4, 6, 8) se puede seguir trabajando sin intervención.**
 
 ---
 
@@ -1406,4 +1410,27 @@ Aparece en la lista de secrets del repo, fecha `2026-07-09T01:02:19Z`, coincide 
 **Con esto, Fase 3 del plan de sesión 25 queda con el sistema de logros cerrado.** **Backlog restante:** ítem 11 (sandboxing Bubblewrap, sesión 35) sin empezar; los 7 pendientes reales de sesión 34 sin cambios (2 de ellos bloqueados exclusivamente por acción del usuario: purgar API keys viejas del historial de git, y conseguir API key de abuse.ch).
 
 **Lección operativa reforzada:** antes de correr `clang-format`/`git-clang-format` sobre código existente en este repo, comprobar primero que el resultado no diverja del estilo real circundante (`git diff --stat` chico y localizado = buena señal; si el diff es enorme y toca líneas no relacionadas, parar y revisar antes de comitear, no después).
+
+---
+
+### Sesión 37 — Causa raíz del cuelgue histórico del build local con LTO, resuelta (2026-07-11)
+
+**Contexto:** continuación directa de una sesión anterior cortada por límite de mensajes justo mientras se aplicaba el fix y se lanzaba el rebuild de verificación en background. Al retomar, se confirmó primero que la sesión 36 (logros de marca) había quedado cerrada y pusheada correctamente sin intervención (`b49a3cbc8` + `f5a2476a1` + `122ea57a3`, árbol limpio en ese momento) antes de tocar nada nuevo.
+
+**Diagnóstico confirmado:** el proyecto compila con `-flto=auto` (GCC). Este flag hace que **cada link individual** paralelice internamente su propia fase LTRANS hasta `nproc()` hilos. Sin un límite a nivel de Ninja, varios de esos links (el ejecutable principal `beteliney` + las ~16 herramientas chicas del repo) corrían en simultáneo, cada uno reclamando hasta 8 hilos propios — en una máquina de 8 cores / 13GB RAM esto multiplicaba el paralelismo real muy por encima de lo disponible, generando *swap thrashing* que se manifestaba como un cuelgue total del build. Confirmado contra el histórico: mismo síntoma documentado en sesiones 20, 27, 29, 31, 32, 33 y 36.
+
+**Fix aplicado (`CMakeLists.txt`, tras el bloque `if(ENABLE_LTO)`):**
+```cmake
+set_property(GLOBAL PROPERTY JOB_POOLS lto_link_pool=2)
+set(CMAKE_JOB_POOL_LINK lto_link_pool)
+```
+Limita a 2 los links simultáneos permitidos por Ninja cuando LTO está activo. Cada uno sigue usando sus propios hilos de LTRANS internamente, pero ya no se pisan entre sí por cores/RAM.
+
+**Verificación:** reconfiguración de CMake confirmó el pool aplicado a todos los link edges del `build.ninja` generado. Rebuild forzado completo (tocando un header compartido para invalidar todos los targets): **72/72 objetivos compilados y linkeados sin cuelgue**, memoria estable entre 6.3GB y 7.5GB de 13GB durante todo el proceso (nunca tocó swap). Cero errores, cero warnings en el log completo. `ctest` corrido después: **29/29 tests pasando**, incluyendo `GDLauncherMigrator` — bloqueado desde sesión 32 precisamente por este mismo cuelgue, ahora verificado sin intervención manual.
+
+**Limpieza de paso:** dos archivos huérfanos y vacíos (`buildconfig/BuildConfig.h.in`, `launcher/BuildConfig.h.in`, 0 bytes cada uno) quedaron sin trackear de una operación de sesión anterior — no correspondían a ningún artefacto real del sistema de build (el archivo que el proyecto trackea es `buildconfig/BuildConfig.h`, sin `.in`; el `.in` real es `BuildConfig.cpp.in`). Eliminados antes de comitear.
+
+**Commit:** `3bba3a54c` ("fix(build): job pool para links con LTO, resuelve cuelgue histórico"), 1 archivo, 11 inserciones.
+
+**Con esto quedan cerrados los pendientes 5 (`ctest` de GDLauncherMigrator) y 7 (causa raíz del cuelgue de LTO) que venían arrastrándose desde sesión 32.** Pendientes reales restantes: 6 puntos (ver bloque ESTADO ACTUAL), de los cuales solo 2 dependen de acción del usuario (API key de abuse.ch, confirmación de purga de historial de git). El resto (meta server sin auditar línea por línea, pruebas manuales de GUI, firma real en CI end-to-end, sandboxing con Bubblewrap) se puede seguir trabajando sin bloqueos.
 
