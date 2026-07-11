@@ -130,6 +130,9 @@
 
 #include "KonamiCode.h"
 
+#include "BetelineyAchievements.h"  // Beteliney Fase 3
+#include "ui/widgets/AchievementToast.h"  // Beteliney Fase 3
+
 #include "InstanceCopyTask.h"
 #include "InstanceDirUpdate.h"
 
@@ -310,6 +313,15 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWi
     {
         secretEventFilter = new KonamiCode(this);
         connect(secretEventFilter, &KonamiCode::triggered, this, &MainWindow::konamiTriggered);
+    }
+
+    // Beteliney Fase 3: logros de marca por tiempo jugado
+    {
+        m_achievementToast = new AchievementToast(this);
+        connect(&Beteliney::Achievements::instance(), &Beteliney::Achievements::achievementUnlocked, this,
+                [this](const Beteliney::Achievement& achievement) {
+                    m_achievementToast->showAchievement(achievement.name, achievement.description);
+                });
     }
 
     // Add the news label to the news toolbar.

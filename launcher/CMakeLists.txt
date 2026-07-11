@@ -1123,6 +1123,10 @@ SET(LAUNCHER_SOURCES
     ui/dialogs/FavoriteServersDialog.cpp
     ui/dialogs/FavoriteServersDialog.h
 
+    # Beteliney Fase 3: logros de marca por tiempo jugado
+    BetelineyAchievements.h
+    BetelineyAchievements.cpp
+
     ui/dialogs/MSALoginDialog.cpp
     ui/dialogs/MSALoginDialog.h
     ui/dialogs/NewComponentDialog.cpp
@@ -1165,6 +1169,8 @@ SET(LAUNCHER_SOURCES
     ui/dialogs/skins/draw/BoxGeometry.cpp
 
     # GUI - widgets
+    ui/widgets/AchievementToast.cpp
+    ui/widgets/AchievementToast.h
     ui/widgets/CheckComboBox.cpp
     ui/widgets/CheckComboBox.h
     ui/widgets/Common.cpp

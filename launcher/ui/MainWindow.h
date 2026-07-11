@@ -66,6 +66,7 @@ class InstanceView;
 class KonamiCode;
 class InstanceTask;
 class LabeledToolButton;
+class AchievementToast;  // Beteliney Fase 3
 
 namespace Ui {
 class MainWindow;
@@ -255,6 +256,7 @@ class MainWindow : public QMainWindow {
     QToolButton* helpMenuButton = nullptr;
     KonamiCode* secretEventFilter = nullptr;
     QMenu* m_favoriteServersMenu = nullptr;  // Beteliney Fase 2
+    AchievementToast* m_achievementToast = nullptr;  // Beteliney Fase 3
 
     std::shared_ptr<Setting> instanceToolbarSetting = nullptr;
 

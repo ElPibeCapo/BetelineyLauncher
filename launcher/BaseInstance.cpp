@@ -37,6 +37,7 @@
  */
 
 #include "BaseInstance.h"
+#include "BetelineyAchievements.h"
 
 #include <QDebug>
 #include <QDir>
@@ -300,6 +301,11 @@ void BaseInstance::setMinecraftRunning(bool running)
         qint64 current = settings()->get("totalTimePlayed").toLongLong();
         settings()->set("totalTimePlayed", current + m_timeStarted.secsTo(timeEnded));
         settings()->set("lastTimePlayed", m_timeStarted.secsTo(timeEnded));
+
+        // Beteliney Fase 3: logros de marca por tiempo jugado. totalTimePlayed()
+        // ya quedó actualizado arriba, así que este es el punto exacto para
+        // chequear.
+        Beteliney::Achievements::instance().checkInstance(this);
 
         emit propertiesChanged(this);
     }
