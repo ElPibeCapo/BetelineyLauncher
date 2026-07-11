@@ -32,6 +32,35 @@ MetadataVersion currentFormatVersion()
     return MetadataVersion::InitialRelease;
 }
 
+// Auditoría de seguridad (sesión 38): 'uid' y 'version' vienen del feed de meta
+// remoto y se usan sin más para construir rutas de archivo (ver
+// VersionList::localFilename / Version::localFilename, y su consumo en
+// BaseEntityLoadTask y HttpMetaCache::resolveEntry). FS::RemoveInvalidPathChars
+// solo filtra caracteres inválidos de NTFS/FAT en Windows y NO bloquea '/' ni
+// '..' en Linux, así que sin esta validación un feed comprometido (o un
+// MetaURLOverride apuntando a un host hostil) podría inyectar un uid/version
+// tipo "../../../.ssh" y leer, escribir o borrar fuera del directorio de cache
+// esperado. Se rechaza cualquier valor que no sea un identificador seguro.
+static bool isSafePathComponent(const QString& value)
+{
+    if (value.isEmpty() || value.size() > 256)
+        return false;
+    if (value == "." || value == "..")
+        return false;
+    if (value.contains(QLatin1String("..")) || value.contains('/') || value.contains('\\') || value.contains(QChar(0)))
+        return false;
+    return true;
+}
+
+static QString requireSafePathComponent(const QJsonObject& obj, const QString& key)
+{
+    auto value = requireString(obj, key);
+    if (!isSafePathComponent(value)) {
+        throw ParseException(QObject::tr("Invalid '%1' in meta entry: contains illegal path characters").arg(key));
+    }
+    return value;
+}
+
 // Index
 static std::shared_ptr<Index> parseIndexInternal(const QJsonObject& obj)
 {
@@ -39,7 +68,7 @@ static std::shared_ptr<Index> parseIndexInternal(const QJsonObject& obj)
     QList<VersionList::Ptr> lists;
     lists.reserve(objects.size());
     std::transform(objects.begin(), objects.end(), std::back_inserter(lists), [](const QJsonObject& obj) {
-        VersionList::Ptr list = std::make_shared<VersionList>(requireString(obj, "uid"));
+        VersionList::Ptr list = std::make_shared<VersionList>(requireSafePathComponent(obj, "uid"));
         list->setName(obj["name"].toString());
         list->setSha256(obj["sha256"].toString());
         return list;
@@ -50,7 +79,7 @@ static std::shared_ptr<Index> parseIndexInternal(const QJsonObject& obj)
 // Version
 static Version::Ptr parseCommonVersion(const QString& uid, const QJsonObject& obj)
 {
-    Version::Ptr version = std::make_shared<Version>(uid, requireString(obj, "version"));
+    Version::Ptr version = std::make_shared<Version>(uid, requireSafePathComponent(obj, "version"));
     version->setTime(QDateTime::fromString(requireString(obj, "releaseTime"), Qt::ISODate).toMSecsSinceEpoch() / 1000);
     version->setType(obj["type"].toString());
     version->setRecommended(obj["recommended"].toBool());
@@ -67,7 +96,7 @@ static Version::Ptr parseCommonVersion(const QString& uid, const QJsonObject& ob
 
 static Version::Ptr parseVersionInternal(const QJsonObject& obj)
 {
-    Version::Ptr version = parseCommonVersion(requireString(obj, "uid"), obj);
+    Version::Ptr version = parseCommonVersion(requireSafePathComponent(obj, "uid"), obj);
 
     version->setData(OneSixVersionFormat::versionFileFromJson(
         QJsonDocument(obj), QString("%1/%2.json").arg(version->uid(), version->version()), obj.contains("order")));
@@ -77,7 +106,7 @@ static Version::Ptr parseVersionInternal(const QJsonObject& obj)
 // Version list / package
 static VersionList::Ptr parseVersionListInternal(const QJsonObject& obj)
 {
-    const QString uid = requireString(obj, "uid");
+    const QString uid = requireSafePathComponent(obj, "uid");
 
     const QList<QJsonObject> versionsRaw = requireIsArrayOf<QJsonObject>(obj, "versions");
     QList<Version::Ptr> versions;
