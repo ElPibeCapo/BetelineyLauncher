@@ -21,12 +21,12 @@
 
 ---
 
-## ESTADO ACTUAL — LEER ESTO PRIMERO (actualizado 2026-07-09, sesión 35)
+## ESTADO ACTUAL — LEER ESTO PRIMERO (actualizado 2026-07-11, sesión 36)
 > El detalle completo de cada sesión (auditorías, hallazgos, código, decisiones) está en `## HISTORIAL DE SESIONES` más abajo. Esta sección de arriba es lo único que hace falta leer para continuar el trabajo.
 
-**Todo el estado técnico de sesiones 24-34 sigue vigente sin cambios de fondo** (ver lista de pendientes reales al final de sesión 34, sin novedad). Sesión 35 fue documentación/planificación pura, sin tocar código ni correr build/test — auditó 3 documentos externos (estrategia de IA, plan de UI/web, roadmap técnico) contra el código real y contra ESTADO.md, en vez de asumirlos ciertos por venir de un LLM. Resultado: 1 ítem nuevo real agregado al backlog (sandboxing con Bubblewrap), 3 propuestas descartadas con razón documentada (LLM local para logs, rediseño completo de UI, "Wayland nativo para el juego" — este último directamente incorrecto, ya bloqueado por LWJGL, no por el launcher), y `ESTRATEGIA_IA.md` actualizado a v5.0 con precios de modelos de IA corregidos a julio 2026. Ver detalle completo en "Sesión 35" en el historial.
+**Todo el estado técnico de sesiones 24-35 sigue vigente sin cambios de fondo** (ver lista de pendientes reales al final de sesión 34, más ítem 11 agregado en sesión 35). Sesión 36 cerró el sistema de logros de marca (Fase 3 del plan de sesión 25, commit `b49a3cbc8`, 288 líneas, build 35/35 sin warnings, 29/29 tests) y corrigió en el momento un incidente de `clang-format` que reformateó de más 2 archivos existentes antes de comitear (diff acotado a lo realmente tocado, detalle completo y lección operativa en "Sesión 36" del historial). De paso corrigió un header de licencia mal copiado (Apache-2.0 → GPL-3.0-only) en los 2 archivos nuevos del widget de toast. Nada de esto toca los pendientes de abajo.
 
-**Pendientes reales sin cambios de fondo desde sesión 34 (7 puntos), más el nuevo ítem 11 del backlog de mejoras:**
+**Pendientes reales sin cambios de fondo desde sesión 34 (7 puntos), más el ítem 11 del backlog de mejoras (sesión 35):**
 1. Meta server (`ElPibeCapo/meta`) como fuente de verdad — sigue sin verificar línea por línea.
 2. `known-hashes.json` (en `~/Descargas/meta_beteliney`, repo `meta`) — bloqueado por API key de abuse.ch/MalwareBazaar, requiere que el usuario la consiga.
 3. Purga del historial de git de las 4 API keys viejas de CurseForge — sigue esperando confirmación explícita del usuario, irreversible.
