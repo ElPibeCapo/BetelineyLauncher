@@ -21,24 +21,33 @@
 
 ---
 
-## ESTADO ACTUAL — LEER ESTO PRIMERO (actualizado 2026-07-11, sesión 37)
+## ESTADO ACTUAL — LEER ESTO PRIMERO (actualizado 2026-07-14, sesión 39)
 > El detalle completo de cada sesión (auditorías, hallazgos, código, decisiones) está en `## HISTORIAL DE SESIONES` más abajo. Esta sección de arriba es lo único que hace falta leer para continuar el trabajo.
 
-**Sesión 37 resolvió la causa raíz del cuelgue histórico del build local con LTO (pendientes 5 y 7)**, commit `3bba3a54c`. Diagnóstico: cada link con `-flto=auto` (GCC) paraleliza internamente hasta `nproc()` hilos de LTRANS por su cuenta; sin límite, Ninja corría varios links en simultáneo (beteliney + ~16 herramientas chicas) multiplicando el paralelismo muy por encima de cores/RAM disponibles (8 cores / 13GB), causando swap thrashing que se veía como cuelgue total. Fix: `JOB_POOLS lto_link_pool=2` + `CMAKE_JOB_POOL_LINK`, limitando a 2 links simultáneos. Verificado con rebuild forzado completo: 72/72 targets sin cuelgue, memoria estable 6.3-7.5GB de 13GB (nunca tocó swap). `ctest` 29/29 pasan, incluyendo GDLauncherMigrator (bloqueado desde sesión 32 por este mismo cuelgue, pendiente 5 ahora cerrado). De paso se limpiaron 2 archivos `.h.in` vacíos y huérfanos (`buildconfig/BuildConfig.h.in`, `launcher/BuildConfig.h.in`) que habían quedado sin trackear de una sesión anterior — no correspondían a ningún artefacto real del build (el trackeado es `BuildConfig.h`, no `.h.in`).
+**Sesión 38 (retroactiva, documentada recién en sesión 39 — ver nota abajo) cerró 2 pendientes:** sandboxing opcional con Bubblewrap para el proceso de Minecraft en Linux (`da70d0e6b`, pendiente 8/ítem 11 del backlog) y un fix de path traversal en `uid`/`version` del feed de meta remoto (`254f05760`, pendiente 1 parcialmente — ver hallazgo de sesión 39).
 
-**Todo el estado técnico de sesiones 24-36 sigue vigente sin cambios de fondo** salvo los dos pendientes cerrados arriba.
+**Sesión 39 encontró y cerró 2 vectores de path traversal adicionales que el fix de sesión 38 NO cubría**, porque ese fix solo validó el feed remoto (`meta/JsonFormat.cpp`), no las rutas de entrada de datos LOCALES no confiables:
+1. `Component::m_uid` en `mmc-pack.json` de la instancia (leído en `PackProfile.cpp::componentFromJsonV1`) — un uid tipo `"../../../.ssh"` en un modpack importado/compartido se propagaba sin validar a `Component::getFilename()`, permitiendo lectura/escritura/**borrado arbitrario de archivos** vía `customize()`/`revert()`, y también a `metadataIndex()->get(uid)`.
+2. `Meta::Require::uid` (campo `"uid"` dentro de arrays `"requires"`/`"conflicts"`) — parseado por `Meta::parseRequires()`, función compartida por el feed remoto Y por `mmc-pack.json` local (`cachedRequires`/`cachedConflicts`) Y por `patches/*.json` (`OneSixVersionFormat.cpp`). Este era el vector más grave: `ComponentUpdateTask::resolveDependencies()` inyecta automáticamente un `Component` nuevo por cada `Require` no resuelto — **sin ninguna interacción del usuario**, en cada resolve/launch de instancia.
 
-**Pendientes reales restantes (6 puntos), más el ítem 8 del backlog de mejoras (sesión 35):**
-1. Meta server (`ElPibeCapo/meta`) como fuente de verdad — sigue sin verificar línea por línea.
+**Fix aplicado:** `Meta::isSafePathComponent()` (antes `static`/interna a `JsonFormat.cpp`) se expuso públicamente en `JsonFormat.h`. Se usa ahora en `componentFromJsonV1` (lanza `JSONValidationError` si el uid es inseguro) y en `Meta::parseRequires` (lanza `Meta::ParseException` vía `requireSafePathComponent`, ya existente). El `catch` de `loadPackProfile` en `PackProfile.cpp` se amplió de `catch (const JSONValidationError&)` a `catch (const Exception&)` (clase base común de ambos tipos de excepción) para no dejar `Meta::ParseException` sin capturar — sin este cambio, un mmc-pack.json malicioso habría tumbado la app en vez de fallar de forma controlada. Verificado que `OneSixVersionFormat.cpp` (tercer consumidor de `parseRequires`, vía `patches/*.json`) ya capturaba `const Exception&` en `ProfileUtils::guardedParseJson`, así que quedó protegido gratis, sin cambios ahí.
+
+**Test añadido:** 7 casos nuevos en `tests/MetaPathTraversal_test.cpp` (`test_requiresRejectsTraversalUid_data/test`, 5 sub-casos maliciosos + `test_requiresAcceptsLegitimateUid`). Build completo (180/180) y `ctest` (**30/30**, incluyendo los 16/16 de `MetaPathTraversal`) verificados sin errores tras el fix.
+
+**Commit:** pendiente de crear al cerrar esta sesión (ver `git diff --stat`: 4 archivos, ~101 inserciones — `JsonFormat.h`, `JsonFormat.cpp`, `PackProfile.cpp`, `tests/MetaPathTraversal_test.cpp`).
+
+**Nota operativa importante — por qué esto se documenta recién ahora:** los commits `254f05760` y `da70d0e6b` (sesión 38) se hicieron DESPUÉS del cierre de sesión 37 (`8cbdfffed`) pero nunca se escribió su entrada correspondiente en este archivo — la sesión terminó (probablemente por corte de contexto) sin documentar. Esto es exactamente el escenario que este archivo existe para evitar: si una sesión nueva hubiera empezado sin revisar `git log` contra el contenido de este documento, habría re-auditado el meta server desde cero sin saber que ya había un fix parcial aplicado. **Lección reforzada: antes de dar cualquier tarea por "pendiente", comparar `git log --oneline -10` contra la última entrada de este archivo — si hay commits más nuevos que la última sesión documentada, documentarlos primero, ANTES de empezar trabajo nuevo.**
+
+**Todo el estado técnico de sesiones 24-37 sigue vigente sin cambios de fondo**, salvo lo de arriba.
+
+**Pendientes reales restantes (5 puntos):**
+1. Meta server (`ElPibeCapo/meta`) como fuente de verdad — el path traversal de `uid`/`version` (feed remoto, local, y `Require`) ya está cerrado (sesiones 38+39). Sigue faltando una auditoría línea por línea del resto (validación de tamaño/estructura de respuestas, manejo de errores HTTP, TLS/certificate pinning si aplica, etc.) — esto NO se hizo todavía, solo se cerró el path traversal.
 2. `known-hashes.json` (en `~/Descargas/meta_beteliney`, repo `meta`) — bloqueado por API key de abuse.ch/MalwareBazaar, requiere que el usuario la consiga.
 3. Purga del historial de git de las 4 API keys viejas de CurseForge — sigue esperando confirmación explícita del usuario, irreversible.
 4. Pruebas manuales GUI (backup de mundos, badge de mods) — sin cambios, no automatizables desde este entorno.
-5. ~~`ctest` local sobre el fix de GDLauncherMigrator~~ — **cerrado en sesión 37**, 29/29 pasan.
-6. Paso de firma real en CI nunca probado end-to-end — secret presente, falta que se dispare un release real.
-7. ~~Causa raíz del cuelgue del build completo local con LTO~~ — **cerrado en sesión 37**, ver arriba.
-8. Sandboxing con Bubblewrap (`bwrap`) para aislar el proceso de Minecraft — ítem 11 del backlog de mejoras (sesión 35), cola después de la Fase 4 del plan de sesión 25.
+5. Paso de firma real en CI nunca probado end-to-end — secret presente, falta que se dispare un release real.
 
-**De los 6 restantes, solo el 2 y el 3 dependen 100% del usuario (API key externa e irreversibilidad, respectivamente). El resto (1, 4, 6, 8) se puede seguir trabajando sin intervención.**
+**De los 5 restantes, solo el 2 y el 3 dependen 100% del usuario. El resto (1, 4, 5) se puede seguir trabajando sin intervención.**
 
 ---
 
@@ -1433,4 +1442,51 @@ Limita a 2 los links simultáneos permitidos por Ninja cuando LTO está activo. 
 **Commit:** `3bba3a54c` ("fix(build): job pool para links con LTO, resuelve cuelgue histórico"), 1 archivo, 11 inserciones.
 
 **Con esto quedan cerrados los pendientes 5 (`ctest` de GDLauncherMigrator) y 7 (causa raíz del cuelgue de LTO) que venían arrastrándose desde sesión 32.** Pendientes reales restantes: 6 puntos (ver bloque ESTADO ACTUAL), de los cuales solo 2 dependen de acción del usuario (API key de abuse.ch, confirmación de purga de historial de git). El resto (meta server sin auditar línea por línea, pruebas manuales de GUI, firma real en CI end-to-end, sandboxing con Bubblewrap) se puede seguir trabajando sin bloqueos.
+
+---
+
+### Sesión 38 — Sandboxing Bubblewrap + fix parcial de path traversal en el feed de meta remoto (2026-07-11) — **documentada retroactivamente en sesión 39**
+
+> **Nota:** esta entrada se escribió en sesión 39, no en el momento. La sesión 38 terminó (aparentemente por corte de contexto) sin dejar su entrada en `ESTADO.md`, a pesar de haber hecho 2 commits reales el mismo día que el cierre de sesión 37. Sesión 39 detectó el hueco comparando `git log` contra este archivo y reconstruyó el contenido a partir de los diffs reales de los commits — no hay reporte original de la sesión 38 de dónde tomar contexto adicional (decisiones descartadas, alternativas consideradas, etc.), así que lo de abajo es lo que el código y los mensajes de commit permiten verificar con certeza.
+
+**1) Sandboxing opcional con Bubblewrap (`bwrap`) para el proceso de Minecraft en Linux.** Cierra el ítem 11 del backlog de mejoras (sesión 35), pendiente 8. Archivos nuevos: `launcher/minecraft/launch/BubblewrapSandbox.h`/`.cpp`. Opción configurable (no forzada por defecto — no todos los sistemas tienen `bwrap` instalado ni todas las configuraciones de instancia son compatibles con un sandbox estricto, p.ej. mods que necesitan acceso a rutas fuera de la instancia).
+
+**2) Fix de seguridad: path traversal en `uid`/`version` del feed de meta remoto (`ElPibeCapo/meta`).** Commit `254f05760`. Hallazgo: `VersionList::localFilename()`/`Version::localFilename()` construyen rutas de archivo de cache concatenando directamente `uid`/`version` sin sanitizar; `FS::RemoveInvalidPathChars` solo filtra caracteres inválidos de NTFS/FAT en Windows y **no bloquea `/` ni `..` en Linux**. Un feed comprometido (o un `MetaURLOverride` apuntando a un host hostil) podía inyectar un `uid`/`version` tipo `"../../../.ssh"` y forzar lectura/escritura/borrado fuera del directorio de cache esperado, a través de `BaseEntityLoadTask` y `HttpMetaCache::resolveEntry()`.
+
+**Fix:** nuevas funciones `isSafePathComponent()` (rechaza vacío, `.`/`..`, cualquier valor con `..`, `/`, `\`, o byte nulo, tamaño >256) y `requireSafePathComponent()` (envuelve `Json::requireString` + la validación, lanza `Meta::ParseException` si falla) en `meta/JsonFormat.cpp`, ambas `static` en ese momento (session 39 expuso la primera públicamente — ver esa entrada). Aplicadas en `parseIndexInternal` (uid de cada package), y en `parseCommonVersion` (uid + version del objeto Version). **Cobertura real en ese momento: solo el feed remoto — NO cubría `mmc-pack.json` local ni `Require::uid` compartido, ver hallazgo de sesión 39 más abajo.**
+
+**Test añadido en el mismo commit:** `tests/MetaPathTraversal_test.cpp` (nuevo archivo), 9 casos: 5 sub-casos maliciosos parametrizados contra `Meta::parseIndex` (dotdot slash, `..`, dotdot embebido, backslash, vacío) + `parseVersionList` rechaza uid malicioso + `parseVersion` rechaza version maliciosa + `parseIndex` acepta uid legítimo. Todos verificados pasando en sesión 39 al correr `ctest` completo (antes de la extensión de sesión 39, este archivo ya tenía 9 tests; después de la extensión, 16).
+
+**Commits de la sesión (orden real en `git log`):** `da70d0e6b` (bubblewrap) y `254f05760` (fix path traversal), ambos `2026-07-11`, ambos posteriores a `8cbdfffed` (cierre docs de sesión 37).
+
+**Estado al cerrar sesión 38 (reconstruido):** pendiente 8/ítem 11 (bubblewrap) cerrado. Pendiente 1 (meta server) parcialmente cerrado — el path traversal del feed remoto sí, el resto de la auditoría línea por línea, no.
+
+---
+
+### Sesión 39 — Auditoría de continuación del meta server: 2 vectores de path traversal adicionales encontrados y cerrados, documentación de sesión 38 reconstruida (2026-07-14)
+
+**Contexto:** el usuario pidió continuar el trabajo pendiente del proyecto ("revisa sugerencias... haz lo mejor de lo mejor"). Antes de tocar código, `git log --oneline -8` mostró 2 commits (`254f05760`, `da70d0e6b`) posteriores a la última entrada documentada en `ESTADO.md` (sesión 37, `8cbdfffed`) — hueco de documentación real, cerrado primero con la entrada de "Sesión 38" de arriba, reconstruida desde los diffs de esos commits (ver nota ahí).
+
+**Con la documentación al día, se retomó la auditoría del meta server (pendiente 1) desde donde el fix de sesión 38 la había dejado.** Ese fix cerró el path traversal de `uid`/`version` **solo en `meta/JsonFormat.cpp`** (parser del feed remoto). Rastreando todos los consumidores de `uid` en el código (`Index::get()`, `VersionList`, `Component::getFilename()`, `PackProfile.cpp`, `ComponentUpdateTask.cpp`) se encontraron dos rutas de entrada de datos **locales** no confiables que ese fix no tocaba:
+
+**Hallazgo 1 — `Component::m_uid` desde `mmc-pack.json` de la instancia.** `PackProfile.cpp::componentFromJsonV1` leía `uid` con `Json::requireString` plano, sin ninguna validación, y lo usaba para construir un `Component`. Ese `m_uid` alimenta `Component::getFilename()` → `PackProfile::patchFilePathForUid(uid)` → `FS::PathCombine(instanceRoot(), "patches", uid + ".json")` — sin sanitizar. `Component::customize()` escribe en esa ruta; `Component::revert()` la **borra** con `FS::deletePath()` si existe. `mmc-pack.json` no es un archivo remoto: viaja dentro de instancias exportadas/compartidas, y puede venir de modpacks de terceros (CurseForge, Modrinth, GDLauncher, zips manuales) — un `uid` tipo `"../../../../home/usuario/.bashrc"` en un componente de un modpack malicioso habría permitido borrar (o sobrescribir, si el parseo de JSON del archivo objetivo fallara de forma explotable) un archivo arbitrario del sistema del usuario que lo instala, con solo que el componente pase por `customize()`/`revert()`.
+
+**Hallazgo 2 — `Meta::Require::uid`, más grave por ser automático.** `Meta::parseRequires()` (en `JsonFormat.cpp`) parsea el campo `"uid"` de cada entrada de los arrays `"requires"`/`"conflicts"` con `requireString` plano — nunca se le aplicó la validación de sesión 38 porque es una función genérica, no específica del feed remoto. Esta MISMA función se usa en 3 lugares: (a) el feed remoto (ya protegido indirectamente porque el resto del objeto Version sí se valida, pero el propio `Require::uid` no); (b) `PackProfile.cpp` leyendo `cachedRequires`/`cachedConflicts` de `mmc-pack.json` local; (c) `OneSixVersionFormat.cpp` leyendo `patches/*.json`. El vector real: `ComponentUpdateTask::resolveDependencies()` recorre `component->m_cachedRequires`, y si una dependencia falta, la inyecta automáticamente: `makeShared<Component>(d->m_profile, add.uid)` seguido de `insertComponent(...)` — **esto corre en cada resolve/launch de instancia, sin que el usuario interactúe con nada**, e igual que el hallazgo 1, termina en `Component::getFilename()` y en `metadataIndex()->get(uid)` (`Index::get()`, que tampoco validaba nada al construir `std::make_shared<VersionList>(uid)`).
+
+**Fix aplicado (mínimo, en el punto de entrada, mismo patrón que sesión 38):**
+- `meta/JsonFormat.h`: se expone `bool isSafePathComponent(const QString&)` (antes `static`/interna a `JsonFormat.cpp`) para que otros consumidores de datos no confiables puedan usarla.
+- `meta/JsonFormat.cpp`: se quita `static` de la definición; `parseRequires()` ahora valida el `uid` de cada `Require` con la ya existente `requireSafePathComponent()` en vez de `requireString()` plano — esto cierra el hallazgo 2 en los 3 call sites de una sola vez, porque `parseRequires` es la única implementación compartida.
+- `minecraft/PackProfile.cpp`: `componentFromJsonV1` valida el `uid` de nivel superior con `Meta::isSafePathComponent()` antes de construir el `Component`; si es inseguro, `throw JSONValidationError(...)` (mismo tipo de excepción que ya usa este archivo para otros errores de formato). El `catch` de `loadPackProfile` se amplió de `catch (const JSONValidationError&)` a `catch (const Exception&)` — `Meta::ParseException` (lo que lanza `parseRequires` internamente) no hereda de `JSONValidationError`/`Json::JsonException`, sino de la clase base común `Exception`; sin ampliar el catch, un `mmc-pack.json` malicioso con un `Require::uid` inseguro habría lanzado una excepción no capturada y tumbado la app en vez de fallar de forma controlada (mismo resultado final — instancia rechazada — pero de forma segura, no un crash).
+- Se verificó que `OneSixVersionFormat.cpp` (el tercer call site de `parseRequires`, vía `ProfileUtils::parseJsonFile` → `guardedParseJson`) **ya envolvía la llamada en `catch (const Exception& e)`**, así que quedó protegido sin ningún cambio ahí — se confirmó leyendo el código, no se asumió.
+
+**Test:** 7 casos nuevos en `tests/MetaPathTraversal_test.cpp` (mismo archivo del hallazgo de sesión 38, mismo dominio de seguridad): `test_requiresRejectsTraversalUid_data/test` (5 sub-casos: dotdot slash, `..`, dotdot embebido, backslash, vacío) + `test_requiresAcceptsLegitimateUid` (caso feliz). No se testeó `componentFromJsonV1` directamente porque es `static`/interna a `PackProfile.cpp` — probarla habría requerido construir una `MinecraftInstance` completa en disco, y no hay precedente de eso en la suite de tests actual; se dejó como pendiente honesto (ver bloque ESTADO ACTUAL, no se infló la cobertura de tests para aparentar más de lo hecho).
+
+**Verificación:** build completo `ninja` desde cero tras los cambios: **180/180 sin errores**. `ctest` completo: **30/30 pasan** (antes de esta sesión eran 29 según sesión 37 + 1 nuevo target `MetaComponentParse` que ya existía sin documentar — no relacionado con esta auditoría, es un parser de componentes de chat de Minecraft tipo `{"text":"foo"}`, se verificó su código para descartar relación). `MetaPathTraversal` específicamente: **16/16** (9 preexistentes de sesión 38 + 7 nuevos de esta sesión).
+
+**Commit:** pendiente de crear (ver diff: `launcher/meta/JsonFormat.h` +5, `launcher/meta/JsonFormat.cpp` +11/-2, `launcher/minecraft/PackProfile.cpp` +23/-1, `tests/MetaPathTraversal_test.cpp` +65 — 4 archivos, ~101 inserciones netas).
+
+**Con esto, el path traversal de `uid`/`version` en TODO el sistema de metadatos (feed remoto, `mmc-pack.json` local, `patches/*.json`, y `Require` en cualquiera de los tres) queda cerrado.** El pendiente 1 (meta server) sigue abierto pero acotado: falta la auditoría del resto (tamaño/estructura de respuestas HTTP, manejo de errores de red, TLS si aplica) — el vector de path traversal específicamente ya no es un pendiente real.
+
+**Lección operativa reforzada (la misma que sesión 38 no siguió):** `git log --oneline -N` contra la última entrada de `ESTADO.md` es el primer paso de CUALQUIER sesión nueva en este proyecto, antes de leer código o planear trabajo — es lo que permitió detectar el hueco de sesión 38 en 30 segundos en vez de re-auditar por las dudas.
+
 
