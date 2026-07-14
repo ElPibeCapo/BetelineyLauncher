@@ -42,6 +42,11 @@ struct Require {
 
 using RequireSet = std::set<Require>;
 
+// Sesión 39: expuesto para que otros consumidores de datos NO confiables
+// (p.ej. PackProfile.cpp leyendo mmc-pack.json local) puedan validar
+// identificadores antes de usarlos para construir rutas de archivo.
+bool isSafePathComponent(const QString& value);
+
 void parseIndex(const QJsonObject& obj, Index* ptr);
 void parseVersion(const QJsonObject& obj, Version* ptr);
 void parseVersionList(const QJsonObject& obj, VersionList* ptr);

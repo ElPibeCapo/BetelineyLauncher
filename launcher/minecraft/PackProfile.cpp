@@ -128,6 +128,19 @@ static ComponentPtr componentFromJsonV1(PackProfile* parent, const QString& comp
 {
     // critical
     auto uid = Json::requireString(obj.value("uid"));
+    // Sesión 39 (auditoría meta server, hallazgo adicional): 'uid' viene del
+    // mmc-pack.json de la INSTANCIA LOCAL, que puede provenir de un modpack de
+    // terceros importado o compartido (CurseForge/Modrinth/GDLauncher/zip
+    // manual). Sin validar, un uid tipo "../../../../home/user/.ssh" se
+    // propaga a Component::getFilename() (patchFilePathForUid) permitiendo
+    // lectura/escritura/BORRADO arbitrario de archivos vía customize()/
+    // revert(), y también a metadataIndex()->get(uid) (mismo patrón de path
+    // traversal que se cerró en JsonFormat.cpp para el feed remoto, sesión
+    // 38, pero ese fix no cubría esta ruta de entrada local).
+    if (!Meta::isSafePathComponent(uid)) {
+        throw JSONValidationError(
+            QObject::tr("Component has invalid 'uid' (illegal path characters): %1").arg(uid));
+    }
     auto filePath = componentJsonPattern.arg(uid);
     auto component = makeShared<Component>(parent, uid);
     component->m_version = obj.value("version").toString();
@@ -215,7 +228,15 @@ static PackProfile::Result loadPackProfile(PackProfile* parent,
             auto comp_obj = Json::requireObject(item, "Component must be an object.");
             container.append(componentFromJsonV1(parent, componentJsonPattern, comp_obj));
         }
-    } catch ([[maybe_unused]] const JSONValidationError& err) {
+    } catch ([[maybe_unused]] const Exception& err) {
+        // Sesión 39: ampliado de 'JSONValidationError' a la base 'Exception'.
+        // componentFromJsonV1 ahora puede lanzar Meta::ParseException (via
+        // Meta::isSafePathComponent / Meta::parseRequires) cuando detecta un
+        // 'uid' inseguro en el componente o en sus requires/conflicts — ese
+        // tipo no hereda de JSONValidationError (Json::JsonException), así
+        // que sin este cambio esa excepción se propagaría sin capturar y
+        // tumbaría la app en vez de fallar de forma controlada, igual que
+        // cualquier otro mmc-pack.json malformado.
         auto message = QObject::tr("Couldn't parse %1 : bad file format").arg(componentsFile.fileName());
         qCCritical(instanceProfileC) << message;
         qCWarning(instanceProfileC) << "error:" << err.what();
