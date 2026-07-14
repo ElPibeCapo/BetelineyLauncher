@@ -41,7 +41,7 @@ MetadataVersion currentFormatVersion()
 // MetaURLOverride apuntando a un host hostil) podría inyectar un uid/version
 // tipo "../../../.ssh" y leer, escribir o borrar fuera del directorio de cache
 // esperado. Se rechaza cualquier valor que no sea un identificador seguro.
-static bool isSafePathComponent(const QString& value)
+bool isSafePathComponent(const QString& value)
 {
     if (value.isEmpty() || value.size() > 256)
         return false;
@@ -199,7 +199,14 @@ void parseRequires(const QJsonObject& obj, RequireSet* ptr, const char* keyName)
         auto iter = reqArray.begin();
         while (iter != reqArray.end()) {
             auto reqObject = requireObject(*iter);
-            auto uid = requireString(reqObject, "uid");
+            // Sesión 39: 'uid' aquí alimenta Index::get()/ComponentUpdateTask
+            // (inyección automática de dependencias) y esta misma función
+            // parsea tanto el feed remoto como cachedRequires/cachedConflicts
+            // de mmc-pack.json local — sin esta validación, un modpack
+            // malicioso con un uid tipo "../../../.ssh" en sus "requires" se
+            // inyecta como Component automáticamente en resolveDependencies(),
+            // sin que el usuario interactúe, y termina en un path traversal.
+            auto uid = requireSafePathComponent(reqObject, "uid");
             auto equals = reqObject["equals"].toString();
             auto suggests = reqObject["suggests"].toString();
             ptr->insert({ uid, equals, suggests });
