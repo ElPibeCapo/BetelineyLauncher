@@ -33,23 +33,26 @@ namespace UpdateVerify {
 // La clave PRIVADA correspondiente vive unicamente como secret de GitHub
 // Actions (RELEASE_SIGNING_KEY) y no debe aparecer jamas en este repo.
 //
-// Rotada 2026-07-14 (sesion 40): la clave anterior (generada 2026-07-08) se
-// perdio - el .pem privado que debia subirse a GitHub Secrets ya no existia
-// en disco y no hay evidencia de que se haya llegado a cargar (ningun
-// release real corrio con firma desde que existe el mecanismo). Se genero un
-// par nuevo con 'openssl genpkey -algorithm Ed25519', verificado con un
-// roundtrip real firma/verificacion contra libsodium antes de commitear esta
-// clave. La privada NUNCA paso por este chat ni por ningun archivo de este
-// repo - vive solo en el filesystem local del usuario, pendiente de que el
-// la cargue el mismo en GitHub Secrets (Settings > Secrets and variables >
-// Actions > RELEASE_SIGNING_KEY).
+// Rotada 2026-07-15 (sesion 40, segunda rotacion): la clave anterior
+// (generada 2026-07-14 en la misma sesion) tambien se perdio - el .pem
+// privado quedo en un directorio temporal que no sobrevivio a un corte de
+// conexion antes de que se subiera a GitHub Secrets. Ningun release real
+// corrio con firma desde que existe el mecanismo, asi que no hay impacto en
+// produccion. Se genero un par nuevo con 'openssl genpkey -algorithm
+// Ed25519', verificado con un roundtrip real firma/verificacion contra
+// libsodium (crypto_sign_verify_detached, resultado 0) antes de commitear
+// esta clave. Esta vez la privada SI se mostro una unica vez en el chat de
+// la sesion (nunca escrita a un archivo de este repo) para que el usuario
+// la copiara de inmediato a GitHub Secrets (Settings > Secrets and
+// variables > Actions > RELEASE_SIGNING_KEY) sin depender de que un archivo
+// temporal sobreviviera.
 //
 // Si algun dia se rota la clave otra vez, hay que actualizar esta constante Y
 // el secret de CI a la vez, o el updater rechazara todos los releases nuevos.
 constexpr unsigned char kReleasePublicKey[crypto_sign_PUBLICKEYBYTES] = {
-    0xb1, 0xde, 0x15, 0x8f, 0xc5, 0xf2, 0x5e, 0xae, 0x9e, 0x84, 0x0d, 0xd1,
-    0x3f, 0x05, 0xc6, 0x80, 0x68, 0x08, 0x26, 0x25, 0xba, 0x5d, 0x94, 0xd6,
-    0x65, 0x36, 0x33, 0x32, 0x83, 0x88, 0x53, 0xbd
+    0x8a, 0x87, 0xbb, 0xce, 0xfa, 0xad, 0xe2, 0x08, 0x81, 0xb6, 0x20, 0x2c,
+    0x2a, 0xd5, 0xf0, 0xbb, 0x77, 0x17, 0xf1, 0x60, 0x5a, 0xaa, 0x41, 0x3f,
+    0x82, 0x2e, 0xf0, 0x63, 0x6b, 0xc0, 0x06, 0x49
 };
 
 static_assert(sizeof(kReleasePublicKey) == 32, "La clave publica Ed25519 debe tener exactamente 32 bytes");
