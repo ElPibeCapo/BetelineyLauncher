@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <b>BetelineyLauncher</b> v8.3.0 — launcher personalizado para Minecraft.<br />
+  <b>BetelineyLauncher</b> v8.4.0 — launcher personalizado para Minecraft.<br />
   Gestión de instancias, diagnóstico inteligente de crashes, perfiles JVM optimizados,<br />
   BetelineyPacks, protección contra malware, importar desde GDLauncher y más.<br /><br />
   Basado en <a href="https://github.com/PrismLauncher/PrismLauncher">Prism Launcher</a> (GPL-3.0).
@@ -74,6 +74,21 @@ Soporte completo de cuentas offline sin necesidad de Microsoft.
 ### Tema gamer neón
 BetelineyTheme v5: fondo deep-space `#080912`, acento neón `#39FF14`, cyan `#00D4FF`, fuente JetBrains Mono. Cards de instancias con bordes neón y animaciones.
 
+### Command Palette (Ctrl+K) + servidores favoritos
+Paleta de comandos estilo editor de código para saltar entre instancias y settings, con quick-join directo a servidores favoritos guardados.
+
+### Sistema de logros por tiempo jugado
+Marca hitos de tiempo jugado con toasts de logro en pantalla — gamificación ligera de la marca Beteliney.
+
+### Sandboxing opcional con Bubblewrap (Linux)
+Aislamiento a nivel de proceso del juego vía `bwrap`, opt-in y sin interferir con GameMode/MangoHud.
+
+### Backup manual de mundos + badge de actualización de mods
+Botón de backup manual de mundos en la página de instancia, y badge silencioso que avisa cuando hay actualizaciones de mods disponibles al seleccionar una instancia.
+
+### Actualizaciones firmadas (Ed25519)
+El updater verifica la firma Ed25519 de cada release antes de aplicarla — fail-closed: si la firma no valida, no se instala.
+
 ---
 
 ## Compilar
@@ -118,7 +133,8 @@ EMPAQUETAR_WINDOWS.bat → [1] ZIP portable / [2] Installer .exe (NSIS)
 GitHub Actions compila automáticamente Linux y Windows en cada push a `main` y publica una Release en cada tag `v*.*.*`.
 
 ```bash
-git tag v8.3.0 && git push --tags
+git tag --list   # confirmar el último tag antes de elegir el nuevo — v8.3.0 y v8.4.0 ya existen
+git tag v8.5.0 && git push --tags   # ejemplo — usar el número siguiente real
 # Release publicada en ~15 min
 ```
 
@@ -136,9 +152,18 @@ launcher/
 ├── minecraft/mod/MalwareScanner.h/cpp Lista negra de malware
 ├── launch/steps/CheckModConflicts.h/cpp Verificador pre-lanzamiento
 ├── modplatform/beteliney/             BetelineyPacks (backend completo)
+├── BetelineyAchievements.h/cpp        Sistema de logros por tiempo jugado
+├── BubblewrapSandbox.h/cpp            Sandboxing opcional del proceso Minecraft (Linux)
+├── FavoriteServers.h/cpp              Servidores favoritos persistidos
+├── updater/betelineyupdater/          Updater con verificación de firma Ed25519
 ├── ui/themes/BetelineyTheme.cpp       Tema visual (810 líneas QSS)
 ├── ui/widgets/JavaSettingsWidget.cpp  Selector de perfiles JVM
+├── ui/widgets/AchievementToast.h/cpp  Toast visual de logros
+├── ui/dialogs/CommandPaletteDialog.h/cpp    Paleta de comandos (Ctrl+K)
+├── ui/dialogs/FavoriteServersDialog.h/cpp   UI de gestión de servidores favoritos
 └── ui/pages/modplatform/beteliney/    BetelineyPackPage (UI)
+
+tools/dev/                             8 herramientas de desarrollo (build_fast.sh, check_ci.sh, secret_scan.sh, etc. — ver tools/dev/README.md)
 
 packaging/
 └── com.beteliney.BetelineyLauncher.json  Manifest Flatpak
@@ -189,16 +214,21 @@ EMPAQUETAR_APPIMAGE.sh Script para generar AppImage
 - [ ] i18n propio conectado a Weblate o similar
 - [ ] Publicar en r/feedthebeast, r/Minecraft, Discord de Prism Launcher
 
+**Ideas de mejora ya implementadas** (corregido en esta revisión — estaban listadas abajo como "no confirmadas aún" pero ya están en `main`, ver `ESTADO.md` y `docs/CHANGELOG.md` sección "Sin publicar aún"):
+
+- [x] Backup manual de mundos antes de actualizar una instancia (botón en página de instancia)
+- [x] Badge de mods con actualización disponible en la card de instancia
+- [x] Servidores favoritos + quick-join desde el dashboard
+- [x] Búsqueda universal tipo Ctrl+K (Command Palette — instancias, settings)
+- [x] Sistema de logros ligado a la marca (gamificación por tiempo jugado)
+- [x] Sandboxing opcional del proceso Minecraft con Bubblewrap (Linux)
+- [x] Firma Ed25519 fail-closed en el updater
+
 **Ideas de mejora futuras (investigadas y verificadas, no confirmadas aún — ver bloque "ESTADO CONSOLIDADO" al final de `ESTADO.md` para el plan completo y priorizado):**
 
-- [ ] Backup automático de mundos antes de actualizar una instancia
-- [ ] Sembrar `known-hashes.json` con datos reales de MalwareBazaar (ver corrección arriba)
-- [ ] Badge de mods con actualización disponible en la card de instancia (feature fantasma: UI ya lista, falta el disparador)
-- [ ] Servidores favoritos + quick-join desde el dashboard
-- [ ] Búsqueda universal tipo Ctrl+K (instancias, settings)
+- [ ] Sembrar `known-hashes.json` con datos reales de MalwareBazaar (ver corrección arriba — bloqueado por API key de abuse.ch, requiere que el usuario la consiga)
 - [ ] Discord Rich Presence a nivel de proceso launcher/juego
 - [ ] Preset de BetelineyPacks con fuente CurseForge (esfuerzo medio — limitado por el "Project Distribution Toggle" de CurseForge)
-- [ ] Sistema de logros ligado a la marca (gamificación)
 - [ ] Tema de alto contraste (accesibilidad — ningún launcher competidor lo tiene)
 - [ ] Búsqueda combinada Modrinth+CurseForge en una sola pestaña (mediano/largo plazo)
 

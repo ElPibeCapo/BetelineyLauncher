@@ -26,6 +26,9 @@ Los perfiles de Beteliney usan **G1GC** (Garbage-First Garbage Collector), el re
 | Balanceado | 2048 MB | 4096 MB | OptiFine / Fabric / Forge ligero (10–100 mods) |
 | Pesado | 2048 MB | 6144 MB | Modpacks 100–300 mods |
 | Extremo | 6144 MB | 12288 MB | Servidores locales / ≥300 mods |
+| iGPU ZGC (Java 21+) | 384 MB | 1536 MB | Igual caso que iGPU/RAM compartida pero con ZGC generacional — pausas sub-milisegundo en vez de G1GC |
+
+> Perfil `MEJ-6` en `BetelineyProfiles.h`. Alternativa al perfil "iGPU / RAM compartida" para quien ya corre Java 21+: mismo rango de RAM, pero usa ZGC (recolector de producción desde Java 21, ya no experimental) en vez de G1GC. Ver sección de flags dedicada más abajo.
 
 ---
 
@@ -159,6 +162,44 @@ Evita que la JVM cree archivos `/tmp/hsperfdata_*`. En algunos sistemas Linux es
 -Djava.rmi.server.disableHttp=true
 ```
 Desactiva el listener HTTP interno de la JVM. Innecesario en cliente y reduce overhead.
+
+---
+
+### ZGC — Recolector alternativo (Java 21+, perfil "iGPU ZGC")
+
+> A diferencia de G1GC, ZGC no usa regiones ni las flags `G1*` de arriba — es un recolector distinto con su propio conjunto de parámetros. Solo aplica al perfil "iGPU ZGC (Java 21+)".
+
+```
+-XX:+UseZGC
+```
+Activa ZGC en vez de G1GC. Requiere Java 21+ (en esa versión ZGC es GC de producción, ya no experimental — no hace falta `+UnlockExperimentalVMOptions`).
+
+```
+-XX:+ZGenerational
+```
+Activa la variante generacional de ZGC (Java 21+). Separa objetos jóvenes de viejos igual que G1, mejorando el caso de Minecraft (crea y destruye muchos objetos de vida corta por tick).
+
+```
+-XX:SoftMaxHeapSize=1280m
+```
+Heap "preferido": ZGC intenta quedarse por debajo de este valor, pero puede subir hasta `-Xmx` (1536m en este perfil) si Minecraft realmente lo necesita. No es un límite duro como `-Xmx`.
+
+```
+-XX:ZUncommitDelay=60
+```
+Tras 60 segundos de memoria sin usarse, ZGC la libera de vuelta al sistema operativo. Relevante en el caso iGPU, donde esa RAM la necesita también la GPU integrada.
+
+```
+-XX:ZCollectionInterval=0.1
+```
+Fuerza un ciclo de colección proactivo cada 100ms como máximo, en vez de esperar a que el heap se llene. Evita micro-stalls durante la carga de chunks.
+
+```
+-XX:ZAllocationSpikeTolerance=3.0
+```
+Le dice a ZGC que tolere picos de asignación de memoria hasta 3x el promedio reciente (típico al cargar un mundo o generar chunks nuevos) sin activar una colección de emergencia.
+
+**Diferencia clave vs. el perfil "iGPU / RAM compartida" (G1GC):** mismo rango de RAM (384–1536 MB) y mismo caso de uso (iGPU, Vanilla), pero pausas de GC teóricamente sub-milisegundo en vez de ~100ms de G1GC — a costa de requerir Java 21+ y de no estar tan probado en compatibilidad con mods viejos. **No hay benchmarks reales medidos todavía para este perfil** (ver tabla "Benchmarks GC por perfil" más abajo, que sí tiene mediciones reales para los perfiles G1GC) — pendiente correr la misma metodología de captura de log GC con este perfil activo antes de afirmar cifras concretas de pausa.
 
 ---
 
