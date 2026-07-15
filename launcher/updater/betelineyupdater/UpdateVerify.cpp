@@ -41,11 +41,12 @@ namespace UpdateVerify {
 // produccion. Se genero un par nuevo con 'openssl genpkey -algorithm
 // Ed25519', verificado con un roundtrip real firma/verificacion contra
 // libsodium (crypto_sign_verify_detached, resultado 0) antes de commitear
-// esta clave. Esta vez la privada SI se mostro una unica vez en el chat de
-// la sesion (nunca escrita a un archivo de este repo) para que el usuario
-// la copiara de inmediato a GitHub Secrets (Settings > Secrets and
-// variables > Actions > RELEASE_SIGNING_KEY) sin depender de que un archivo
-// temporal sobreviviera.
+// esta clave. La privada se mostro una unica vez en el chat de la sesion
+// (nunca escrita a un archivo de este repo) y se subio directo a GitHub
+// Secrets via 'gh secret set RELEASE_SIGNING_KEY' (CLI ya autenticada con
+// scope repo), sin depender de que un archivo temporal sobreviviera ni de
+// un paso manual de copiar/pegar. Confirmado con 'gh secret list' (fecha de
+// actualizacion coincide con esta rotacion).
 //
 // Si algun dia se rota la clave otra vez, hay que actualizar esta constante Y
 // el secret de CI a la vez, o el updater rechazara todos los releases nuevos.
