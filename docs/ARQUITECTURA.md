@@ -1,7 +1,8 @@
 # ⬡ Beteliney Launcher — Arquitectura Técnica
 
 > Documento de referencia del proyecto. Basado en lectura directa del código fuente.
-> Última actualización: **2026-04-05** · Versión: **7.7.0**
+> Última actualización: **2026-07-14** (sesión 39, actualizado por auditoría de documentación) · Versión: **8.4.0** (tag) — `main` tiene 14 commits reales sin tagear encima, ver `ESTADO.md` sección ESTADO ACTUAL y `docs/CHANGELOG.md` sección "Sin publicar aún".
+> **Este documento estuvo congelado desde 2026-04-05 (v7.5.0/7.7.0) hasta esta revisión — todo lo de abajo se verificó contra el código real, no contra la versión vieja del archivo.**
 
 ---
 
@@ -11,11 +12,12 @@
 |-------|-------|
 | Nombre | Beteliney Launcher |
 | AppID | `com.beteliney.BetelineyLauncher` |
-| Versión actual | 7.5.0 |
+| Versión actual | 8.4.0 (tag) / main sin tagear por delante — ver nota arriba |
 | Binario | `beteliney` (Linux) · `beteliney.exe` (Windows) |
 | Config file | `beteliney.cfg` |
 | Domain | `beteliney.github.io` |
-| Repo | `https://github.com/beteliney/BetelineyLauncher` |
+| Repo | `https://github.com/ElPibeCapo/BetelineyLauncher` (corregido — el doc viejo decía `beteliney/BetelineyLauncher`, no existe) |
+| Repo meta | `https://github.com/ElPibeCapo/meta` (rama `gh-pages`, sirve JSONs de versiones + BetelineyPacks + malware hashes + news feed) |
 | Copyright | © 2026 El_PibeCapo / Beteliney Launcher |
 | Base | Prism Launcher (GPL-3.0) |
 | Licencia | GPL-3.0-only |
@@ -51,56 +53,61 @@ Flags de compilación dedicados a esta CPU:
 | Compilador Windows | MinGW-w64 (distribuido con Qt Installer) |
 | Gestor dependencias Win | vcpkg (incluido en `vcpkg_local/`) |
 | Dependencias C++ | libarchive · cmark · libqrencode · zlib · tomlplusplus · gamemode (Linux only) |
-| Tests | Qt Test (CTest) — 47 tests Beteliney-specific |
+| Tests | Qt Test (CTest) — 29 archivos de test total, 6 Beteliney-specific (5 `Beteliney*_test.cpp` + `MetaPathTraversal_test.cpp`) + resto heredados de Prism (30/30 ctest verificados en sesión 39) |
 
 
 ---
 
 ## Estructura de directorios
 
+> **Corregido en esta revisión** — el árbol de abajo estaba completamente inventado en la versión vieja del documento (raíz `BetelineyLauncher_v7/`, `docs/PENDIENTES.md`, `docs/ESTRUCTURA.md`, `docs/SESIONES.md`, `docs/AUDITORIA.md`, `tools/verify.py`, `tools/fix_icons.py` — ninguno de esos existe). Esto es lo que hay realmente en `"/home/pibe/Descargas/Beteliney Launcher [Minecraft]/BetelineyLauncher/source/"` (raíz del repo git):
+
 ```
-BetelineyLauncher_v7/
-├── BetelineyLauncher/
-│   └── source/                  Código fuente del launcher
-│       ├── launcher/            C++ principal
-│       │   ├── Application.cpp  Punto de entrada — settings, init, capabilities (2107 líneas)
-│       │   ├── BetelineyProfiles.h  Perfiles JVM (inline, header-only, 6 perfiles)
-│       │   ├── BetelineyCode.h  Easter egg — secuencia B-E-T-E en ventana principal
-│       │   ├── BetelineyTime.cpp/.h  Utilidades de tiempo (prettifyDuration, humanReadableDuration)
-│       │   ├── BetelineyZip.cpp/.h   Compresión ZIP (renombrado de MMCZip en v7.3.0)
-│       │   ├── SysInfo.cpp      Detección de RAM cross-platform
-│       │   ├── MangoHud.cpp/.h  Integración MangoHud (solo Linux)
-│       │   ├── java/            Detección Java (Registry Win, /usr/lib Linux)
-│       │   ├── minecraft/       Lanzamiento de instancias Minecraft
-│       │   ├── ui/
-│       │   │   ├── themes/      BetelineyTheme.cpp — stylesheet neón #39FF14
-│       │   │   ├── dialogs/     AboutDialog, MSALoginDialog, etc.
-│       │   │   ├── widgets/     JavaSettingsWidget (perfiles JVM + iGPU detection)
-│       │   │   └── pages/       JavaPage, ModFolderPage, ExternalResourcesPage, ResourcePage (traducidos v7.4.0)
-│       │   └── updater/         BetelineyExternalUpdater
-│       ├── program_info/        Ícono (SVG/PNG/ICO/ICNS), manifest, .desktop, metainfo, .rc
-│       ├── buildconfig/         BuildConfig.h/.cpp.in — variables CMake → C++
-│       ├── libraries/           libnbtplusplus, rainbow, qdcss, murmur2, LocalPeer, javacheck
-│       ├── docs/                CHANGELOG, TROUBLESHOOTING, PERFILES_JVM, ARQUITECTURA (este archivo)
-│       ├── tests/               Tests unitarios Qt Test (47 Beteliney-specific + tests base Prism)
-│       ├── build/               Directorio de build generado por CMake/Ninja
-│       ├── COMPILAR_LINUX.sh    Build script Linux — menú 5 modos
-│       ├── COMPILAR_BETELINEY.bat  Build script Windows — menú
-│       ├── COMPILAR.ps1         Build script PowerShell
-│       ├── EMPAQUETAR_LINUX.sh  Distribución Linux (tar.gz / AppImage / .deb)
-│       └── EMPAQUETAR_WINDOWS.bat  Distribución Windows (ZIP / NSIS)
-├── docs/                        Documentación del proyecto raíz
-│   ├── PENDIENTES.md            Estado, tareas y bugs conocidos
-│   ├── ESTRUCTURA.md            Mapa técnico del proyecto
-│   ├── SESIONES.md              Historial completo de sesiones de desarrollo
-│   └── AUDITORIA.md             Informe de auditoría 2026-03-31
-├── tools/
-│   ├── verify.py                Verifica integridad del proyecto
-│   └── fix_icons.py             Regenera SVGs de íconos de tema
-├── lanzar.sh                    Entry point Linux — autodetecta GPU + perfil JVM
-├── beteliney-updater.sh         Updater: git pull + recompila
-└── README.md                    Documentación principal (ASCII art + badges)
+source/                          Raíz del repo (== raíz del proyecto, sin carpeta v7 envolvente)
+├── launcher/                    C++ principal
+│   ├── Application.cpp          Punto de entrada — settings, init, capabilities
+│   ├── BetelineyProfiles.h      7 perfiles JVM (inline, header-only)
+│   ├── BetelineyCode.h          Easter egg — secuencia B-E-T-E en ventana principal
+│   ├── BetelineyTime.cpp/.h     Utilidades de tiempo
+│   ├── BetelineyZip.cpp/.h      Compresión ZIP
+│   ├── BetelineyAchievements.h/.cpp   Sistema de logros por tiempo jugado (Fase 3, sesión 36)
+│   ├── BubblewrapSandbox.h/.cpp Sandboxing opcional Bubblewrap del proceso Minecraft (Linux, sesión 38)
+│   ├── FavoriteServers.h/.cpp   Servidores favoritos con quick-join (sesión 31)
+│   ├── SysInfo.cpp              Detección de RAM cross-platform
+│   ├── crash/                   BetelineyPanicHandler (crash reporter)
+│   ├── logs/                    BetelineyLogAnalyzer (18 checks de diagnóstico)
+│   ├── migration/                GDLauncherMigrator (importador GDLauncher Carbon)
+│   ├── minecraft/mod/           MalwareScanner
+│   ├── launch/steps/            CheckModConflicts
+│   ├── modplatform/beteliney/   BetelineyPacks (backend completo)
+│   ├── updater/                 BetelineyExternalUpdater + BetelineyUpdater (firma Ed25519 desde sesión 34)
+│   ├── ui/
+│   │   ├── themes/               BetelineyTheme.cpp — stylesheet neón #39FF14
+│   │   ├── dialogs/               CommandPaletteDialog (Ctrl+K), FavoriteServersDialog, GDLauncherMigrateDialog
+│   │   ├── widgets/               JavaSettingsWidget, AchievementToast
+│   │   └── pages/                 modplatform/beteliney/BetelineyPackPage
+│   └── icons/                   BetelineyIcon
+├── program_info/                 Ícono (SVG/PNG/ICO/ICNS), manifest, .desktop, metainfo, .rc
+├── buildconfig/                  BuildConfig.h/.cpp.in — variables CMake → C++
+├── libraries/                    libnbtplusplus, rainbow, qdcss, murmur2, LocalPeer, javacheck
+├── docs/                         CHANGELOG, TROUBLESHOOTING, PERFILES_JVM, ARQUITECTURA (este archivo), COMPILAR_WINDOWS, CONTRIBUTING, COPYING
+├── tests/                        29 archivos de test (Qt Test/CTest) — 6 Beteliney-specific, resto heredados de Prism
+├── tools/dev/                    8 herramientas de desarrollo (ver sección dedicada abajo)
+├── packaging/                    Manifest Flatpak
+├── screenshots/                  Capturas para README
+├── build/                        Directorio de build generado por CMake/Ninja (gitignored)
+├── ESTADO.md                     Fuente de verdad del estado del proyecto (raíz del repo)
+├── ESTRATEGIA_IA.md              Estrategia de trabajo con IA (raíz del repo)
+├── COMPILAR_LINUX.sh             Build script Linux — menú de modos
+├── COMPILAR_BETELINEY.bat        Build script Windows — menú
+├── COMPILAR.ps1                  Build script PowerShell
+├── EMPAQUETAR_LINUX.sh           Distribución Linux (tar.gz)
+├── EMPAQUETAR_APPIMAGE.sh        Distribución Linux (AppImage)
+├── EMPAQUETAR_WINDOWS.bat        Distribución Windows (ZIP / NSIS)
+└── README.md                     Documentación principal (ASCII art + badges)
 ```
+
+No existe una carpeta `lanzar.sh`/`beteliney-updater.sh` en la raíz — la sección original que las mencionaba parece haber descrito un layout planeado que nunca se implementó así; el arranque real es directo vía el binario compilado, sin script `lanzar.sh` intermedio en el repo actual (verificar si hace falta reconciliar con `docs/TROUBLESHOOTING.md`).
 
 ---
 
@@ -120,16 +127,17 @@ Punto de entrada real del launcher (2107 líneas). Maneja:
 - Font monospace: `Courier` (Win) / `Menlo` (Mac) / `Monospace` (Linux)
 
 ### BetelineyProfiles.h
-Header-only. `inline const QList<BetelineyJVMProfile> BETELINEY_PROFILES`. 6 perfiles:
+Header-only. `inline const QList<BetelineyJVMProfile> BETELINEY_PROFILES`. **7 perfiles** (corregido — el doc viejo decía 6, faltaba el perfil ZGC añadido después):
 
 | # | Nombre | Xms | Xmx | Notas |
 |---|--------|-----|-----|-------|
 | 0 | Personalizado | 0 | 0 | Sin flags — limpia campos |
 | 1 | iGPU / RAM compartida | 384 MB | 1536 MB | G1HeapRegionSize=1M, Xss=768k, MaxGCPauseMillis=100 |
-| 2 | Ligero | 512 MB | 2048 MB | G1HeapRegionSize=2M, Xss=1M, UseTransparentHugePages |
+| 2 | Ligero Vanilla | 512 MB | 2048 MB | G1HeapRegionSize=2M, Xss=1M, UseTransparentHugePages |
 | 3 | Balanceado | 2048 MB | 4096 MB | G1HeapRegionSize=4M, UseStringDeduplication, AutoBoxCacheMax=20000 |
-| 4 | Pesado | 2048 MB | 6144 MB | G1HeapRegionSize=8M, AlwaysPreTouch, MaxGCPauseMillis=150 |
-| 5 | Extremo | 6144 MB | 12288 MB | G1HeapRegionSize=16M, AlwaysPreTouch, MaxGCPauseMillis=200 |
+| 4 | Pesado 100–300 mods | 2048 MB | 6144 MB | G1HeapRegionSize=8M, AlwaysPreTouch, MaxGCPauseMillis=150 |
+| 5 | Extremo ≥300 mods | 6144 MB | 12288 MB | G1HeapRegionSize=16M, AlwaysPreTouch, MaxGCPauseMillis=200 |
+| 6 | iGPU ZGC (Java 21+) | 384 MB | 1536 MB | UseZGC + ZGenerational, pausas sub-milisegundo, SoftMaxHeapSize=1280m |
 
 Todos los perfiles (salvo Personalizado) incluyen los flags base de Aikar:
 `UseG1GC, ParallelRefProcEnabled, UnlockExperimentalVMOptions, DisableExplicitGC,
@@ -276,7 +284,7 @@ El bug GCC 15 afecta la generación de código LTO para `tag_array`. Desactivar 
 `Packwiz`, `ParseUtils`, `ResourceFolderModel`, `ResourcePackParse`, `ShaderPackParse`,
 `StringUtils`, `Task`, `TexturePackParse`, `Version`, `WorldSaveParse`, `XmlLogs`
 
-### Tests Beteliney-specific (47 tests en 5 archivos)
+### Tests Beteliney-specific (6 archivos, incluyendo el de seguridad)
 
 | Archivo | Tests | Cobertura |
 |---------|-------|-----------|
@@ -285,35 +293,43 @@ El bug GCC 15 afecta la generación de código LTO para `tag_array`. Desactivar 
 | `BetelineyTime_test.cpp` | 15 | prettifyDuration (10 casos), humanReadableDuration (5 casos) |
 | `BetelineyGPUDetect_test.cpp` | 18 | iGPU AMD/Intel, discrete NVIDIA/AMD, dual GPU, edge cases |
 | `BetelineyTranslation_test.cpp` | 15 | Ausencia strings inglés + presencia strings español en 3 archivos |
+| `MetaPathTraversal_test.cpp` | 16 | Regresión de seguridad: rechazo de `uid`/`version` maliciosos en feed remoto, `mmc-pack.json` y `Require` compartido (sesiones 38-39) |
 
 **Ejecutar todos:**
 ```bash
-cd BetelineyLauncher/source/build && ctest --output-on-failure
+cd build && ctest --output-on-failure
 ```
 **Ejecutar solo Beteliney:**
 ```bash
 ctest -R "Beteliney" --output-on-failure
 ```
+**Ejecutar solo el test de seguridad:**
+```bash
+ctest -R "MetaPathTraversal" --output-on-failure
+```
 
-**Nota sobre BetelineyTranslation_test:** requiere que `tests/CMakeLists.txt` defina
-`BETELINEY_SRCDIR` con `target_compile_definitions`. Sin esa macro, los tests hacen
-`QSKIP` y pasan vacíos — ver BUG-2 en `docs/PENDIENTES.md`.
+**Nota sobre BetelineyTranslation_test:** el bug histórico de `BETELINEY_SRCDIR` (definía `${CMAKE_SOURCE_DIR}/launcher` en vez de `${CMAKE_SOURCE_DIR}`, causando que los 11 tests de traducción pasaran en falso vía `QSKIP` desde el commit inicial) **se corrigió en sesión 12** — ver `BUG-2` abajo, ya resuelto.
 
 ---
 
-## Bugs conocidos (auditoría 2026-03-31)
+## Bugs conocidos
 
-Ver lista completa con fixes propuestos en `docs/PENDIENTES.md` sección `🐛 Bugs encontrados`.
+> **Corregido en esta revisión** — este bloque decía "auditoría 2026-03-31" y apuntaba a `docs/PENDIENTES.md`, que no existe. Los 7 bugs de esa auditoría **ya están todos resueltos** (verificado contra `ESTADO.md`, sesiones 12 y posteriores). Se dejan documentados por trazabilidad histórica, no como pendientes:
 
-| ID | Prioridad | Archivo | Descripción breve |
-|----|-----------|---------|-------------------|
-| BUG-1 | 🔴 Alta | `lanzar.sh` | `exec "$EXE" "$@"` reenvía flags propios al exe Qt |
-| BUG-2 | 🔴 Alta | `BetelineyTranslation_test.cpp` | Tests pasan vacíos si CMake no define `BETELINEY_SRCDIR` |
-| BUG-3 | 🟡 Media | `lanzar.sh` | Race condition iGPU en primer arranque — cfg no existe aún |
-| BUG-4 | 🟡 Media | `beteliney-updater.sh` | `--silent` no llama `verify_build` |
-| BUG-5 | 🟡 Media | `docs/ESTRUCTURA.md` | LTO documentado como OFF pero en código es ON |
-| BUG-6 | 🟢 Baja | `tools/verify.py` | No verifica existencia de los 5 archivos de test |
-| BUG-7 | 🟢 Baja | `COMPILAR_LINUX.sh` | `ensure_libnbt()` sin pin de versión |
+| ID | Prioridad | Archivo | Descripción breve | Estado |
+|----|-----------|---------|-------------------|--------|
+| BUG-1 | 🔴 Alta | `lanzar.sh` | `exec "$EXE" "$@"` reenvía flags propios al exe Qt | ✅ Resuelto (filtrado vía array `LAUNCHER_ARGS`) |
+| BUG-2 | 🔴 Alta | `BetelineyTranslation_test.cpp` | Tests pasan vacíos si CMake no define `BETELINEY_SRCDIR` correctamente | ✅ Resuelto sesión 12 (path duplicado `launcher/launcher/...` corregido) |
+| BUG-3 | 🟡 Media | `lanzar.sh` | Race condition iGPU en primer arranque — cfg no existe aún | ✅ Resuelto (`.cfg` mínimo con perfil iGPU se crea antes de lanzar el exe) |
+| BUG-4 | 🟡 Media | `beteliney-updater.sh` | `--silent` no llama `verify_build` | ✅ Verificado ya correcto (`apply_update; recompile; verify_build`) |
+| BUG-5 | 🟡 Media | (doc obsoleto) | LTO documentado como OFF pero en código es ON | ✅ No aplica — LTO está ON, con `IPO OFF` solo en `nbt++` por bug de GCC 15, y el hang histórico de linkeo con LTO se resolvió en sesión 37 (job pool) |
+| BUG-6 | 🟢 Baja | `tools/dev/` | Verificación de archivos de test | ✅ Cubierto — `tools/dev/check_build.sh` y `estado_actual.sh` existen |
+| BUG-7 | 🟢 Baja | `COMPILAR_LINUX.sh` | `ensure_libnbt()` sin pin de versión | — sin confirmar en esta revisión, no crítico |
+
+**Vulnerabilidades de seguridad encontradas y cerradas después de esta auditoría** (no son parte de los BUG-1..7, son hallazgos posteriores — ver `ESTADO.md` sesiones 32, 38 y 39 para el detalle completo):
+- Path traversal en el importador GDLauncher (sesión 32)
+- Path traversal en `uid`/`version` del feed de meta remoto (sesión 38)
+- Path traversal en `Component::m_uid` local (`mmc-pack.json`) y en `Meta::Require::uid` compartido (feed remoto + local + `patches/*.json`) — el vector más grave, porque se dispara automáticamente en cada resolve/launch sin interacción del usuario (sesión 39)
 
 ---
 
@@ -333,7 +349,36 @@ Ver lista completa con fixes propuestos en `docs/PENDIENTES.md` sección `🐛 B
 - Verifica existencia del exe updater ANTES de cerrar la app
 - Cancelación real con `proc.kill()` + monitoreo en chunks de 200ms
 - `watcher->setFuture()` después de `connect()` — elimina race condition
+- **Desde sesión 34:** verificación de firma **Ed25519 fail-closed** sobre cada release descargado, vía `libsodium` — si la firma no valida, el update se rechaza en vez de aplicarse a ciegas.
 
 ---
 
-*Generado por El_PibeCapo · 2026-03-31 · BetelineyLauncher v7.5.0*
+## Módulos añadidos después de la última auditoría completa (sesiones 30-39)
+
+Esta sección no existía en el documento original — se agrega en esta revisión para cubrir el trabajo hecho después de 2026-04-05, que nunca se documentó acá.
+
+### BetelineyAchievements (`launcher/BetelineyAchievements.h/.cpp`, sesión 36)
+Singleton de logros ligados a marca de tiempo jugado (Fase 3 del roadmap gamificación). Se engancha en `BaseInstance::setMinecraftRunning` para acumular tiempo y disparar milestones. La UI del toast de logro vive en `launcher/ui/widgets/AchievementToast.h/.cpp`.
+
+### BubblewrapSandbox (`launcher/BubblewrapSandbox.h/.cpp`, sesión 38)
+Sandboxing **opcional** del proceso de Minecraft en Linux vía `bwrap` (Bubblewrap). Aislamiento a nivel de proceso — no interfiere con GameMode/MangoHud que ya están integrados. Opt-in, no activado por defecto.
+
+### CommandPaletteDialog + FavoriteServers (sesión 31)
+- `launcher/FavoriteServers.h/.cpp`: persistencia de servidores favoritos.
+- `launcher/ui/dialogs/FavoriteServersDialog.h/.cpp`: UI de gestión.
+- `launcher/ui/dialogs/CommandPaletteDialog.h/.cpp`: paleta de comandos estilo Ctrl+K — instancias y settings, con quick-join a servidores favoritos.
+
+### Fixes de reliability (sesiones 29, 37)
+- Sesión 29: `QPointer` en `BackgroundModUpdateCheckTask` para eliminar un use-after-free.
+- Sesión 37: job pool dedicado para los pasos de linkeo con LTO — resolvió un cuelgue histórico del build que venía arrastrándose desde varias sesiones (20/27/29/31/32/33/36) sin diagnóstico certero hasta entonces.
+
+### Vulnerabilidades de path traversal cerradas (sesiones 32, 38, 39)
+Ver tabla "Bugs conocidos" arriba, último bloque — resumen completo en `ESTADO.md`.
+
+### `tools/dev/` — 8 herramientas de desarrollo (sesión 35)
+Cada una trazada a un fallo real documentado previamente en `ESTADO.md`, no especulativas:
+`build_fast.sh`, `check_build.sh`, `check_ci.sh`, `check_meta_urls.sh`, `estado_actual.sh`, `install_hooks.sh`, `secret_scan.sh`, `verify_presets.py` — más `tools/dev/README.md` explicando cada una.
+
+---
+
+*Generado por El_PibeCapo · 2026-03-31 (versión original v7.5.0) · Revisado y puesto al día 2026-07-14 (sesión 39) contra el código real en v8.4.0+main.*

@@ -10,7 +10,7 @@
 |---|---|
 | **Nombre** | BetelineyLauncher |
 | **Versión actual en código** | 8.4.0 (`CMakeLists.txt` líneas 179-181) |
-| **Última release** | `v8.4.0`, tageada y publicada en GitHub Releases (sesión 27, 2026-07-07) — https://github.com/ElPibeCapo/BetelineyLauncher/releases/tag/v8.4.0. Commits sin tagear desde entonces: ver `## HISTORIAL DE COMMITS` para el último hash real en `main`. |
+| **Última release** | `v8.4.0`, tageada y publicada en GitHub Releases (sesión 27, 2026-07-07) — https://github.com/ElPibeCapo/BetelineyLauncher/releases/tag/v8.4.0. El tag en sí solo tiene el bump de versión; los commits reales posteriores (sesiones 27-39, sin release nueva aún) están listados en `## HISTORIAL DE COMMITS` y detallados en `docs/CHANGELOG.md`. Fuente de verdad real: `git log --oneline`. |
 | **Base** | Prism Launcher (GPL-3.0), fork extensamente modificado |
 | **Autor** | El_PibeCapo — `elpibecapoofficial@gmail.com` |
 | **Repo launcher** | https://github.com/ElPibeCapo/BetelineyLauncher |
@@ -71,6 +71,27 @@
 
 ## HISTORIAL DE COMMITS
 
+> **Corregido en sesión 39:** este bloque estaba congelado desde ~sesión 17 (último commit real listado abajo es `a7795abe7`), mientras la tabla de IDENTIDAD DEL PROYECTO prometía que acá estaba "el último hash real en main" — falso desde hace ~20 sesiones. No se reescribe como espejo completo de `git log` (mantener eso manual a mano es justo lo que causó este desfase); en vez de eso, **la fuente de verdad es `git log --oneline` directamente**, y este bloque queda como snapshot histórico de los primeros commits del proyecto (útil para ver de dónde viene v8.2.0→v8.3.0) más un puntero corto a los commits recientes reales.
+
+**Commits recientes reales (sesiones 27-39, más nuevos primero — ver `docs/CHANGELOG.md` para el detalle de cada uno):**
+```
+89a7f8c38  docs: ESTADO.md — Sesión 38 (retroactiva) + Sesión 39, path traversal local cerrado
+de3717394  fix(security): path traversal en uid/version local (mmc-pack.json y Require compartido)
+254f05760  fix(security): path traversal en uid/version del feed de meta remoto
+da70d0e6b  feat: sandboxing opcional del proceso de Minecraft con Bubblewrap (Linux)
+af88e5b88  fix(build): job pool para links con LTO, resuelve cuelgue histórico
+17880fbb0  feat(achievements): sistema de logros de marca por tiempo jugado (Fase 3)
+fe3c4a1af  Sesión 35: ESTRATEGIA_IA v5.0 + auditoría docs externos, tools/dev
+c149bb9a0  fix(migration): path traversal en importador GDLauncher
+77e0f40cc  feat(updater): firma Ed25519 fail-closed para releases + libsodium
+e46e1f13d  feat(servers): command palette (Ctrl+K) + servidores favoritos con quick-join
+efe33a69e  fix(mods): usar QPointer en BackgroundModUpdateCheckTask para evitar use-after-free
+2ef426dcd  feat(mods): chequeo silencioso de actualizaciones en background al seleccionar instancia
+b37308428  feat(worlds): botón de backup manual de mundos
+ef861cdeb  chore: bump version 8.3.0 → 8.4.0  ← tag v8.4.0
+```
+
+**Snapshot histórico (commits originales del proyecto, v8.2.0 → v8.3.0, sin actualizar desde entonces):**
 ```
 a7795abe7  fix: backport 3 fixes reales de Prism 11.0.0 -> 11.0.2 upstream
 2d475330e  docs: capturas de BetelineyPacks y perfiles JVM en README, Discord corregido, Roadmap sincronizado

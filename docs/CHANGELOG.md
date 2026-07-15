@@ -1,7 +1,39 @@
 # ⬡ BetelineyLauncher — Changelog
 
 > Historial de versiones desde v7.0.0.
-> Actualizado: **2026-06-18** · Versión actual: **v8.3.0** · Autor: **El_PibeCapo**
+> Actualizado: **2026-07-14** · Versión actual en código: **v8.4.0** (tag publicado, pero contiene solo el bump de versión — todo lo de abajo son commits reales en `main` posteriores al tag, sin release nueva todavía). Autor: **El_PibeCapo**
+
+---
+
+## Sin publicar aún — commits en `main` desde `v8.4.0` (2026-07-06 a 2026-07-14)
+
+> Nota: `v8.4.0` se taggeó sin contenido nuevo (solo bump 8.3.0→8.4.0 + limpieza de docs). Todo lo real de esta sección vive en `main` sin tag propio todavía — la próxima release debería llevar estos cambios y bumpear a `v8.5.0` (ver `## VERSIONES` en `ESTADO.md`: nunca reusar `v8.3.0`/`v8.4.0`).
+
+### Seguridad
+
+| Commit | Cambio |
+|---|---|
+| `c149bb9a0` | **`GDLauncherMigrator`** — path traversal: `shortpath`/`id` de `data.sqlite` se usaban sin sanitizar para construir la ruta de origen, permitiendo lectura arbitraria de archivos del sistema disfrazada de importación de instancia. Fix: `safeChildPath()` valida con `QDir::cleanPath()` que la ruta resultante no escape de `instances/`; nombre de directorio destino rechaza también `..` literal (antes solo bloqueaba caracteres sueltos). |
+| `254f05760` | **Feed de meta remoto** (`meta/JsonFormat.cpp`) — `uid`/`version` del feed (`ElPibeCapo/meta`) se usaban sin sanitizar para construir rutas de cache local; un feed comprometido podía inyectar `../` y escapar del directorio esperado. Fix: `isSafePathComponent()`/`requireSafePathComponent()`, rechazan cualquier valor con `..`, `/`, `\`, byte nulo, vacío o `>256` caracteres. |
+| `de3717394` | **`mmc-pack.json` local + `Require` compartido** (`PackProfile.cpp`, `JsonFormat.cpp`) — el fix anterior solo cubría el feed remoto. `Component::m_uid` de una instancia local (puede venir de un modpack de terceros importado) permitía borrar/escribir archivos arbitrarios vía `customize()`/`revert()`. Peor: `Meta::Require::uid` (compartido por feed remoto, `mmc-pack.json` y `patches/*.json`) se inyecta automáticamente como componente nuevo en cada resolve/launch de instancia sin interacción del usuario — vector más grave que los otros dos por ser automático. Ambos cerrados con la misma validación. |
+| `77e0f40cc` | **Firma Ed25519 fail-closed para actualizaciones** — el updater (`BetelineyUpdater`) ahora descarga y verifica una firma `.sig` con clave pública embebida antes de instalar cualquier update; si falta la firma o no valida, borra el archivo y aborta (no hay "instalar de todos modos"). Usa `libsodium` (nueva dependencia vcpkg). CI firma el release con un secret (`RELEASE_SIGNING_KEY`) antes de publicar. |
+
+### Confiabilidad
+
+| Commit | Cambio |
+|---|---|
+| `efe33a69e` | **Use-after-free en `BackgroundModUpdateCheckTask`** — `m_instance` era un puntero crudo a `MinecraftInstance`; si el usuario borraba la instancia mientras el chequeo de mods en background seguía en red, el callback final escribía sobre memoria liberada. Fix: `QPointer<MinecraftInstance>` (Qt lo pone en `nullptr` solo al destruirse el objeto) + guard defensivo adicional. |
+| `af88e5b88` | **Cuelgue histórico del build local con LTO, causa raíz resuelta** — cada link con `-flto=auto` paralelizaba internamente hasta `nproc()` hilos propios; sin límite, Ninja corría varios links en simultáneo multiplicando el paralelismo muy por encima de cores/RAM disponibles, generando swap thrashing (síntoma arrastrado desde sesiones 20/27/29/31/32/33/36). Fix: `JOB_POOLS lto_link_pool=2`, limita a 2 links simultáneos. |
+
+### Nuevas funciones
+
+| Commit | Cambio |
+|---|---|
+| `b37308428` | **Backup manual de mundos** — botón "Backup" en la toolbar de `WorldListPage`. Comprime el mundo seleccionado a `backups/worlds/{nombre}_{timestamp}.zip` dentro de la instancia, reusando `BetelineyZip::ExportToZipTask` (mismo mecanismo que `ExportInstanceDialog`). El backup automático antes de actualizar un pack queda pendiente como trabajo aparte. |
+| `2ef426dcd` | **Badge de actualizaciones de mods** — chequeo silencioso en background (`ModrinthCheckUpdate`/`FlameCheckUpdate`) al seleccionar una instancia, una vez por sesión del launcher por instancia. Activa `MinecraftInstance::setUpdateAvailable()`, que ya existía en el código pero no tenía disparador (feature fantasma detectada en sesión 26: la UI ya pintaba el badge, solo faltaba quién lo activara). |
+| `e46e1f13d` | **Command palette (Ctrl+K) + servidores favoritos con quick-join** — paleta estilo VSCode/Sublime que recorre el menú principal en vivo con filtro de texto; diálogo de alta/edición/baja de servidores favoritos persistidos en `SettingsObject`; acceso directo a unirse a un favorito sin abrir la instancia primero. |
+| `17880fbb0` | **Sistema de logros de marca por tiempo jugado** — 5 logros (1h/10h/50h/100h/500h de juego acumulado en una instancia), notificación visual tipo toast (esquina inferior derecha, cola FIFO si se desbloquean varios a la vez), persistencia en `SettingsObject`. |
+| `da70d0e6b` | **Sandboxing opcional con Bubblewrap (`bwrap`) para el proceso de Minecraft en Linux** — opción configurable, no forzada por defecto (no todos los sistemas tienen `bwrap`, ni todas las configuraciones de instancia son compatibles con un sandbox estricto). |
 
 ---
 
