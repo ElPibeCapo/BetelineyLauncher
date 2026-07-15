@@ -33,12 +33,23 @@ namespace UpdateVerify {
 // La clave PRIVADA correspondiente vive unicamente como secret de GitHub
 // Actions (RELEASE_SIGNING_KEY) y no debe aparecer jamas en este repo.
 //
-// Generada 2026-07-08 (sesion de implementacion de firma del updater).
-// Si algun dia se rota la clave, hay que actualizar esta constante Y el
-// secret de CI a la vez, o el updater rechazara todos los releases nuevos.
+// Rotada 2026-07-14 (sesion 40): la clave anterior (generada 2026-07-08) se
+// perdio - el .pem privado que debia subirse a GitHub Secrets ya no existia
+// en disco y no hay evidencia de que se haya llegado a cargar (ningun
+// release real corrio con firma desde que existe el mecanismo). Se genero un
+// par nuevo con 'openssl genpkey -algorithm Ed25519', verificado con un
+// roundtrip real firma/verificacion contra libsodium antes de commitear esta
+// clave. La privada NUNCA paso por este chat ni por ningun archivo de este
+// repo - vive solo en el filesystem local del usuario, pendiente de que el
+// la cargue el mismo en GitHub Secrets (Settings > Secrets and variables >
+// Actions > RELEASE_SIGNING_KEY).
+//
+// Si algun dia se rota la clave otra vez, hay que actualizar esta constante Y
+// el secret de CI a la vez, o el updater rechazara todos los releases nuevos.
 constexpr unsigned char kReleasePublicKey[crypto_sign_PUBLICKEYBYTES] = {
-    0x02, 0xfd, 0x06, 0x3b, 0xec, 0x0b, 0xf9, 0xd1, 0x1c, 0x4d, 0x88, 0x69, 0xdc, 0x23, 0x0e, 0xd6,
-    0x19, 0x47, 0x1d, 0x9a, 0xbe, 0x9d, 0x1e, 0xf0, 0x23, 0x65, 0xa0, 0x09, 0xb8, 0x46, 0x28, 0xff
+    0xb1, 0xde, 0x15, 0x8f, 0xc5, 0xf2, 0x5e, 0xae, 0x9e, 0x84, 0x0d, 0xd1,
+    0x3f, 0x05, 0xc6, 0x80, 0x68, 0x08, 0x26, 0x25, 0xba, 0x5d, 0x94, 0xd6,
+    0x65, 0x36, 0x33, 0x32, 0x83, 0x88, 0x53, 0xbd
 };
 
 static_assert(sizeof(kReleasePublicKey) == 32, "La clave publica Ed25519 debe tener exactamente 32 bytes");
