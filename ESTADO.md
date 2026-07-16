@@ -123,7 +123,7 @@ ae1ddd6  fix: Q_INIT_RESOURCE dup, BUILD_TESTING OFF, CurseForge env, BUILD_ARTI
 
 ```bash
 cd "/home/pibe/Descargas/Beteliney Launcher [Minecraft]/BetelineyLauncher/source"
-git tag --list   # confirmar el último tag antes de elegir el numero nuevo
+git tag --list   # confirmar el último tag antes de elegir el número nuevo
 # 1. Editar CMakeLists.txt líneas 179-181 con la versión nueva (ej. 8.5.0)
 git add -A
 git commit -m "descripción del cambio"
@@ -831,60 +831,24 @@ Con los bugs #3-#8 corregidos, "Empaquetar" en Windows falló con `7z: command n
 | 6 | Publicar en r/feedthebeast, r/Minecraft, Discord Prism | ⏳ Manual. |
 | 7 | Formulario OpenAI Codex for OSS | ⏳ Manual. |
 
-### Sesión 23 — Acceso directo en Escritorio + auditoría de confusión de nombres "Beteliney" en el sistema (2026-07-05)
+### Sesión 19 — Capturas de pantalla integradas al README + corrección de Roadmap desactualizado (2026-07-04)
 
-**Contexto:** se pidió poner el launcher en el Escritorio y revisar si algo más se llama "Beteliney" en el sistema, por posible confusión.
+**Contexto:** el usuario ya había tomado 46 capturas de pantalla navegando el launcher manualmente (`/home/pibe/Imágenes/Capturas de pantalla/`), tras el bloqueo de automatización en Wayland de sesiones anteriores (sin `ydotool`/`kdotool` funcionando de forma confiable, foco de ventana robado por la app de Claude Desktop). Se pidió revisar todo y elegir las mejores para documentar.
 
-**Hallazgo real de confusión de nombres — dos proyectos distintos, mismo nombre:**
-1. **BetelineyLauncher (Minecraft)** — este repo. AppID `com.beteliney.BetelineyLauncher`.
-2. **Beteliney (Roblox)** — proyecto completamente distinto en `~/Descargas/Beteliney Launcher [Roblox]/`, un fork de Sober (launcher de Roblox para Linux). AppID `org.beteliney.Beteliney`.
+**Método:** en vez de adivinar el contenido visual de 46 archivos, se corrió `tesseract` (OCR) sobre las 46 capturas en un solo batch, extrayendo el texto visible de cada una. Esto permitió identificar con certeza (no por inspección visual subjetiva) qué pantalla del launcher representa cada archivo:
+- **BetelineyPacks:** identificada por el texto "Modpacks de Beteliney", "Vanilla Optimizado", "PVP Competitivo", "Destacado" — elegida `Captura...121049.png` (primera vista de la pestaña, sin scroll).
+- **Perfiles JVM:** identificada por "Perfiles Beteliney (Ryzen 7 3700U + Vega 10)" + dropdown de perfiles — elegida `Captura...121642.png` porque muestra el desplegable abierto con varios perfiles listados (más informativa que las capturas con el dropdown cerrado).
+- **Diagnóstico de logs:** no se encontró ninguna captura del panel real (`BetelineyLogAnalyzer`/`diagnosisPanel`) porque ese panel solo se activa cuando un lanzamiento de Minecraft termina con `gameExitCode != 0` — el usuario nunca forzó ese escenario. Sí hay una captura de "View Launcher Logs" (ventana de logs cruda, sin el panel de diagnóstico), ya identificada pero **no usada** para no hacer pasar una cosa por otra. Queda pendiente en el Roadmap, con la causa exacta documentada.
 
-**Problema real encontrado y corregido:** en `~/.local/share/applications/` había 3 archivos `.desktop`:
-- `beteliney.desktop` (genérico, sin AppID) — apuntaba correctamente al `lanzar.sh` de Minecraft actual. Parche manual creado el 12/06.
-- `com.beteliney.BetelineyLauncher.desktop` — el `.desktop` "oficial" de este proyecto (con `MimeType` completo para modrinth/curseforge/`beteliney://`), pero con el `Exec` **roto**: apuntaba a `.../Beteliney Launcher [Minecraft] 7.0v/lanzar.sh`, una ruta con sufijo de versión vieja que ya no existe (confirmado, la carpeta actual no tiene sufijo). Este archivo quedó desactualizado desde el 23/05 tras un rename de carpeta, y el genérico de arriba fue el parche manual del usuario para no quedarse sin lanzador funcional.
-- `org.beteliney.Beteliney.desktop` — el de Roblox, correcto, sin tocar.
+Archivos copiados a `source/screenshots/`: `betelineypacks.png`, `perfiles-jvm.png`.
 
-**Confusión adicional, no corregida por ser de otro proyecto:** `~/.local/bin/beteliney` (en el `$PATH`) es el binario del launcher de **Roblox**, confirmado por hash MD5 idéntico al binario en `Beteliney Launcher [Roblox]/beteliney/beteliney`. Si se ejecuta `beteliney` desde una terminal esperando abrir Minecraft, en realidad abre Roblox/Sober. No se tocó porque pertenece a la gestión de otro proyecto instalado por su propio instalador — cambiarlo sin permiso explícito podría romper esa instalación. Queda anotado para que el usuario decida si quiere renombrar ese binario o el símbolo del PATH.
+**README actualizado:**
+- Galería de capturas ampliada (ventana principal + BetelineyPacks + perfiles JVM lado a lado).
+- Link de Discord corregido: `discord.gg/2JdB7pvBq3` (el original de la sesión 9, ya no válido/reemplazado por el usuario) → `discord.gg/fMbSkEd85r`. Corregido también en `ESTADO.md` (sección Sesión 9) y `ESTRATEGIA_IA.md` (tabla de enlaces).
+- **Roadmap corregido — hallazgo no pedido pero relevante:** tenía 3 ítems marcados como pendientes (`[ ]`) que en realidad ya estaban resueltos desde las sesiones 14 a 17 según este mismo documento: activar GitHub Pages del repo `meta`, publicar los 3 BetelineyPacks, y `known-hashes.json`. El README nunca se había sincronizado con el avance real documentado acá. Marcados `[x]` con la aclaración exacta de cada uno (incluida la honestidad de que `known-hashes.json` quedó vacío por diseño, no relleno con datos inventados — ver sesión 14). También se agregó al Roadmap la rotación de la CurseForge API key (sesión 18) y el pendiente de publicar en Reddit/Discord de Prism, que no estaban listados ahí.
 
-**Corregido:**
-- `com.beteliney.BetelineyLauncher.desktop`: `Exec` corregido a la ruta real actual (`bash "/home/pibe/Descargas/Beteliney Launcher [Minecraft]/lanzar.sh" %U`). Validado con `desktop-file-validate` — sin errores.
-- Ícono verificado: `~/.local/share/icons/hicolor/scalable/apps/com.beteliney.BetelineyLauncher.svg` ya era idéntico (diff) al logo real del repo — no había que tocarlo, ya estaba instalado correctamente desde antes.
-- Eliminado `beteliney.desktop` (genérico, redundante una vez arreglado el oficial — tenía menos metadata, sin `MimeType`).
-- `update-desktop-database` corrido para refrescar la caché.
 
-**Acceso directo en Escritorio:** copiado `com.beteliney.BetelineyLauncher.desktop` a `~/Escritorio/BetelineyLauncher.desktop`, permisos `755` (idénticos al `Paralives.desktop` que ya funciona ahí). `gio set metadata::trusted` no aplica en este entorno (KDE Plasma, no GNOME/Nautilus) — en KDE el bit ejecutable es suficiente, no hace falta el atributo extra.
 
-**Nota:** estos cambios son a nivel de sistema operativo del usuario (`~/.local/share/applications`, `~/Escritorio`), no del repo — se documentan acá por ser la fuente de verdad de sesiones, pero no generan commit.
-
-### Sesión 22 — Limpieza y organización de estructura del repo (2026-07-05)
-
-**Contexto:** se pidió limpiar y organizar la estructura general. Auditoría real antes de mover nada, no reorganización cosmética a ciegas.
-
-**Intento revertido conscientemente:** se evaluó mover los scripts de compilación/empaquetado de la raíz (`COMPILAR_LINUX.sh`, `COMPILAR_BETELINEY.bat`, `COMPILAR.ps1`, `EMPAQUETAR_*`, `MONTAR_WINDOWS_NOBARA.sh`) a `scripts/` para despejar la raíz. Se revirtió al confirmar que `COMPILAR_LINUX.sh` usa `SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"` y luego rutas relativas (`build/`, `libraries/libnbtplusplus/`, `.git/HEAD`) asumiendo que el script vive en la raíz del repo. Moverlo sin reescribir esa lógica interna habría roto el build. Además, 13 archivos (README, LEEME.txt, docs/*) referencian estos scripts asumiendo ejecución desde la raíz — el riesgo/beneficio no lo justificaba sin poder recompilar y confirmar en el momento. **Se dejaron donde estaban.**
-
-**Falso positivo descartado:** `COPYING.md` (raíz) y `docs/COPYING.md` parecían duplicados (contenido idéntico, confirmado con `diff`). No lo son: `docs/COPYING.md` está referenciado por `launcher/resources/documents/documents.qrc` y se embebe como recurso Qt dentro del binario compilado (se muestra en la app); `COPYING.md` de la raíz es el que GitHub detecta automáticamente como licencia del repo. Cumplen roles distintos — no se tocó ninguno.
-
-**Limpieza real aplicada:**
-- Eliminados `DEVLOG.md` y `MASTER_PLAN.md` — eran stubs de 3 líneas ("DEPRECATED, reemplazado por ESTADO.md") desde hace varias sesiones, sin contenido útil, y solo referenciados históricamente en este mismo documento.
-- Renombrado `tools/pc/` → `tools/windows-fixes/` (scripts `ACTUALIZAR_DRIVERS.bat`, `DESHABILITAR_FAST_STARTUP.bat`, `DESHABILITAR_HYPERV.bat`). "pc" no describía nada; confirmado por búsqueda de código que ningún otro archivo referencia esa ruta por nombre, así que el rename es seguro.
-- Confirmado que `dist/` (ignorado en `.gitignore`) no tiene ningún archivo trackeado por error.
-- Búsqueda de archivos temporales/basura sueltos (`*.tmp`, `*.log`, `*~`, `*.orig`, `*.rej`) en el árbol — ninguno real encontrado.
-
-**Conclusión:** la estructura del repo ya estaba, en general, bien pensada — lo que parecía desorden (scripts en la raíz, "duplicados" de licencia) tenía razones funcionales reales. La limpieza real posible era acotada: 2 archivos basura eliminados, 1 carpeta renombrada.
-
-### Sesión 21 — Ícono macOS (Icon Composer) corregido + bug en genicons.sh (2026-07-05)
-
-**Contexto:** se pidió mejorar la estética general (íconos, logo, UI, fondos). Revisión real del branding existente, no cambios cosméticos a ciegas.
-
-**Estado encontrado:**
-- Logo principal (`com.beteliney.BetelineyLauncher.logo.svg`) y tema de widgets (`BetelineyTheme.cpp`) — ya correctos: hexágono deep-space + "B" en gradiente verde neón `#39FF14`, paleta consistente, tipografía JetBrains Mono. No se tocaron.
-- **Bug real encontrado:** el ícono para macOS moderno (formato Icon Composer, `program_info/BetelineyLauncher.icon/Assets/block.svg` + `rainbow.svg`) seguía siendo literalmente el logo de PrismLauncher sin reemplazar (`<title>Prism Launcher Logo</title>` en el XML), mientras el resto del proyecto ya tenía el logo propio.
-
-**Fix aplicado:** reemplazo de `block.svg` y `rainbow.svg` por el hexágono-B real, escalado matemáticamente desde el logo oficial 512×512 a las unidades del formato Icon Composer (12.7×12.7), separado en las dos capas que pide ese formato (capa base opaca + capa "glass" con contorno y puntos de vértice en glow). Verificado por histograma de color, no a ojo: verde en `#37F513` (`#39FF14` con antialiasing esperado) y gradiente deep-space correcto. Backups `.bak` generados y luego excluidos vía `.gitignore` (no hacía falta versionarlos, git ya guarda el original en el historial).
-
-**Segundo bug encontrado en esta sesión, no en la anterior:** `genicons.sh` tenía el `LAUNCHER_APPID` ya corregido a `com.beteliney.BetelineyLauncher` de una pasada previa, pero los nombres de archivo de salida seguían hardcodeados como `prismlauncher.ico`/`prismlauncher.icns` — mientras los archivos reales del proyecto son `beteliney.ico`/`beteliney.icns` (confirmado listando `program_info/`). Esto habría generado íconos con el nombre equivocado en cada regeneración, y `rm prismlauncher.ico` habría fallado porque ese archivo nunca existe en este repo (corregido a `rm -f beteliney.ico` de paso). Corregidos todos los nombres intermedios (`beteliney_16.png`...`beteliney_256.png`, `beteliney.iconset`) y los dos `cp`/`icotool` finales.
-
-**Pendiente, decisión del usuario:** los fondos (`resources/backgrounds/`) siguen siendo las mascotas heredadas de PrismLauncher (`rory`, `kitteh`, `teawie` — esta última con licencia CC BY-SA de terceros, atribución obligatoria en el `.qrc`). Reemplazarlos requiere diseñar ilustración propia de marca y, si se quita `teawie`, retirar correctamente su atribución legal del `.qrc`. No se tocó sin definición explícita.
 
 ### Sesión 20 — Backport de Prism 11.0.0→11.0.2 testeado en la práctica (2026-07-05)
 
@@ -913,24 +877,60 @@ Remote `upstream` (`PrismLauncher/PrismLauncher`) agregado al repo local para po
 - 21 commits / 13 archivos restantes del gap Prism 11.0.0→11.0.2, listados arriba, cada uno requiere revisión manual uno por uno por el conflicto con customización propia (especialmente el refactor de `McClient`).
 - El resto de la tabla de pendientes no cambió respecto a la sesión 19 (ver abajo).
 
-### Sesión 19 — Capturas de pantalla integradas al README + corrección de Roadmap desactualizado (2026-07-04)
+### Sesión 21 — Ícono macOS (Icon Composer) corregido + bug en genicons.sh (2026-07-05)
 
-**Contexto:** el usuario ya había tomado 46 capturas de pantalla navegando el launcher manualmente (`/home/pibe/Imágenes/Capturas de pantalla/`), tras el bloqueo de automatización en Wayland de sesiones anteriores (sin `ydotool`/`kdotool` funcionando de forma confiable, foco de ventana robado por la app de Claude Desktop). Se pidió revisar todo y elegir las mejores para documentar.
+**Contexto:** se pidió mejorar la estética general (íconos, logo, UI, fondos). Revisión real del branding existente, no cambios cosméticos a ciegas.
 
-**Método:** en vez de adivinar el contenido visual de 46 archivos, se corrió `tesseract` (OCR) sobre las 46 capturas en un solo batch, extrayendo el texto visible de cada una. Esto permitió identificar con certeza (no por inspección visual subjetiva) qué pantalla del launcher representa cada archivo:
-- **BetelineyPacks:** identificada por el texto "Modpacks de Beteliney", "Vanilla Optimizado", "PVP Competitivo", "Destacado" — elegida `Captura...121049.png` (primera vista de la pestaña, sin scroll).
-- **Perfiles JVM:** identificada por "Perfiles Beteliney (Ryzen 7 3700U + Vega 10)" + dropdown de perfiles — elegida `Captura...121642.png` porque muestra el desplegable abierto con varios perfiles listados (más informativa que las capturas con el dropdown cerrado).
-- **Diagnóstico de logs:** no se encontró ninguna captura del panel real (`BetelineyLogAnalyzer`/`diagnosisPanel`) porque ese panel solo se activa cuando un lanzamiento de Minecraft termina con `gameExitCode != 0` — el usuario nunca forzó ese escenario. Sí hay una captura de "View Launcher Logs" (ventana de logs cruda, sin el panel de diagnóstico), ya identificada pero **no usada** para no hacer pasar una cosa por otra. Queda pendiente en el Roadmap, con la causa exacta documentada.
+**Estado encontrado:**
+- Logo principal (`com.beteliney.BetelineyLauncher.logo.svg`) y tema de widgets (`BetelineyTheme.cpp`) — ya correctos: hexágono deep-space + "B" en gradiente verde neón `#39FF14`, paleta consistente, tipografía JetBrains Mono. No se tocaron.
+- **Bug real encontrado:** el ícono para macOS moderno (formato Icon Composer, `program_info/BetelineyLauncher.icon/Assets/block.svg` + `rainbow.svg`) seguía siendo literalmente el logo de PrismLauncher sin reemplazar (`<title>Prism Launcher Logo</title>` en el XML), mientras el resto del proyecto ya tenía el logo propio.
 
-Archivos copiados a `source/screenshots/`: `betelineypacks.png`, `perfiles-jvm.png`.
+**Fix aplicado:** reemplazo de `block.svg` y `rainbow.svg` por el hexágono-B real, escalado matemáticamente desde el logo oficial 512×512 a las unidades del formato Icon Composer (12.7×12.7), separado en las dos capas que pide ese formato (capa base opaca + capa "glass" con contorno y puntos de vértice en glow). Verificado por histograma de color, no a ojo: verde en `#37F513` (`#39FF14` con antialiasing esperado) y gradiente deep-space correcto. Backups `.bak` generados y luego excluidos vía `.gitignore` (no hacía falta versionarlos, git ya guarda el original en el historial).
 
-**README actualizado:**
-- Galería de capturas ampliada (ventana principal + BetelineyPacks + perfiles JVM lado a lado).
-- Link de Discord corregido: `discord.gg/2JdB7pvBq3` (el original de la sesión 9, ya no válido/reemplazado por el usuario) → `discord.gg/fMbSkEd85r`. Corregido también en `ESTADO.md` (sección Sesión 9) y `ESTRATEGIA_IA.md` (tabla de enlaces).
-- **Roadmap corregido — hallazgo no pedido pero relevante:** tenía 3 ítems marcados como pendientes (`[ ]`) que en realidad ya estaban resueltos desde las sesiones 14 a 17 según este mismo documento: activar GitHub Pages del repo `meta`, publicar los 3 BetelineyPacks, y `known-hashes.json`. El README nunca se había sincronizado con el avance real documentado acá. Marcados `[x]` con la aclaración exacta de cada uno (incluida la honestidad de que `known-hashes.json` quedó vacío por diseño, no relleno con datos inventados — ver sesión 14). También se agregó al Roadmap la rotación de la CurseForge API key (sesión 18) y el pendiente de publicar en Reddit/Discord de Prism, que no estaban listados ahí.
+**Segundo bug encontrado en esta sesión, no en la anterior:** `genicons.sh` tenía el `LAUNCHER_APPID` ya corregido a `com.beteliney.BetelineyLauncher` de una pasada previa, pero los nombres de archivo de salida seguían hardcodeados como `prismlauncher.ico`/`prismlauncher.icns` — mientras los archivos reales del proyecto son `beteliney.ico`/`beteliney.icns` (confirmado listando `program_info/`). Esto habría generado íconos con el nombre equivocado en cada regeneración, y `rm prismlauncher.ico` habría fallado porque ese archivo nunca existe en este repo (corregido a `rm -f beteliney.ico` de paso). Corregidos todos los nombres intermedios (`beteliney_16.png`...`beteliney_256.png`, `beteliney.iconset`) y los dos `cp`/`icotool` finales.
 
+**Pendiente, decisión del usuario:** los fondos (`resources/backgrounds/`) siguen siendo las mascotas heredadas de PrismLauncher (`rory`, `kitteh`, `teawie` — esta última con licencia CC BY-SA de terceros, atribución obligatoria en el `.qrc`). Reemplazarlos requiere diseñar ilustración propia de marca y, si se quita `teawie`, retirar correctamente su atribución legal del `.qrc`. No se tocó sin definición explícita.
 
+### Sesión 22 — Limpieza y organización de estructura del repo (2026-07-05)
 
+**Contexto:** se pidió limpiar y organizar la estructura general. Auditoría real antes de mover nada, no reorganización cosmética a ciegas.
+
+**Intento revertido conscientemente:** se evaluó mover los scripts de compilación/empaquetado de la raíz (`COMPILAR_LINUX.sh`, `COMPILAR_BETELINEY.bat`, `COMPILAR.ps1`, `EMPAQUETAR_*`, `MONTAR_WINDOWS_NOBARA.sh`) a `scripts/` para despejar la raíz. Se revirtió al confirmar que `COMPILAR_LINUX.sh` usa `SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"` y luego rutas relativas (`build/`, `libraries/libnbtplusplus/`, `.git/HEAD`) asumiendo que el script vive en la raíz del repo. Moverlo sin reescribir esa lógica interna habría roto el build. Además, 13 archivos (README, LEEME.txt, docs/*) referencian estos scripts asumiendo ejecución desde la raíz — el riesgo/beneficio no lo justificaba sin poder recompilar y confirmar en el momento. **Se dejaron donde estaban.**
+
+**Falso positivo descartado:** `COPYING.md` (raíz) y `docs/COPYING.md` parecían duplicados (contenido idéntico, confirmado con `diff`). No lo son: `docs/COPYING.md` está referenciado por `launcher/resources/documents/documents.qrc` y se embebe como recurso Qt dentro del binario compilado (se muestra en la app); `COPYING.md` de la raíz es el que GitHub detecta automáticamente como licencia del repo. Cumplen roles distintos — no se tocó ninguno.
+
+**Limpieza real aplicada:**
+- Eliminados `DEVLOG.md` y `MASTER_PLAN.md` — eran stubs de 3 líneas ("DEPRECATED, reemplazado por ESTADO.md") desde hace varias sesiones, sin contenido útil, y solo referenciados históricamente en este mismo documento.
+- Renombrado `tools/pc/` → `tools/windows-fixes/` (scripts `ACTUALIZAR_DRIVERS.bat`, `DESHABILITAR_FAST_STARTUP.bat`, `DESHABILITAR_HYPERV.bat`). "pc" no describía nada; confirmado por búsqueda de código que ningún otro archivo referencia esa ruta por nombre, así que el rename es seguro.
+- Confirmado que `dist/` (ignorado en `.gitignore`) no tiene ningún archivo trackeado por error.
+- Búsqueda de archivos temporales/basura sueltos (`*.tmp`, `*.log`, `*~`, `*.orig`, `*.rej`) en el árbol — ninguno real encontrado.
+
+**Conclusión:** la estructura del repo ya estaba, en general, bien pensada — lo que parecía desorden (scripts en la raíz, "duplicados" de licencia) tenía razones funcionales reales. La limpieza real posible era acotada: 2 archivos basura eliminados, 1 carpeta renombrada.
+
+### Sesión 23 — Acceso directo en Escritorio + auditoría de confusión de nombres "Beteliney" en el sistema (2026-07-05)
+
+**Contexto:** se pidió poner el launcher en el Escritorio y revisar si algo más se llama "Beteliney" en el sistema, por posible confusión.
+
+**Hallazgo real de confusión de nombres — dos proyectos distintos, mismo nombre:**
+1. **BetelineyLauncher (Minecraft)** — este repo. AppID `com.beteliney.BetelineyLauncher`.
+2. **Beteliney (Roblox)** — proyecto completamente distinto en `~/Descargas/Beteliney Launcher [Roblox]/`, un fork de Sober (launcher de Roblox para Linux). AppID `org.beteliney.Beteliney`.
+
+**Problema real encontrado y corregido:** en `~/.local/share/applications/` había 3 archivos `.desktop`:
+- `beteliney.desktop` (genérico, sin AppID) — apuntaba correctamente al `lanzar.sh` de Minecraft actual. Parche manual creado el 12/06.
+- `com.beteliney.BetelineyLauncher.desktop` — el `.desktop` "oficial" de este proyecto (con `MimeType` completo para modrinth/curseforge/`beteliney://`), pero con el `Exec` **roto**: apuntaba a `.../Beteliney Launcher [Minecraft] 7.0v/lanzar.sh`, una ruta con sufijo de versión vieja que ya no existe (confirmado, la carpeta actual no tiene sufijo). Este archivo quedó desactualizado desde el 23/05 tras un rename de carpeta, y el genérico de arriba fue el parche manual del usuario para no quedarse sin lanzador funcional.
+- `org.beteliney.Beteliney.desktop` — el de Roblox, correcto, sin tocar.
+
+**Confusión adicional, no corregida por ser de otro proyecto:** `~/.local/bin/beteliney` (en el `$PATH`) es el binario del launcher de **Roblox**, confirmado por hash MD5 idéntico al binario en `Beteliney Launcher [Roblox]/beteliney/beteliney`. Si se ejecuta `beteliney` desde una terminal esperando abrir Minecraft, en realidad abre Roblox/Sober. No se tocó porque pertenece a la gestión de otro proyecto instalado por su propio instalador — cambiarlo sin permiso explícito podría romper esa instalación. Queda anotado para que el usuario decida si quiere renombrar ese binario o el símbolo del PATH.
+
+**Corregido:**
+- `com.beteliney.BetelineyLauncher.desktop`: `Exec` corregido a la ruta real actual (`bash "/home/pibe/Descargas/Beteliney Launcher [Minecraft]/lanzar.sh" %U`). Validado con `desktop-file-validate` — sin errores.
+- Ícono verificado: `~/.local/share/icons/hicolor/scalable/apps/com.beteliney.BetelineyLauncher.svg` ya era idéntico (diff) al logo real del repo — no había que tocarlo, ya estaba instalado correctamente desde antes.
+- Eliminado `beteliney.desktop` (genérico, redundante una vez arreglado el oficial — tenía menos metadata, sin `MimeType`).
+- `update-desktop-database` corrido para refrescar la caché.
+
+**Acceso directo en Escritorio:** copiado `com.beteliney.BetelineyLauncher.desktop` a `~/Escritorio/BetelineyLauncher.desktop`, permisos `755` (idénticos al `Paralives.desktop` que ya funciona ahí). `gio set metadata::trusted` no aplica en este entorno (KDE Plasma, no GNOME/Nautilus) — en KDE el bit ejecutable es suficiente, no hace falta el atributo extra.
+
+**Nota:** estos cambios son a nivel de sistema operativo del usuario (`~/.local/share/applications`, `~/Escritorio`), no del repo — se documentan acá por ser la fuente de verdad de sesiones, pero no generan commit.
 
 ### Sesión 24 — Investigación y comparación con otros launchers para priorizar mejoras futuras (2026-07-05)
 
@@ -1225,136 +1225,135 @@ quedaba escribiendo sobre un puntero colgante. El `if (instance)` no protegía n
 - `launcher/CMakeLists.txt` — los 6 archivos nuevos agregados a `LAUNCHER_SOURCES`.
 - `launcher/ui/MainWindow.h/.cpp` — shortcut `Ctrl+K` → `openCommandPalette()`, menú "Servidores favoritos" insertado antes de "Ayuda" (repoblado on-demand via `aboutToShow`), `quickJoinFavoriteServer()`, `openManageFavoriteServers()`.
 
-**Auditoria de esta sesion sobre lo que habia en disco (verificado linea por linea contra el codigo real, no releido de memoria ni de la transcripcion pasada):**
+**Auditoría de esta sesión sobre lo que había en disco (verificado línea por línea contra el código real, no releído de memoria ni de la transcripción pasada):**
 
-- FavoriteServers.h/.cpp: correcto. load() tolera JSON corrupto/vacio (devuelve lista vacia, nunca crashea), descarta entradas sin address sin tirar el resto de la lista, usa name = address como fallback si falta el nombre. save() serializa a JSON compacto sobre SettingsObject. Sin problemas.
-- CommandPaletteDialog.h/.cpp: correcto. Recorre QMenuBar recursivamente incluyendo submenus, filtra separadores y acciones deshabilitadas/invisibles, filtra en vivo por texto (sin mnemonics), navega con flechas y confirma con Enter/doble-click. Diseno explicitamente pensado contra use-after-free: el dialogo nunca dispara la accion elegida internamente, solo guarda el puntero en selectedAction() para que el caller la dispare despues de que exec() retorne y el dialogo ya este cerrado (documentado en el propio header). Es la leccion directa de sesion 29 aplicada de entrada al escribir codigo nuevo, no aplicada despues de encontrar un bug.
-- FavoriteServersDialog.h/.cpp: correcto. Agregar/editar/eliminar con promptServer() (mini-dialogo con validacion: no deja guardar direccion vacia). Cada cambio persiste al toque via persist() - no hay estado sin guardar que se pueda perder al cerrar con la X.
-- Application.cpp: correcto. Registra FavoriteServers con default "[]", mismo patron que el resto de registerSetting() en ese bloque.
-- CMakeLists.txt: correcto. Los 6 archivos nuevos agregados a LAUNCHER_SOURCES en la seccion de migration/, antes de MSALoginDialog.
+- FavoriteServers.h/.cpp: correcto. load() tolera JSON corrupto/vacío (devuelve lista vacía, nunca crashea), descarta entradas sin address sin tirar el resto de la lista, usa name = address como fallback si falta el nombre. save() serializa a JSON compacto sobre SettingsObject. Sin problemas.
+- CommandPaletteDialog.h/.cpp: correcto. Recorre QMenuBar recursivamente incluyendo submenús, filtra separadores y acciones deshabilitadas/invisibles, filtra en vivo por texto (sin mnemonics), navega con flechas y confirma con Enter/doble-click. Diseño explícitamente pensado contra use-after-free: el diálogo nunca dispara la acción elegida internamente, solo guarda el puntero en selectedAction() para que el caller la dispare después de que exec() retorne y el diálogo ya esté cerrado (documentado en el propio header). Es la lección directa de sesión 29 aplicada de entrada al escribir código nuevo, no aplicada después de encontrar un bug.
+- FavoriteServersDialog.h/.cpp: correcto. Agregar/editar/eliminar con promptServer() (mini-diálogo con validación: no deja guardar dirección vacía). Cada cambio persiste al toque vía persist() — no hay estado sin guardar que se pueda perder al cerrar con la X.
+- Application.cpp: correcto. Registra FavoriteServers con default "[]", mismo patrón que el resto de registerSetting() en ese bloque.
+- CMakeLists.txt: correcto. Los 6 archivos nuevos agregados a LAUNCHER_SOURCES en la sección de migration/, antes de MSALoginDialog.
 - MainWindow.h/.cpp: correcto, verificado contra los signatures reales (no asumidos):
-  - quickJoinFavoriteServer() usa std::make_shared<MinecraftTarget>(MinecraftTarget::parse(address, false)) + APPLICATION->launch(m_selectedInstance, LaunchMode::Normal, target) - es el mismo patron exacto, caracter por caracter, que ya esta en produccion en ui/pages/instance/ServersPage.cpp:761 (quick-join desde la lista de servidores de una instancia). No es una construccion nueva sin precedente, es reutilizar el flujo ya probado.
-  - Application::launch() verificado en Application.h:220 - firma (BaseInstance*, LaunchMode, std::shared_ptr<MinecraftTarget>, ...) coincide exactamente.
-  - MinecraftTarget::parse(fullAddress, useWorld) verificado en MinecraftTarget.h:28 - segundo parametro false es correcto (es una direccion de servidor, no una ruta de mundo).
-  - m_selectedInstance verificado en MainWindow.h:269 - es BaseInstance*, coincide con el primer parametro de launch(). quickJoinFavoriteServer() chequea if (!m_selectedInstance) antes de usarlo (muestra CustomMessageBox de advertencia en vez de crashear).
-  - openCommandPalette(): las acciones sinteticas de quick-join (ownedActions) se crean con this como padre Qt, se le pasan al dialogo solo para listar/filtrar (el dialogo no toma ownership, ver comentario en CommandPaletteDialog.h), se disparan despues de exec() si fueron la elegida, y se destruyen con qDeleteAll() al final - sin fugas ni doble-free, sin importar si la accion elegida fue una sintetica o una real del menu.
-  - populateFavoriteServersMenu(): se repuebla en cada aboutToShow via m_favoriteServersMenu->clear() - verificado que QMenu::clear() borra las QAction de las que el menu es dueno (todas aca, creadas con addAction()), asi que no hay fuga de memoria ni acciones fantasma acumulandose sesion tras sesion de abrir/cerrar el menu.
-  - Insercion del menu (ui->menuBar->insertMenu(ui->helpMenu->menuAction(), ...)) es incondicional (no depende del toggle MenuBarInsteadOfToolBar), correcto porque la barra de menu existe siempre como objeto aunque esa opcion solo controle si se ve o no.
+  - quickJoinFavoriteServer() usa std::make_shared<MinecraftTarget>(MinecraftTarget::parse(address, false)) + APPLICATION->launch(m_selectedInstance, LaunchMode::Normal, target) — es el mismo patrón exacto, carácter por carácter, que ya está en producción en ui/pages/instance/ServersPage.cpp:761 (quick-join desde la lista de servidores de una instancia). No es una construcción nueva sin precedente, es reutilizar el flujo ya probado.
+  - Application::launch() verificado en Application.h:220 — firma (BaseInstance*, LaunchMode, std::shared_ptr<MinecraftTarget>, ...) coincide exactamente.
+  - MinecraftTarget::parse(fullAddress, useWorld) verificado en MinecraftTarget.h:28 — segundo parámetro false es correcto (es una dirección de servidor, no una ruta de mundo).
+  - m_selectedInstance verificado en MainWindow.h:269 — es BaseInstance*, coincide con el primer parámetro de launch(). quickJoinFavoriteServer() chequea if (!m_selectedInstance) antes de usarlo (muestra CustomMessageBox de advertencia en vez de crashear).
+  - openCommandPalette(): las acciones sintéticas de quick-join (ownedActions) se crean con this como padre Qt, se le pasan al diálogo solo para listar/filtrar (el diálogo no toma ownership, ver comentario en CommandPaletteDialog.h), se disparan después de exec() si fueron la elegida, y se destruyen con qDeleteAll() al final — sin fugas ni doble-free, sin importar si la acción elegida fue una sintética o una real del menú.
+  - populateFavoriteServersMenu(): se repuebla en cada aboutToShow vía m_favoriteServersMenu->clear() — verificado que QMenu::clear() borra las QAction de las que el menú es dueño (todas acá, creadas con addAction()), así que no hay fuga de memoria ni acciones fantasma acumulándose sesión tras sesión de abrir/cerrar el menú.
+  - Inserción del menú (ui->menuBar->insertMenu(ui->helpMenu->menuAction(), ...)) es incondicional (no depende del toggle MenuBarInsteadOfToolBar), correcto porque la barra de menú existe siempre como objeto aunque esa opción solo controle si se ve o no.
 
-**Ningun bug encontrado.** A diferencia de sesion 29 (donde la auditoria encontro un use-after-free real), esta revision no encontro defectos - el codigo de Fase 2 esta bien disenado desde el vamos, siguiendo tanto los patrones ya probados del codebase (ServersPage.cpp) como las lecciones de la sesion anterior.
+**Ningún bug encontrado.** A diferencia de sesión 29 (donde la auditoría encontró un use-after-free real), esta revisión no encontró defectos — el código de Fase 2 está bien diseñado desde el vamos, siguiendo tanto los patrones ya probados del codebase (ServersPage.cpp) como las lecciones de la sesión anterior.
 
-**Build y tests verificados por esta sesion (no asumidos de la transcripcion anterior, que se corto antes de confirmarlo):**
-- Timestamps: build/beteliney (14:20) mas nuevo que los 4 archivos fuente modificados mas recientemente (FavoriteServers.cpp, CommandPaletteDialog.cpp, FavoriteServersDialog.cpp, todos a las 13:34) y que MainWindow.cpp (12:31) - el binario esta al dia con el codigo en disco.
-- ctest --output-on-failure corrido directamente esta sesion: **29/29 tests pasando**, 2.86s. Sin fallos.
-- clang-format --dry-run --Werror sobre los 6 archivos nuevos: **limpio, cero violaciones**. Sobre los archivos modificados (Application.cpp, MainWindow.cpp/.h) hay violaciones de formato, pero estan repartidas por todo el archivo (incluido codigo preexistente sin relacion con este diff) - es un desfasaje preexistente entre la version de clang-format instalada aca y estos archivos legados, no algo introducido por Fase 2. No se toco nada de eso: esta fuera de alcance.
+**Build y tests verificados por esta sesión (no asumidos de la transcripción anterior, que se cortó antes de confirmarlo):**
+- Timestamps: build/beteliney (14:20) más nuevo que los 4 archivos fuente modificados más recientemente (FavoriteServers.cpp, CommandPaletteDialog.cpp, FavoriteServersDialog.cpp, todos a las 13:34) y que MainWindow.cpp (12:31) — el binario está al día con el código en disco.
+- ctest --output-on-failure corrido directamente esta sesión: **29/29 tests pasando**, 2.86s. Sin fallos.
+- clang-format --dry-run --Werror sobre los 6 archivos nuevos: **limpio, cero violaciones**. Sobre los archivos modificados (Application.cpp, MainWindow.cpp/.h) hay violaciones de formato, pero están repartidas por todo el archivo (incluido código preexistente sin relación con este diff) — es un desfasaje preexistente entre la versión de clang-format instalada acá y estos archivos legados, no algo introducido por Fase 2. No se tocó nada de eso: está fuera de alcance.
 
-**Estado real de git al cierre de esta seccion de la sesion:** nada de esto esta commiteado todavia. git status muestra 6 archivos nuevos sin trackear + Application.cpp/CMakeLists.txt/MainWindow.cpp/MainWindow.h/ESTADO.md modificados sin stagear. Ultimo commit en el arbol es ffb219f69 (threat model de sesion 30).
+**Estado real de git al cierre de esta sección de la sesión:** nada de esto está commiteado todavía. git status muestra 6 archivos nuevos sin trackear + Application.cpp/CMakeLists.txt/MainWindow.cpp/MainWindow.h/ESTADO.md modificados sin stagear. Último commit en el árbol es ffb219f69 (threat model de sesión 30).
+### Sesión 32 — Firma criptográfica Ed25519 del updater + corrección de metodología de verificación (2026-07-08)
 
-### Sesion 32 - Firma criptografica Ed25519 del updater + correccion de metodologia de verificacion (2026-07-08)
+**Contexto de arranque:** la sesión anterior se cortó (MCP colgado) en medio del build de verificación, dejando el código escrito en disco pero sin confirmar compilación, sin tests, sin commit. Esta sesión arrancó reconciliando el estado real del repo (git status/log/diff contra el árbol, no contra la transcripción) antes de tocar nada.
 
-**Contexto de arranque:** la sesion anterior se corto (MCP colgado) en medio del build de verificacion, dejando el codigo escrito en disco pero sin confirmar compilacion, sin tests, sin commit. Esta sesion arranco reconciliando el estado real del repo (git status/log/diff contra el arbol, no contra la transcripcion) antes de tocar nada.
+**Hallazgo #1 — por qué el build anterior se colgó sin verificar nada útil:** `ninja -C build -j$(nproc)` sin argumentos de target compila el launcher completo, que tiene LTO activado (`IPO / LTO enabled`, confirmado en el log de cmake) y tarda minutos — el mismo patrón de cuelgue ya documentado en sesiones 20/27/29. Pero además, y esto es lo que importa: **ese build ni siquiera iba a tocar el código del updater**. `Launcher_BUILD_UPDATER` (CMakeLists.txt:404) solo se activa si `Launcher_BUILD_ARTIFACT` (CMakeLists.txt:209) no está vacío, y por defecto está vacío en un build local. Confirmado con `ninja -C build -t targets | grep updater` antes de reconfigurar: cero resultados, el target `prism_updater_logic` no existía en el grafo de build. La sesión anterior podría haber esperado horas al build completo sin haber compilado ni una línea de `UpdateVerify.cpp`.
 
-**Hallazgo #1 - por que el build anterior se colgo sin verificar nada util:** `ninja -C build -j$(nproc)` sin argumentos de target compila el launcher completo, que tiene LTO activado (`IPO / LTO enabled`, confirmado en el log de cmake) y tarda minutos - el mismo patron de cuelgue ya documentado en sesiones 20/27/29. Pero ademas, y esto es lo que importa: **ese build ni siquiera iba a tocar el codigo del updater**. `Launcher_BUILD_UPDATER` (CMakeLists.txt:404) solo se activa si `Launcher_BUILD_ARTIFACT` (CMakeLists.txt:209) no esta vacio, y por defecto esta vacio en un build local. Confirmado con `ninja -C build -t targets | grep updater` antes de reconfigurar: cero resultados, el target `prism_updater_logic` no existia en el grafo de build. La sesion anterior podria haber esperado horas al build completo sin haber compilado ni una linea de `UpdateVerify.cpp`.
+**Fix de metodología:** reconfiguré con `cmake -S . -B build -DLauncher_BUILD_ARTIFACT="linux-x86_64"` (reconfiguración incremental, no reset del build existente), lo que habilitó los targets `prism_updater_logic` y `BetelineyLauncher_updater`. Confirmado en el log de cmake: `Enabling all warnings as errors for target 'prism_updater_logic'` y `'BetelineyLauncher_updater'` — mismo nivel de rigor (`-Werror`) que el resto del proyecto.
 
-**Fix de metodologia:** reconfigure con `cmake -S . -B build -DLauncher_BUILD_ARTIFACT="linux-x86_64"` (reconfiguracion incremental, no reset del build existente), lo que habilito los targets `prism_updater_logic` y `BetelineyLauncher_updater`. Confirmado en el log de cmake: `Enabling all warnings as errors for target 'prism_updater_logic'` y `'BetelineyLauncher_updater'` - mismo nivel de rigor (`-Werror`) que el resto del proyecto.
+**Build real, en background para no repetir el cuelgue de la herramienta:** `ninja -C build -j8 prism_updater_logic BetelineyLauncher_updater` lanzado con `nohup ... & disown`, log a archivo, sondeado con `cat`/`pgrep` sin bloquear la conexión del tool. **40/40, sin un solo warning ni error** (grep sobre el log completo: cero coincidencias de "error"/"warning"). `UpdateVerify.cpp.o` compiló en el paso 8/40. Link final: `build/beteliney_updater` generado y confirmado con `find`.
 
-**Build real, en background para no repetir el cuelgue de la herramienta:** `ninja -C build -j8 prism_updater_logic BetelineyLauncher_updater` lanzado con `nohup ... & disown`, log a archivo, sondeado con `cat`/`pgrep` sin bloquear la conexion del tool. **40/40, sin un solo warning ni error** (grep sobre el log completo: cero coincidencias de "error"/"warning"). `UpdateVerify.cpp.o` compilo en el paso 8/40. Link final: `build/beteliney_updater` generado y confirmado con `find`.
+**Lo que esto confirma de lo que dejó la sesión anterior (auditado, no asumido):**
+- La lógica de verificación Ed25519 fail-closed en `UpdateVerify.cpp/h` (32 bytes de clave pública embebida, borra el archivo descargado y aborta si falta `.sig` o no valida) compila limpio contra libsodium.
+- El wiring en `launcher/CMakeLists.txt` (PRISMUPDATER_SOURCES + link condicional `PkgConfig::libsodium` o fallback `find_library`) está correcto — se verificó línea por línea con `git diff`, no solo confiando en que "debería estar bien".
+- El `find_package`/`pkg_check_modules` de libsodium en el CMakeLists.txt raíz resuelve bien (`Checking for module 'libsodium' -- Found libsodium, version 1.0.22`).
+- `vcpkg.json` y `.github/workflows/build.yml` (dependencias apt/msys2, paso de firma Ed25519 del release con secret `RELEASE_SIGNING_KEY`) quedan sin verificar en esta sesión — no hay forma de correr el workflow de GitHub Actions localmente; la revisión fue solo de sintaxis/lógica leyendo el YAML.
 
-**Lo que esto confirma de lo que dejo la sesion anterior (auditado, no asumido):**
-- La logica de verificacion Ed25519 fail-closed en `UpdateVerify.cpp/h` (32 bytes de clave publica embebida, borra el archivo descargado y aborta si falta `.sig` o no valida) compila limpio contra libsodium.
-- El wiring en `launcher/CMakeLists.txt` (PRISMUPDATER_SOURCES + link condicional `PkgConfig::libsodium` o fallback `find_library`) esta correcto - se verifico linea por linea con `git diff`, no solo confiando en que "deberia estar bien".
-- El `find_package`/`pkg_check_modules` de libsodium en el CMakeLists.txt raiz resuelve bien (`Checking for module 'libsodium' -- Found libsodium, version 1.0.22`).
-- `vcpkg.json` y `.github/workflows/build.yml` (dependencias apt/msys2, paso de firma Ed25519 del release con secret `RELEASE_SIGNING_KEY`) quedan sin verificar en esta sesion - no hay forma de correr el workflow de GitHub Actions localmente; la revision fue solo de sintaxis/logica leyendo el YAML.
+**No verificado en esta sesión (pendiente real):**
+- No se corrió `ctest` sobre el nuevo código — no existen tests unitarios para el updater en el proyecto (los 29/29 tests de sesión 31 son del launcher principal, target distinto).
+- `clang-format --dry-run` sobre `UpdateVerify.h/.cpp` no se pudo correr: el archivo `.clang-format` no existe en la raíz del repo en este checkout (buscado con `find`, no aparece), pese a que el custom target de clang-format en `build.ninja` lo referencia por ruta absoluta. Es una condición preexistente del entorno, no algo introducido por este cambio — queda anotado pero fuera de alcance arreglarlo ahora.
+- El paso de firma real en CI (`RELEASE_SIGNING_KEY` → firmar assets del release) sigue sin probarse end-to-end porque requiere que subas el secret a GitHub y se dispare un release real.
 
-**No verificado en esta sesion (pendiente real):**
-- No se corrio `ctest` sobre el nuevo codigo - no existen tests unitarios para el updater en el proyecto (los 29/29 tests de sesion 31 son del launcher principal, target distinto).
-- `clang-format --dry-run` sobre `UpdateVerify.h/.cpp` no se pudo correr: el archivo `.clang-format` no existe en la raiz del repo en este checkout (buscado con `find`, no aparece), pese a que el custom target de clang-format en `build.ninja` lo referencia por ruta absoluta. Es una condicion preexistente del entorno, no algo introducido por este cambio - queda anotado pero fuera de alcance arreglarlo ahora.
-- El paso de firma real en CI (`RELEASE_SIGNING_KEY` -> firmar assets del release) sigue sin probarse end-to-end porque requiere que subas el secret a GitHub y se dispare un release real.
+**Clave privada:** sigue en `/tmp/beteliney_signing/release_signing_key.pem` (permisos 600, solo pibe), sin commitear, confirmado que sigue ahí. **Sigue pendiente que la subas vos a Settings → Secrets and variables → Actions → New repository secret con el nombre exacto `RELEASE_SIGNING_KEY`, pegando el PEM completo, y borres el archivo de /tmp después.**
 
-**Clave privada:** sigue en `/tmp/beteliney_signing/release_signing_key.pem` (permisos 600, solo pibe), sin commitear, confirmado que sigue ahi. **Segue pendiente que la subas vos a Settings -> Secrets and variables -> Actions -> New repository secret con el nombre exacto `RELEASE_SIGNING_KEY`, pegando el PEM completo, y borres el archivo de /tmp despues.**
+**Pregunta sin resolver de sesiones anteriores, sigue sin tocarse:** reescribir el historial de git para purgar la API key vieja de CurseForge — irreversible, rompe forks/clones existentes. No se hizo, esperando tu confirmación explícita.
 
-**Pregunta sin resolver de sesiones anteriores, sigue sin tocarse:** reescribir el historial de git para purgar la API key vieja de CurseForge - irreversible, rompe forks/clones existentes. No se hizo, esperando tu confirmacion explicita.
+**Estado de git al cierre de esta sección:** `git add` + `commit` hecho sobre los 8 archivos (6 modificados + 2 nuevos) con el fix de ESTADO.md incluido. Push a origin/main pendiente de confirmar en el mensaje de cierre de sesión (ver abajo si ya se hizo).
 
-**Estado de git al cierre de esta seccion:** `git add` + `commit` hecho sobre los 8 archivos (6 modificados + 2 nuevos) con el fix de ESTADO.md incluido. Push a origin/main pendiente de confirmar en el mensaje de cierre de sesion (ver abajo si ya se hizo).
+### Sesión 32 (continuación) — fixes reales aplicados sobre el threat model, antes de cierre por límite de tokens
 
-### Continuacion sesion 32 - fixes reales aplicados sobre el threat model, antes de cierre por limite de tokens
+**Contexto:** el usuario pidió avanzar todo lo posible sobre la lista de pendientes antes de que la sesión se corte. De los ítems marcados "sin verificar línea por línea" en el threat model de sesión 30, se resolvieron dos de forma concreta:
 
-**Contexto:** el usuario pidio avanzar todo lo posible sobre la lista de pendientes antes de que la sesion se corte. De los items marcados "sin verificar linea por linea" en el threat model de sesion 30, se resolvieron dos de forma concreta:
+**1. Path traversal en el importador de GDLauncher — CONFIRMADO y ARREGLADO.**
 
-**1. Path traversal en el importador de GDLauncher - CONFIRMADO y ARREGLADO.**
+`GDLauncherMigrator.cpp` lee `shortpath`/`id` desde `data.sqlite` de GDLauncher (un archivo que el usuario puede recibir de un tercero, o de una instalación de GDLauncher comprometida) y los concatenaba sin sanitizar para construir `sourcePath = dataDir + "/instances/" + shortpath`. Un `shortpath` como `"../../../../home/usuario/.ssh"` hacía que `copyDirRecursive()` copiara esos archivos hacia el `.minecraft/` de la instancia recién creada — lectura arbitraria de archivos del sistema, disfrazada de "importar una instancia".
 
-`GDLauncherMigrator.cpp` lee `shortpath`/`id` desde `data.sqlite` de GDLauncher (un archivo que el usuario puede recibir de un tercero, o de una instalacion de GDLauncher comprometida) y los concatenaba sin sanitizar para construir `sourcePath = dataDir + "/instances/" + shortpath`. Un `shortpath` como `"../../../../home/usuario/.ssh"` hacia que `copyDirRecursive()` copiara esos archivos hacia el `.minecraft/` de la instancia recien creada - lectura arbitraria de archivos del sistema, disfrazada de "importar una instancia".
+Además, `inst.name` (también de la DB) se usaba para el nombre del directorio destino sanitizando solo `\/:*?"<>|` — un nombre literal `".."` no tiene ninguno de esos caracteres, y `destInstancesDir + "/" + ".."` resuelve al directorio padre: escritura de `instance.cfg`/`mmc-pack.json` fuera de la carpeta de instancias (blast radius menor que el de lectura, porque no hay forma de encadenar más niveles sin `/`, pero real).
 
-Ademas, `inst.name` (tambien de la DB) se usaba para el nombre del directorio destino sanitizando solo `\/:*?"<>|` - un nombre literal `".."` no tiene ninguno de esos caracteres, y `destInstancesDir + "/" + ".."` resuelve al directorio padre: escritura de `instance.cfg`/`mmc-pack.json` fuera de la carpeta de instancias (blast radius menor que el de lectura, porque no hay forma de encadenar mas niveles sin `/`, pero real).
+**Fix aplicado:** función `safeChildPath()` que usa `QDir::cleanPath()` para resolver lógicamente los `../` y verificar que el resultado siga dentro del directorio base; si no, devuelve vacío (la instancia cae al camino ya existente de "no se encontraron los archivos", sin crashear). Para el nombre del directorio destino: rechazo explícito de nombres compuestos solo por puntos (`^\.+$`), fallback a `GDL_<id>` igual que el caso de nombre vacío que ya existía.
 
-**Fix aplicado:** funcion `safeChildPath()` que usa `QDir::cleanPath()` para resolver logicamente los `../` y verificar que el resultado siga dentro del directorio base; si no, devuelve vacio (la instancia cae al camino ya existente de "no se encontraron los archivos", sin crashear). Para el nombre del directorio destino: rechazo explicito de nombres compuestos solo por puntos (`^\.+$`), fallback a `GDL_<id>` igual que el caso de nombre vacio que ya existia.
+**Verificado que compila:** extraído el comando exacto de `build/compile_commands.json` para `GDLauncherMigrator.cpp` y corrido standalone (sin disparar el link/LTO del launcher completo) — **compila limpio con `-Werror`**, objeto generado.
 
-**Verificado que compila:** extraido el comando exacto de `build/compile_commands.json` para `GDLauncherMigrator.cpp` y corrido standalone (sin disparar el link/LTO del launcher completo) - **compila limpio con `-Werror`**, objeto generado.
+**No se corrió el build completo del launcher ni ctest sobre este cambio** — se prioriza dejar esto documentado con precisión sobre simular una verificación más completa de la que hubo tiempo de hacer. Pendiente para la próxima sesión: build completo + `ctest` antes de dar esto por definitivamente cerrado (aunque el archivo compila aislado, un cambio en `migration/` podría interactuar con algo que solo aparece en el link completo — improbable dado que no toca ninguna interfaz externa, pero no confirmado).
 
-**No se corrio el build completo del launcher ni ctest sobre este cambio** - se prioriza dejar esto documentado con precision sobre simular una verificacion mas completa de la que hubo tiempo de hacer. Pendiente para la proxima sesion: build completo + `ctest` antes de dar esto por definitivamente cerrado (aunque el archivo compila aislado, un cambio en `migration/` podria interactuar con algo que solo aparece en el link completo - improbable dado que no toca ninguna interfaz externa, pero no confirmado).
+**2. JVM args de packs importados (FTB legacy) — VERIFICADO, sin fix separado (decisión razonada).**
 
-**2. JVM args de packs importados (FTB legacy) - VERIFICADO, sin fix separado (decision razonada).**
+Confirmado en `PackInstallTask.cpp:61-63`: el `JvmArgs` del manifiesto del pack importado se aplica tal cual vía `OverrideJavaArgs`, sin sanitizar. Pero se concluye que esto no es una escalada de privilegios *adicional* real: un modpack ya ejecuta código arbitrario en cuanto se lanza (los mods son código Java arbitrario) — inyectar `-javaagent` u otro flag no le da a un pack malicioso más poder del que ya tiene. Es el mismo modelo de confianza que existe en cualquier launcher de modpacks (este proyecto, el original del que viene, CurseForge, etc.) — no un bug introducido acá. No se aplicó ningún fix para no crear una falsa sensación de seguridad arreglando el síntoma sin tocar el problema real (confiar en packs de fuentes no verificadas).
 
-Confirmado en `PackInstallTask.cpp:61-63`: el `JvmArgs` del manifiesto del pack importado se aplica tal cual via `OverrideJavaArgs`, sin sanitizar. Pero se concluye que esto no es una escalada de privilegios *adicional* real: un modpack ya ejecuta codigo arbitrario en cuanto se lanza (los mods son codigo Java arbitrario) - inyectar `-javaagent` u otro flag no le da a un pack malicioso mas poder del que ya tiene. Es el mismo modelo de confianza que existe en cualquier launcher de modpacks (este proyecto, el original del que viene, CurseForge, etc.) - no un bug introducido aca. No se aplico ningun fix para no crear una falsa sensacion de seguridad arreglando el sintoma sin tocar el problema real (confiar en packs de fuentes no verificadas).
+**3. `RELEASE_SIGNING_KEY` subido a GitHub Actions — HECHO.**
 
-**3. `RELEASE_SIGNING_KEY` subido a GitHub Actions - HECHO.**
+`gh` estaba autenticado con scope `repo` (`gh auth status` confirmó cuenta `ElPibeCapo`, token con scopes `gist, read:org, repo, workflow`). Se subió el secret directamente con `gh secret set RELEASE_SIGNING_KEY --repo ElPibeCapo/BetelineyLauncher < /tmp/beteliney_signing/release_signing_key.pem`, confirmado con `gh secret list` (aparece con fecha de esta sesión). **La clave privada temporal en `/tmp/beteliney_signing/release_signing_key.pem` fue borrada de forma segura (`shred -u`) después de subirla.** Solo queda la clave pública en `/tmp/beteliney_signing/release_signing_pub.pem` (sin riesgo, es pública por diseño).
 
-`gh` estaba autenticado con scope `repo` (`gh auth status` confirmo cuenta `ElPibeCapo`, token con scopes `gist, read:org, repo, workflow`). Se subio el secret directamente con `gh secret set RELEASE_SIGNING_KEY --repo ElPibeCapo/BetelineyLauncher < /tmp/beteliney_signing/release_signing_key.pem`, confirmado con `gh secret list` (aparece con fecha de esta sesion). **La clave privada temporal en `/tmp/beteliney_signing/release_signing_key.pem` fue borrada de forma segura (`shred -u`) despues de subirla.** Solo queda la clave publica en `/tmp/beteliney_signing/release_signing_pub.pem` (sin riesgo, es publica por diseno).
+**4. `.clang-format` faltante — investigado, no es un bug.**
 
-**4. `.clang-format` faltante - investigado, no es un bug.**
+`git log --all --diff-filter=D -- .clang-format` muestra que se borró a propósito en un commit del proyecto (`ffe84d6ec "remove some dead things"`). No se restauró — fue una decisión deliberada previa, no algo perdido por error. Queda como está salvo que se pida explícitamente restaurarlo.
 
-`git log --all --diff-filter=D -- .clang-format` muestra que se borro a proposito en un commit del proyecto (`ffe84d6ec "remove some dead things"`). No se restauro - fue una decision deliberada previa, no algo perdido por error. Queda como esta salvo que se pida explicitamente restaurarlo.
-
-**Estado de git al cierre de esta seccion:** el fix de `GDLauncherMigrator.cpp` + esta documentacion quedan commiteados y pusheados junto con esta seccion (ver hash de commit en el mensaje de cierre de sesion si ya se hizo el push).
+**Estado de git al cierre de esta sección:** el fix de `GDLauncherMigrator.cpp` + esta documentación quedan commiteados y pusheados junto con esta sección (ver hash de commit en el mensaje de cierre de sesión si ya se hizo el push).
 
 **Pendiente real que queda, actualizado:**
-1. Meta server (`ElPibeCapo/meta`) como fuente de verdad - **sigue sin verificar linea por linea**, es mas arquitectural (requeriria firmar el indice del meta server tambien, cambio grande) - no se ataco esta sesion por alcance/tiempo.
-2. `known-hashes.json` bloqueado por API key de abuse.ch/MalwareBazaar - sin cambios, requiere que consigas la key vos.
-3. Purga del historial de git de la API key vieja de CurseForge - **sigue esperando tu confirmacion explicita**, irreversible.
-4. Pruebas manuales GUI (backup de mundos, badge de mods) - sin cambios, no automatizables desde este entorno.
-5. Build completo + ctest sobre el fix de GDLauncherMigrator - pendiente para proxima sesion (se verifico compilacion aislada, no el link completo ni tests).
-6. Paso de firma real en CI nunca probado end-to-end - ahora que el secret esta subido, falta que se dispare un release real para confirmar que firma bien.
+1. Meta server (`ElPibeCapo/meta`) como fuente de verdad — **sigue sin verificar línea por línea**, es más arquitectural (requeriría firmar el índice del meta server también, cambio grande) — no se atacó esta sesión por alcance/tiempo.
+2. `known-hashes.json` bloqueado por API key de abuse.ch/MalwareBazaar — sin cambios, requiere que consigas la key vos.
+3. Purga del historial de git de la API key vieja de CurseForge — **sigue esperando tu confirmación explícita**, irreversible.
+4. Pruebas manuales GUI (backup de mundos, badge de mods) — sin cambios, no automatizables desde este entorno.
+5. Build completo + ctest sobre el fix de GDLauncherMigrator — pendiente para próxima sesión (se verificó compilación aislada, no el link completo ni tests).
+6. Paso de firma real en CI nunca probado end-to-end — ahora que el secret está subido, falta que se dispare un release real para confirmar que firma bien.
 
-### Sesion 33 - Verificacion externa contra GitHub real (no contra lo que dice este documento) (2026-07-08)
+### Sesión 33 — Verificación externa contra GitHub real (no contra lo que dice este documento) (2026-07-08)
 
-**Contexto:** el usuario pidio revisar todo de nuevo, a fondo. En vez de releer ESTADO.md y confiar en el, esta sesion verifico cada afirmacion pendiente contra el estado real del repo (`git`) y de GitHub (`gh`), incluyendo un intento de build completo local que revelo un problema nuevo.
+**Contexto:** el usuario pidió revisar todo de nuevo, a fondo. En vez de releer ESTADO.md y confiar en él, esta sesión verificó cada afirmación pendiente contra el estado real del repo (`git`) y de GitHub (`gh`), incluyendo un intento de build completo local que reveló un problema nuevo.
 
-**1. Intento de build completo local con LTO - CONFIRMADO que se cuelga, causa aislada de si el fix es correcto.**
+**1. Intento de build completo local con LTO — CONFIRMADO que se cuelga, causa aislada de si el fix es correcto.**
 
-Se lanzo `cmake --build . -j$(nproc)` (build completo, sin restringir targets) en background sobre el commit `350227d48`. Avanzo limpio hasta compilar y linkear `Launcher_logic` (la libreria estatica que contiene el fix de `GDLauncherMigrator.cpp`) y linkear `beteliney_updater`, `GradleSpecifier`, `GZip` (10/38 targets) - **el fix compila y linkea limpio dentro de la libreria principal**, confirmado mas alla de la compilacion aislada de sesion 32. Despues de eso el build se colgo: proceso `ninja` vivo pero 0% CPU, log sin crecer por mas de 2 minutos. Se mato el proceso (`SIGKILL`) para no dejarlo zombie. Es el mismo patron de cuelgue con LTO ya documentado en sesiones 20/27/29/31/32 - no revela nada nuevo sobre el fix en si, solo reconfirma que el build completo local con LTO no es confiable en este entorno para verificacion. Causa raiz del cuelgue en si: **no investigada** (sigue pendiente si se quiere resolver la herramienta de verificacion local, no bloqueante para el proyecto).
+Se lanzó `cmake --build . -j$(nproc)` (build completo, sin restringir targets) en background sobre el commit `350227d48`. Avanzó limpio hasta compilar y linkear `Launcher_logic` (la librería estática que contiene el fix de `GDLauncherMigrator.cpp`) y linkear `beteliney_updater`, `GradleSpecifier`, `GZip` (10/38 targets) — **el fix compila y linkea limpio dentro de la librería principal**, confirmado más allá de la compilación aislada de sesión 32. Después de eso el build se colgó: proceso `ninja` vivo pero 0% CPU, log sin crecer por más de 2 minutos. Se mató el proceso (`SIGKILL`) para no dejarlo zombie. Es el mismo patrón de cuelgue con LTO ya documentado en sesiones 20/27/29/31/32 — no revela nada nuevo sobre el fix en sí, solo reconfirma que el build completo local con LTO no es confiable en este entorno para verificación. Causa raíz del cuelgue en sí: **no investigada** (sigue pendiente si se quiere resolver la herramienta de verificación local, no bloqueante para el proyecto).
 
-**2. CI de GitHub Actions - verificado con `gh run list`, no asumido: el build completo SI paso, en un entorno limpio.**
+**2. CI de GitHub Actions — verificado con `gh run list`, no asumido: el build completo SÍ pasó, en un entorno limpio.**
 
-El commit `350227d48` (fix de path traversal) corrio en CI y termino `completed success` en 14m11s. El commit `36af71d2c` (firma Ed25519) tambien `completed success`. Esto es evidencia mas fuerte que el intento local fallido: confirma que el fix de GDLauncher compila y linkea el launcher completo de punta a punta en un entorno limpio (Ubuntu 24.04 CI), aunque localmente el build se cuelgue por un problema de entorno no relacionado con el codigo.
+El commit `350227d48` (fix de path traversal) corrió en CI y terminó `completed success` en 14m11s. El commit `36af71d2c` (firma Ed25519) también `completed success`. Esto es evidencia más fuerte que el intento local fallido: confirma que el fix de GDLauncher compila y linkea el launcher completo de punta a punta en un entorno limpio (Ubuntu 24.04 CI), aunque localmente el build se cuelgue por un problema de entorno no relacionado con el código.
 
-**Matiz importante encontrado sobre este punto:** el workflow de CI (`.github/workflows/build.yml`, lineas 80 y 164) tiene `-DBUILD_TESTING=OFF` hardcodeado. **CI nunca corre `ctest`, ni antes ni ahora.** Esto significa que "build completo + ctest" como pendiente (item 5 de la lista de sesion 32) va a seguir sin poder cerrarse via CI para siempre - la unica forma de correr ctest es localmente, que es justo donde el build se cuelga con LTO. Sigue pendiente encontrar una forma de compilar+testear localmente sin disparar el cuelgue (ej: targets restringidos como se hizo en sesion 32 para el updater, aplicado ahora al launcher principal + tests).
+**Matiz importante encontrado sobre este punto:** el workflow de CI (`.github/workflows/build.yml`, líneas 80 y 164) tiene `-DBUILD_TESTING=OFF` hardcodeado. **CI nunca corre `ctest`, ni antes ni ahora.** Esto significa que "build completo + ctest" como pendiente (ítem 5 de la lista de sesión 32) va a seguir sin poder cerrarse vía CI para siempre — la única forma de correr ctest es localmente, que es justo donde el build se cuelga con LTO. Sigue pendiente encontrar una forma de compilar+testear localmente sin disparar el cuelgue (ej: targets restringidos como se hizo en sesión 32 para el updater, aplicado ahora al launcher principal + tests).
 
-**3. `RELEASE_SIGNING_KEY` en GitHub Actions - CONFIRMADO con `gh secret list` (no solo confiando en el commit anterior).**
+**3. `RELEASE_SIGNING_KEY` en GitHub Actions — CONFIRMADO con `gh secret list` (no solo confiando en el commit anterior).**
 
-Aparece en la lista de secrets del repo, fecha `2026-07-09T01:02:19Z`, coincide con lo que dice sesion 32. Confirmado tambien que `CURSEFORGE_API_KEY` (el secret actual, rotado) sigue presente desde `2026-07-04T16:33:10Z` - no se toco, sigue activo para CI.
+Aparece en la lista de secrets del repo, fecha `2026-07-09T01:02:19Z`, coincide con lo que dice sesión 32. Confirmado también que `CURSEFORGE_API_KEY` (el secret actual, rotado) sigue presente desde `2026-07-04T16:33:10Z` — no se tocó, sigue activo para CI.
 
-**4. `known-hashes.json` - CORRECCION DE ESTA MISMA SESION (era un error propio, corregido en sesion 34): SI EXISTE, esta en el repo equivocado de busqueda.**
+**4. `known-hashes.json` — CORRECCIÓN DE ESTA MISMA SESIÓN (era un error propio, corregido en sesión 34): SÍ EXISTE, está en el repo equivocado de búsqueda.**
 
-`find . -name "known-hashes.json"` no devolvio resultado porque se corrio dentro del checkout de `BetelineyLauncher` (el launcher). El archivo nunca vivio ahi — vive en `~/Descargas/meta_beteliney`, el clon local del repo `meta` (rama `gh-pages`), tal como ya documentaba correctamente la sesion 27. Verificado en sesion 34 leyendo el archivo real: existe, arrays `sha256`/`sha512` vacios por diseno honesto (sesion 14), `comment` con la investigacion completa, MD5 de Bitdefender documentados aparte sin usar por el scanner, y `sourcesChecked` con las 5 fuentes revisadas. No cambia la conclusion de fondo (el scanner sigue sin proteger nada en la practica porque los arrays reales estan vacios), pero la sesion 33 se equivoco al decir que el archivo no existia — solo busco en el repo que no correspondia.
+`find . -name "known-hashes.json"` no devolvió resultado porque se corrió dentro del checkout de `BetelineyLauncher` (el launcher). El archivo nunca vivió ahí — vive en `~/Descargas/meta_beteliney`, el clon local del repo `meta` (rama `gh-pages`), tal como ya documentaba correctamente la sesión 27. Verificado en sesión 34 leyendo el archivo real: existe, arrays `sha256`/`sha512` vacíos por diseño honesto (sesión 14), `comment` con la investigación completa, MD5 de Bitdefender documentados aparte sin usar por el scanner, y `sourcesChecked` con las 5 fuentes revisadas. No cambia la conclusión de fondo (el scanner sigue sin proteger nada en la práctica porque los arrays reales están vacíos), pero la sesión 33 se equivocó al decir que el archivo no existía — solo buscó en el repo que no correspondía.
 
-**5. `.clang-format` - reconfirmado ausente.** `ls .clang-format` en la raiz: no existe. Sigue siendo la misma condicion preexistente documentada en sesion 32 (borrado a proposito en `ffe84d6ec`), sin cambios.
+**5. `.clang-format` — reconfirmado ausente.** `ls .clang-format` en la raíz: no existe. Sigue siendo la misma condición preexistente documentada en sesión 32 (borrado a propósito en `ffe84d6ec`), sin cambios.
 
-**6. Estado de git al cierre - todo limpio y sincronizado, verificado con comandos directos, no asumido:**
-- `git status --porcelain`: sin salida (arbol limpio).
-- `git stash list`: vacio.
+**6. Estado de git al cierre — todo limpio y sincronizado, verificado con comandos directos, no asumido:**
+- `git status --porcelain`: sin salida (árbol limpio).
+- `git stash list`: vacío.
 - `git branch -vv`: `main` apunta a `350227d48`, exactamente igual que `origin/main` (`[origin/main]` sin `ahead`/`behind`).
 - `git log -1` local y `git log -1 origin/main`: mismo hash (`350227d48`) en ambos.
 
-**Nada de codigo se toco esta sesion - fue puramente de verificacion/auditoria externa.** Unico cambio: esta seccion de documentacion.
+**Nada de código se tocó esta sesión — fue puramente de verificación/auditoría externa.** Único cambio: esta sección de documentación.
 
-**Pendiente real, actualizado y sin cambios de fondo respecto a sesion 32 (solo mas evidencia, ninguno de estos items se cerro):**
-1. Meta server (`ElPibeCapo/meta`) como fuente de verdad - sigue sin verificar linea por linea.
-2. `known-hashes.json` - existe en `~/Descargas/meta_beteliney` (repo `meta`, no el launcher), arrays vacios por diseno, sin cambios de fondo desde sesion 27 - bloqueado por API key de abuse.ch/MalwareBazaar, requiere que el usuario la consiga. (Correccion sesion 34: la afirmacion de que "no existe" en esta misma sesion 33 fue un error de busqueda en el repo equivocado.)
-3. Purga del historial de git de las 4 API keys viejas de CurseForge (confirmadas por hash en sesion anterior) - **sigue esperando confirmacion explicita del usuario**, irreversible.
-4. Pruebas manuales GUI (backup de mundos, badge de mods) - sin cambios, no automatizables desde este entorno.
-5. `ctest` local sobre el fix de GDLauncherMigrator - **ahora confirmado que CI nunca lo va a correr** (`BUILD_TESTING=OFF` en el workflow), la unica via es local, y local se cuelga con LTO en un build sin restringir targets. Pendiente: intentar con targets restringidos (patron ya usado en sesion 32 para el updater) para evitar el cuelgue y poder correr ctest.
-6. Paso de firma real en CI nunca probado end-to-end - secret confirmado presente, falta que se dispare un release real.
-7. **Nuevo:** causa raiz del cuelgue del build completo local con LTO - no investigada, solo reconfirmada su existencia. No bloqueante (CI cubre la verificacion de build), pero afecta la capacidad de correr ctest localmente (ver punto 5).
+**Pendiente real, actualizado y sin cambios de fondo respecto a sesión 32 (solo más evidencia, ninguno de estos ítems se cerró):**
+1. Meta server (`ElPibeCapo/meta`) como fuente de verdad — sigue sin verificar línea por línea.
+2. `known-hashes.json` — existe en `~/Descargas/meta_beteliney` (repo `meta`, no el launcher), arrays vacíos por diseño, sin cambios de fondo desde sesión 27 — bloqueado por API key de abuse.ch/MalwareBazaar, requiere que el usuario la consiga. (Corrección sesión 34: la afirmación de que "no existe" en esta misma sesión 33 fue un error de búsqueda en el repo equivocado.)
+3. Purga del historial de git de las 4 API keys viejas de CurseForge (confirmadas por hash en sesión anterior) — **sigue esperando confirmación explícita del usuario**, irreversible.
+4. Pruebas manuales GUI (backup de mundos, badge de mods) — sin cambios, no automatizables desde este entorno.
+5. `ctest` local sobre el fix de GDLauncherMigrator — **ahora confirmado que CI nunca lo va a correr** (`BUILD_TESTING=OFF` en el workflow), la única vía es local, y local se cuelga con LTO en un build sin restringir targets. Pendiente: intentar con targets restringidos (patrón ya usado en sesión 32 para el updater) para evitar el cuelgue y poder correr ctest.
+6. Paso de firma real en CI nunca probado end-to-end — secret confirmado presente, falta que se dispare un release real.
+7. **Nuevo:** causa raíz del cuelgue del build completo local con LTO — no investigada, solo reconfirmada su existencia. No bloqueante (CI cubre la verificación de build), pero afecta la capacidad de correr ctest localmente (ver punto 5).
 
 ### Sesión 34 — Corrección: `known-hashes.json` sí existe, sesión 33 buscó en el repo equivocado (2026-07-08)
 
