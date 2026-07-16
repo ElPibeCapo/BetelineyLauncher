@@ -28,6 +28,7 @@
 #include <QStyleFactory>
 #include "Exception.h"
 #include "ui/themes/BetelineyTheme.h"
+#include "ui/themes/BetelineyHighContrastTheme.h"
 #include "ui/themes/BrightTheme.h"
 #include "ui/themes/CatPack.h"
 #include "ui/themes/CustomTheme.h"
@@ -141,6 +142,7 @@ void ThemeManager::initializeWidgets()
     themeDebugLog() << "Loading Built-in Theme:" << darkThemeId;
     themeDebugLog() << "Loading Built-in Theme:" << addTheme(std::make_unique<BrightTheme>());
     themeDebugLog() << "Loading Built-in Theme:" << addTheme(std::make_unique<BetelineyTheme>());
+    themeDebugLog() << "Loading Built-in Theme:" << addTheme(std::make_unique<BetelineyHighContrastTheme>());
 
     themeDebugLog() << "<> Initializing System Widget Themes";
     QStringList styles = QStyleFactory::keys();

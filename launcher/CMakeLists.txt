@@ -915,6 +915,8 @@ SET(LAUNCHER_SOURCES
     ui/themes/DarkTheme.h
     ui/themes/BetelineyTheme.cpp
     ui/themes/BetelineyTheme.h
+    ui/themes/BetelineyHighContrastTheme.cpp
+    ui/themes/BetelineyHighContrastTheme.h
     ui/themes/ITheme.cpp
     ui/themes/ITheme.h
     ui/themes/HintOverrideProxyStyle.cpp
