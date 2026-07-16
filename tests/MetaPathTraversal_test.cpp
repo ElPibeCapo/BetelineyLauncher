@@ -32,9 +32,9 @@
 // terminando en el mismo path traversal. Ver también: PackProfile.cpp
 // componentFromJsonV1 ahora valida el 'uid' de nivel superior del componente
 // con Meta::isSafePathComponent (expuesta públicamente en JsonFormat.h para
-// ese fin) — no cubierto aquí porque esa función es estática/interna a
-// PackProfile.cpp y no se puede invocar directamente desde un test unitario
-// sin construir una instancia completa en disco.
+// ese fin) — esa función es estática/interna a PackProfile.cpp, así que se
+// prueba de punta a punta (construyendo una MinecraftInstance real sobre
+// disco) en tests/PackProfileLoadPathTraversal_test.cpp en vez de aquí.
 
 #include <QJsonDocument>
 #include <QJsonObject>

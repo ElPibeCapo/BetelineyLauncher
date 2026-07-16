@@ -118,6 +118,14 @@ class PackProfile : public QAbstractListModel {
     /// reload the list, reload all components, resolve dependencies
     Result reload(Net::Mode netmode);
 
+    /// reload the component list from disk (mmc-pack.json) WITHOUT resolving
+    /// dependencies against the remote metadata index. reload() calls this
+    /// internally before resolve(); exposed publicly so callers (and
+    /// security-regression tests) can exercise/verify component parsing and
+    /// validation (see componentFromJsonV1's uid checks) without requiring a
+    /// live Application/metadataIndex singleton.
+    Result load();
+
     // reload all components, resolve dependencies
     void resolve(Net::Mode netmode);
 
@@ -183,7 +191,6 @@ class PackProfile : public QAbstractListModel {
     void disableInteraction(bool disable);
 
    private:
-    Result load();
     bool installJarMods_internal(QStringList filepaths);
     bool installCustomJar_internal(QString filepath);
     bool installAgents_internal(QStringList filepaths);

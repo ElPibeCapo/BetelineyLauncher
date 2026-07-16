@@ -78,6 +78,18 @@ class XmlLogParseTest : public QObject {
         QTest::newRow("long-forge-xml") << longXml << 869 << longTextLevelsXml;
     }
 
+    void init()
+    {
+        // QTest reusa la misma instancia de esta clase (y por lo tanto el mismo
+        // m_parser) entre las 4 filas de datos de parseXml(). LogParser tiene
+        // estado interno real (m_buffer, m_partialData, QXmlStreamReader) que
+        // solo queda vacio al final de una fila si esa fila termino en un limite
+        // completo (sin linea XML partida colgando) — una suposicion implicita,
+        // no garantizada. Resetear aca hace la aislacion entre filas explicita
+        // en vez de depender de que los logs de prueba nunca dejen restos.
+        m_parser.emplace();
+    }
+
     void parseXml()
     {
         QFETCH(QString, log);
@@ -102,7 +114,7 @@ class XmlLogParseTest : public QObject {
     }
 
    private:
-    LogParser m_parser;
+    std::optional<LogParser> m_parser;
 
     QList<std::pair<MessageLevel, QString>> parseLines(const QStringList& lines)
     {
@@ -110,9 +122,9 @@ class XmlLogParseTest : public QObject {
         MessageLevel last = MessageLevel::Unknown;
 
         for (const auto& line : lines) {
-            m_parser.appendLine(line);
+            m_parser->appendLine(line);
 
-            auto items = m_parser.parseAvailable();
+            auto items = m_parser->parseAvailable();
             for (const auto& item : items) {
                 if (std::holds_alternative<LogParser::LogEntry>(item)) {
                     auto entry = std::get<LogParser::LogEntry>(item);
