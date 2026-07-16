@@ -68,7 +68,7 @@ class BetelineyTranslationTest : public QObject {
     void test_modfolder_no_english_download_mods()
     {
         QByteArray src = readFile("launcher/ui/pages/instance/ModFolderPage.cpp");
-        if (src.isEmpty()) QSKIP("Archivo no encontrado — verificar BETELINEY_SRCDIR");
+        QVERIFY2(!src.isEmpty(), "Archivo no encontrado - verificar BETELINEY_SRCDIR (esto debe ser un fallo, no un skip: si el archivo no existe, la traduccion no se puede verificar de verdad)");
         QVERIFY2(!src.contains("tr(\"Download Mods\")"),
                  "ModFolderPage: 'Download Mods' sin traducir");
         QVERIFY2(!src.contains("tr(\"Download mods from online mod platforms\")"),
@@ -78,7 +78,7 @@ class BetelineyTranslationTest : public QObject {
     void test_modfolder_no_english_check_updates()
     {
         QByteArray src = readFile("launcher/ui/pages/instance/ModFolderPage.cpp");
-        if (src.isEmpty()) QSKIP("Archivo no encontrado");
+        QVERIFY2(!src.isEmpty(), "Archivo no encontrado - verificar BETELINEY_SRCDIR");
         QVERIFY2(!src.contains("tr(\"Check for Updates\")"),
                  "ModFolderPage: 'Check for Updates' sin traducir");
     }
@@ -86,7 +86,7 @@ class BetelineyTranslationTest : public QObject {
     void test_modfolder_no_english_confirm_strings()
     {
         QByteArray src = readFile("launcher/ui/pages/instance/ModFolderPage.cpp");
-        if (src.isEmpty()) QSKIP("Archivo no encontrado");
+        QVERIFY2(!src.isEmpty(), "Archivo no encontrado - verificar BETELINEY_SRCDIR");
         QVERIFY2(!src.contains("tr(\"Confirm Update\""),
                  "ModFolderPage: 'Confirm Update' sin traducir");
         QVERIFY2(!src.contains("tr(\"Confirm Delete\""),
@@ -98,7 +98,7 @@ class BetelineyTranslationTest : public QObject {
     void test_modfolder_no_english_uptodate()
     {
         QByteArray src = readFile("launcher/ui/pages/instance/ModFolderPage.cpp");
-        if (src.isEmpty()) QSKIP("Archivo no encontrado");
+        QVERIFY2(!src.isEmpty(), "Archivo no encontrado - verificar BETELINEY_SRCDIR");
         QVERIFY2(!src.contains("All mods are up-to-date"),
                  "ModFolderPage: 'All mods are up-to-date' sin traducir");
         QVERIFY2(!src.contains("The mod updater was aborted"),
@@ -108,7 +108,7 @@ class BetelineyTranslationTest : public QObject {
     void test_modfolder_has_spanish_strings()
     {
         QByteArray src = readFile("launcher/ui/pages/instance/ModFolderPage.cpp");
-        if (src.isEmpty()) QSKIP("Archivo no encontrado");
+        QVERIFY2(!src.isEmpty(), "Archivo no encontrado - verificar BETELINEY_SRCDIR");
         QVERIFY2(src.contains("Descargar Mods"),
                  "ModFolderPage: falta 'Descargar Mods' en español");
         QVERIFY2(src.contains("Buscar actualizaciones"),
@@ -122,7 +122,7 @@ class BetelineyTranslationTest : public QObject {
     void test_external_no_english_confirm_removal()
     {
         QByteArray src = readFile("launcher/ui/pages/instance/ExternalResourcesPage.cpp");
-        if (src.isEmpty()) QSKIP("Archivo no encontrado");
+        QVERIFY2(!src.isEmpty(), "Archivo no encontrado - verificar BETELINEY_SRCDIR");
         QVERIFY2(!src.contains("tr(\"Confirm Removal\""),
                  "ExternalResourcesPage: 'Confirm Removal' sin traducir");
         QVERIFY2(!src.contains("tr(\"Confirm Delete\""),
@@ -132,7 +132,7 @@ class BetelineyTranslationTest : public QObject {
     void test_external_no_english_item_count()
     {
         QByteArray src = readFile("launcher/ui/pages/instance/ExternalResourcesPage.cpp");
-        if (src.isEmpty()) QSKIP("Archivo no encontrado");
+        QVERIFY2(!src.isEmpty(), "Archivo no encontrado - verificar BETELINEY_SRCDIR");
         QVERIFY2(!src.contains("installed, %2 selected)"),
                  "ExternalResourcesPage: contador 'installed/selected' sin traducir");
         QVERIFY2(!src.contains("You are about to remove %1 items"),
@@ -142,7 +142,7 @@ class BetelineyTranslationTest : public QObject {
     void test_external_has_spanish_strings()
     {
         QByteArray src = readFile("launcher/ui/pages/instance/ExternalResourcesPage.cpp");
-        if (src.isEmpty()) QSKIP("Archivo no encontrado");
+        QVERIFY2(!src.isEmpty(), "Archivo no encontrado - verificar BETELINEY_SRCDIR");
         QVERIFY2(src.contains("Confirmar eliminaci"),
                  "ExternalResourcesPage: falta 'Confirmar eliminación'");
         QVERIFY2(src.contains("instalados"),
@@ -154,7 +154,7 @@ class BetelineyTranslationTest : public QObject {
     void test_resourcepage_no_english_loading()
     {
         QByteArray src = readFile("launcher/ui/pages/modplatform/ResourcePage.cpp");
-        if (src.isEmpty()) QSKIP("Archivo no encontrado");
+        QVERIFY2(!src.isEmpty(), "Archivo no encontrado - verificar BETELINEY_SRCDIR");
         QVERIFY2(!src.contains("tr(\"Loading versions...\""),
                  "ResourcePage: 'Loading versions...' sin traducir");
         QVERIFY2(!src.contains("tr(\"No valid version found.\""),
@@ -164,7 +164,7 @@ class BetelineyTranslationTest : public QObject {
     void test_resourcepage_no_english_versions_blocked()
     {
         QByteArray src = readFile("launcher/ui/pages/modplatform/ResourcePage.cpp");
-        if (src.isEmpty()) QSKIP("Archivo no encontrado");
+        QVERIFY2(!src.isEmpty(), "Archivo no encontrado - verificar BETELINEY_SRCDIR");
         QVERIFY2(!src.contains("tr(\"No versions available\""),
                  "ResourcePage: 'No versions available' sin traducir");
         QVERIFY2(!src.contains("The author likely blocked third-party launchers"),
@@ -174,7 +174,7 @@ class BetelineyTranslationTest : public QObject {
     void test_resourcepage_no_english_external_links()
     {
         QByteArray src = readFile("launcher/ui/pages/modplatform/ResourcePage.cpp");
-        if (src.isEmpty()) QSKIP("Archivo no encontrado");
+        QVERIFY2(!src.isEmpty(), "Archivo no encontrado - verificar BETELINEY_SRCDIR");
         QVERIFY2(!src.contains("tr(\"External links:\""),
                  "ResourcePage: 'External links:' sin traducir");
         QVERIFY2(!src.contains("tr(\"Source code:"),
@@ -184,7 +184,7 @@ class BetelineyTranslationTest : public QObject {
     void test_resourcepage_no_english_select_button()
     {
         QByteArray src = readFile("launcher/ui/pages/modplatform/ResourcePage.cpp");
-        if (src.isEmpty()) QSKIP("Archivo no encontrado");
+        QVERIFY2(!src.isEmpty(), "Archivo no encontrado - verificar BETELINEY_SRCDIR");
         QVERIFY2(!src.contains("tr(\"Select %1 for download\""),
                  "ResourcePage: 'Select %1 for download' sin traducir");
         QVERIFY2(!src.contains("tr(\"Deselect %1 for download\""),
@@ -198,7 +198,7 @@ class BetelineyTranslationTest : public QObject {
     void test_resourcepage_no_english_not_found()
     {
         QByteArray src = readFile("launcher/ui/pages/modplatform/ResourcePage.cpp");
-        if (src.isEmpty()) QSKIP("Archivo no encontrado");
+        QVERIFY2(!src.isEmpty(), "Archivo no encontrado - verificar BETELINEY_SRCDIR");
         QVERIFY2(!src.contains("The resource was not found"),
                  "ResourcePage: 'The resource was not found' sin traducir");
     }
@@ -206,7 +206,7 @@ class BetelineyTranslationTest : public QObject {
     void test_resourcepage_has_spanish_strings()
     {
         QByteArray src = readFile("launcher/ui/pages/modplatform/ResourcePage.cpp");
-        if (src.isEmpty()) QSKIP("Archivo no encontrado");
+        QVERIFY2(!src.isEmpty(), "Archivo no encontrado - verificar BETELINEY_SRCDIR");
         QVERIFY2(src.contains("Cargando versiones"),
                  "ResourcePage: falta 'Cargando versiones'");
         QVERIFY2(src.contains("digo fuente") || src.contains("Código fuente"),
