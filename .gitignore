@@ -19,3 +19,4 @@ dist/
 *.bak
 tools/dev/.buildlogs/
 tools/dev/__pycache__/
+*.bak_*

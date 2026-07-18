@@ -1,6 +1,7 @@
 # ⬡ BetelineyLauncher — Changelog
 
-> Historial de versiones desde v7.0.0.
+> Historial de versiones desde v7.0.0. Antes hubo 6 versiones sin documentar (1 a 6, sin ceros ni puntos) de las que no quedó registro de contenido.
+> Numerado real: `7.0.0 → 7.1.0 → ... → 7.9.0 → 8.0.0 → 8.1.0 → 8.2.0 → 8.3.0 → 8.4.0`. El patch (tercer número) siempre es `0` — nunca se publicó una versión con patch distinto de cero. Entradas que aparecían antes como `7.3.2`, `7.6.1`, `7.8.1`, `7.9.1` y `7.9.2` no fueron releases reales; eran trabajo del mismo ciclo que quedó mal fragmentado en una reconstrucción previa de este documento. Ya están fusionadas en su versión base correspondiente.
 > Actualizado: **2026-07-14** · Versión actual en código: **v8.4.0** (tag publicado, pero contiene solo el bump de versión — todo lo de abajo son commits reales en `main` posteriores al tag, sin release nueva todavía). Autor: **El_PibeCapo**
 
 ---
@@ -179,59 +180,9 @@
 
 ---
 
-## v7.9.2 — BetelineyTheme v4 + traducciones .ui completas (2026-04-10)
+## v7.9.0 — Mejoras MEJ-5 a MEJ-18 + estandarización + BetelineyTheme v4 + traducciones .ui (2026-04-09 a 2026-04-10)
 
-### UI / Tema
-
-| # | Tipo | Cambio |
-|---|------|--------|
-| 1 | `FEAT` | **`ui/themes/BetelineyTheme.cpp`** — v4: fondo `#080912`, font 10pt, radios aumentados, GroupBox uppercase, segundo acento cyan `#00D4FF` documentado. Backup `BetelineyTheme.cpp.v3bak` creado. |
-| 2 | `DOCS` | **`README.md`** — tabla features actualizada a BetelineyTheme v4; badges `labelColor=080912`; entrada v7.9.2 en CHANGELOG interno. |
-
-### Traducciones .ui — windowTitle al español (13 archivos total)
-
-| # | Archivo | Antes | Después |
-|---|---------|-------|---------|
-| 3 | `AboutDialog.ui` | (varios strings) | Traducido completamente |
-| 4 | `UpdateAvailableDialog.ui` | (varios strings) | Traducido completamente |
-| 5 | `NewsDialog.ui` | "News" / "Hide article list" | "Noticias" / "Ocultar lista" |
-| 6 | `CopyInstanceDialog.ui` | "Copy Instance" | "Copiar instancia" |
-| 7 | `CreateShortcutDialog.ui` | "Create Instance Shortcut" | "Crear acceso directo" |
-| 8 | `SkinManageDialog.ui` | "Skin Upload" | "Subir skin" |
-| 9 | `ProgressDialog.ui` | "Please wait..." | "Por favor espera..." |
-| 10 | `IconPickerDialog.ui` | "Pick icon" | "Elegir ícono" |
-| 11 | `ExportInstanceDialog.ui` | "Export Instance" | "Exportar instancia" |
-| 12 | `NewInstanceDialog.ui` | "New Instance" | "Nueva instancia" |
-
-### Documentación
-
-| # | Tipo | Cambio |
-|---|------|--------|
-| 13 | `DOCS` | **`docs/SESIONES.md`** — sesión 20 documentada completa; header → v7.9.2 / 20 sesiones |
-| 14 | `DOCS` | **`docs/PENDIENTES.md`** — sesión 20 agregada con tabla de .ui traducidos y estado final |
-| 15 | `DOCS` | **`docs/INDICE.md`** — versión y footer → v7.9.2 / 2026-04-10 |
-| 16 | `DOCS` | **`source/docs/CHANGELOG.md`** — esta entrada agregada al tope |
-
-> ⚠️ Requiere recompilación para aplicar cambios del tema v4 y traducciones .ui.
-
----
-
-## v7.9.1 — Estandarización de nombres y firmas (2026-04-09)
-
-### Fixes
-
-| # | Tipo | Cambio |
-|---|------|--------|
-| 1 | `FIX` | **`lanzar.sh:209`** — Firma `by pibe` → `by El_PibeCapo` |
-| 2 | `FIX` | **`beteliney-updater.sh`** — Banner sin línea de cierre `╚══╝` — corregido |
-| 3 | `FIX` | **`tools/verify.py`** — Versión hardcodeada `v7.7.0` → `v7.9.0` |
-| 4 | `FIX` | **`tools/fix_icons.py`** — Versión hardcodeada `v7.7.0` → `v7.9.0` |
-| 5 | `FIX` | **`tools/sign_release.sh`** — Banner: `MEJ-18` eliminado del título, email agregado |
-| 6 | `FIX` | **`tools/extract_strings.sh`** — Banner: `MEJ-15` eliminado del título, email agregado |
-
----
-
-## v7.9.0 — Implementación de mejoras MEJ-5 a MEJ-18 (2026-04-09)
+> Nota: el CHANGELOG anterior fragmentaba este trabajo en tres releases (`v7.9.0`, `v7.9.1`, `v7.9.2`). Nunca existió más de una versión `7.9` — todo esto es el mismo ciclo, documentado en dos días consecutivos.
 
 ### Nuevas características
 
@@ -252,20 +203,35 @@
 | 8 | `DOCS` | **`docs/PENDIENTES.md`** — Todas las mejoras MEJ-1/18 marcadas `[x]`. Tabla resumen actualizada. Versión → v7.9.0. |
 | 9 | `DOCS` | **`docs/SESIONES.md`** — Sesión 17 documentada. Header → v7.9.0 / 17 sesiones. |
 
----
-
-## v7.8.1 — Auditoría y corrección de scripts de optimización (2026-04-09)
+### Estandarización de nombres y firmas
 
 | # | Tipo | Cambio |
 |---|------|--------|
-| 1 | `FIX` | **`tools/pre_minecraft.sh`** — BUG-A: THP `always` → `madvise`; BUG-B: `sched_migration` 5ms → 2ms; BUG-C: `renice` sin efecto eliminado; BUG-D/E: CPU governor guardado dinámicamente, crash-safe |
-| 2 | `FIX` | **`tools/post_minecraft.sh`** — BUG-D: restaura `ORIG_CPU_GOV` dinámicamente en lugar de hardcodear `schedutil` |
-| 3 | `FIX` | **`lanzar.sh`** — BUG-F: `RADV_PERFTEST` y `AMD_PREFER_64BIT_BVHBUILD` eliminadas (Vulkan, sin efecto en OpenGL); BUG-G: `MESA_LOADER_DRIVER_OVERRIDE=radeonsi` agregado |
-| 4 | `FIX` | **`tools/tune_persistent.sh`** — BUG-H: UDEV NVMe pattern `nvme[0-9]n[0-9]` → `nvme[0-9]*n[0-9]*`; BUG-I: `RADV_PERFTEST` y `AMD_PREFER_64BIT_BVHBUILD` eliminadas del bloque ENVVARS de KDE |
+| 10 | `FIX` | **`lanzar.sh:209`** — Firma `by pibe` → `by El_PibeCapo` |
+| 11 | `FIX` | **`beteliney-updater.sh`** — Banner sin línea de cierre `╚══╝` — corregido |
+| 12 | `FIX` | **`tools/verify.py`** — Versión hardcodeada `v7.7.0` → `v7.9.0` |
+| 13 | `FIX` | **`tools/fix_icons.py`** — Versión hardcodeada `v7.7.0` → `v7.9.0` |
+| 14 | `FIX` | **`tools/sign_release.sh`** — Banner: `MEJ-18` eliminado del título, email agregado |
+| 15 | `FIX` | **`tools/extract_strings.sh`** — Banner: `MEJ-15` eliminado del título, email agregado |
+
+### BetelineyTheme v4 + traducciones .ui (windowTitle al español, 13 archivos)
+
+| # | Tipo | Cambio |
+|---|------|--------|
+| 16 | `FEAT` | **`ui/themes/BetelineyTheme.cpp`** — v4: fondo `#080912`, font 10pt, radios aumentados, GroupBox uppercase, segundo acento cyan `#00D4FF` documentado. Backup `BetelineyTheme.cpp.v3bak` creado. |
+| 17 | `DOCS` | **`README.md`** — tabla features actualizada a BetelineyTheme v4; badges `labelColor=080912`. |
+| 18 | `FEAT` | **`AboutDialog.ui`, `UpdateAvailableDialog.ui`, `NewsDialog.ui`, `CopyInstanceDialog.ui`, `CreateShortcutDialog.ui`, `SkinManageDialog.ui`, `ProgressDialog.ui`, `IconPickerDialog.ui`, `ExportInstanceDialog.ui`, `NewInstanceDialog.ui`** — windowTitle y strings traducidos al español completo |
+| 19 | `DOCS` | **`docs/SESIONES.md`** — sesión 20 documentada completa |
+| 20 | `DOCS` | **`docs/PENDIENTES.md`** — sesión 20 agregada con tabla de .ui traducidos y estado final |
+| 21 | `DOCS` | **`docs/INDICE.md`** — footer → 2026-04-10 |
+
+> ⚠️ Requiere recompilación para aplicar cambios del tema v4 y traducciones .ui.
 
 ---
 
-## v7.8.0 — Fixes C++ + análisis runtime + build actualizado (2026-04-07–09)
+## v7.8.0 — Fixes C++ + análisis runtime + build actualizado + optimización de scripts (2026-04-07 a 2026-04-09)
+
+> Nota: el CHANGELOG anterior fragmentaba este trabajo en `v7.8.0` y una supuesta `v7.8.1`. Nunca existió más de una versión `7.8` — mismo ciclo, dos días de documentación.
 
 | # | Tipo | Cambio |
 |---|------|--------|
@@ -274,6 +240,10 @@
 | 3 | `FIX` | **`CMakeLists.txt`** — Versión corregida: `MINOR 3` → `MINOR 7` (binario reporta `7.7.0-master`) |
 | 4 | `PERF` | **`BetelineyLauncher/source/COMPILAR_LINUX.sh`** — Flags: `-ftree-vectorize`, `-fno-plt`, `-fomit-frame-pointer`, `-fno-semantic-interposition`; linker: `-Wl,-O1`, `--sort-common`; detección mold/lld |
 | 5 | `FIX` | **`libraries/libnbtplusplus/CMakeLists.txt`** — Fix mold+LTO+GCC15: `target_compile_options(nbt++ PRIVATE -fno-lto)` |
+| 6 | `FIX` | **`tools/pre_minecraft.sh`** — BUG-A: THP `always` → `madvise`; BUG-B: `sched_migration` 5ms → 2ms; BUG-C: `renice` sin efecto eliminado; BUG-D/E: CPU governor guardado dinámicamente, crash-safe |
+| 7 | `FIX` | **`tools/post_minecraft.sh`** — BUG-D: restaura `ORIG_CPU_GOV` dinámicamente en lugar de hardcodear `schedutil` |
+| 8 | `FIX` | **`lanzar.sh`** — BUG-F: `RADV_PERFTEST` y `AMD_PREFER_64BIT_BVHBUILD` eliminadas (Vulkan, sin efecto en OpenGL); BUG-G: `MESA_LOADER_DRIVER_OVERRIDE=radeonsi` agregado |
+| 9 | `FIX` | **`tools/tune_persistent.sh`** — BUG-H: UDEV NVMe pattern `nvme[0-9]n[0-9]` → `nvme[0-9]*n[0-9]*`; BUG-I: `RADV_PERFTEST` y `AMD_PREFER_64BIT_BVHBUILD` eliminadas del bloque ENVVARS de KDE |
 
 ---
 
@@ -290,24 +260,19 @@
 
 ---
 
-## v7.6.1 — Corrección de bugs de auditoría (2026-03-31)
+## v7.6.0 — Auditoría completa del proyecto + corrección de bugs (2026-03-31)
 
-| # | Tipo | Cambio |
-|---|------|--------|
-| 1 | `FIX` | **`tools/verify.py`** — BUG-6: nueva función `check_test_files()` — verifica los 5 archivos de test Beteliney |
-| 2 | `FIX` | **`COMPILAR_LINUX.sh`** — BUG-7: `ensure_libnbt()` usa `--branch` explícito y variable `LIBNBT_BRANCH` |
-| 3 | `DOCS` | **`docs/AUDITORIA.md`** — Tabla de bugs actualizada con estado de corrección |
-| 4 | `NOTE` | BUG-1/2/3/4/5 verificados como ya corregidos en código (no requerían cambios adicionales) |
-
----
-
-## v7.6.0 — Auditoría completa del proyecto (2026-03-31)
+> Nota: el CHANGELOG anterior fragmentaba este trabajo en `v7.6.0` y una supuesta `v7.6.1`. Nunca existió más de una versión `7.6` — mismo día, mismo ciclo.
 
 | # | Tipo | Cambio |
 |---|------|--------|
 | 1 | `DOCS` | **`docs/AUDITORIA.md`** — Documento standalone de auditoría creado |
 | 2 | `DOCS` | 7 bugs detectados y registrados en `docs/PENDIENTES.md` |
 | 3 | `DOCS` | **`source/docs/ARQUITECTURA.md`** — Actualizado a v7.5.0 |
+| 4 | `FIX` | **`tools/verify.py`** — BUG-6: nueva función `check_test_files()` — verifica los 5 archivos de test Beteliney |
+| 5 | `FIX` | **`COMPILAR_LINUX.sh`** — BUG-7: `ensure_libnbt()` usa `--branch` explícito y variable `LIBNBT_BRANCH` |
+| 6 | `DOCS` | **`docs/AUDITORIA.md`** — Tabla de bugs actualizada con estado de corrección |
+| 7 | `NOTE` | BUG-1/2/3/4/5 verificados como ya corregidos en código (no requerían cambios adicionales) |
 
 ---
 
@@ -334,21 +299,9 @@
 
 ---
 
-## v7.3.2 — Documentación completa del proyecto (2026-03-31)
+## v7.3.0 — Renombrado MMC → Beteliney + logo + AboutDialog + iGPU + documentación completa (2026-03-31)
 
-| # | Tipo | Cambio |
-|---|------|--------|
-| 1 | `DOCS` | **`docs/PERFILES_JVM.md`** — Guía de perfiles con flags G1GC, fuentes, benchmarks |
-| 2 | `DOCS` | **`docs/TROUBLESHOOTING.md`** — 245 líneas: errores comunes y soluciones |
-| 3 | `DOCS` | **`source/docs/ARQUITECTURA.md`** — Árbol de módulos, flujo de lanzamiento |
-| 4 | `DOCS` | **`docs/ESTRUCTURA.md`** — Mapa técnico completo del proyecto |
-| 5 | `DOCS` | **`README.md`** — Reescrito: ASCII art, badges, perfiles JVM, tabla de scripts |
-| 6 | `FEAT` | **`tools/verify.py`** — Checks: `BetelineyProfiles.h`, `BetelineyTheme.cpp (#39FF14)`, módulos clave |
-| 7 | `FEAT` | **`tools/fix_icons.py`** — Flag `--dry-run` agregado |
-
----
-
-## v7.3.0 — Renombrado MMC → Beteliney + logo + AboutDialog + iGPU (2026-03-31)
+> Nota: el CHANGELOG anterior fragmentaba este trabajo en `v7.3.0` y una supuesta `v7.3.2`. Nunca existió más de una versión `7.3` — mismo día, mismo ciclo.
 
 | # | Tipo | Cambio |
 |---|------|--------|
@@ -357,6 +310,13 @@
 | 3 | `FEAT` | **`AboutDialog`** — Título, versión neón, hardware objetivo, commit 8 chars, labels en español |
 | 4 | `FEAT` | **`launcher/ui/pages/instance/JavaSettingsWidget.cpp`** — Detección automática de iGPU (AMD/Intel) con sugerencia de perfil |
 | 5 | `FEAT` | **`launcher/ui/pages/instance/JavaPage.cpp`** — Strings de Java traducidos al español |
+| 6 | `DOCS` | **`docs/PERFILES_JVM.md`** — Guía de perfiles con flags G1GC, fuentes, benchmarks |
+| 7 | `DOCS` | **`docs/TROUBLESHOOTING.md`** — 245 líneas: errores comunes y soluciones |
+| 8 | `DOCS` | **`source/docs/ARQUITECTURA.md`** — Árbol de módulos, flujo de lanzamiento |
+| 9 | `DOCS` | **`docs/ESTRUCTURA.md`** — Mapa técnico completo del proyecto |
+| 10 | `DOCS` | **`README.md`** — Reescrito: ASCII art, badges, perfiles JVM, tabla de scripts |
+| 11 | `FEAT` | **`tools/verify.py`** — Checks: `BetelineyProfiles.h`, `BetelineyTheme.cpp (#39FF14)`, módulos clave |
+| 12 | `FEAT` | **`tools/fix_icons.py`** — Flag `--dry-run` agregado |
 
 ---
 
