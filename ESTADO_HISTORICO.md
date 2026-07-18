@@ -26,7 +26,7 @@ Fase 5: Flatpak manifest + AppImage script + SmartScreen bypass en NSIS + CI Rel
 
 ### Sesión 5 — Auditoría completa
 Verificación sistemática: 29/29 archivos, 19/19 CMakeLists, 18/18 hooks, CI 19/19, Flatpak 12/12.
-Commit: `adbd887 docs: ESTADO.md v6 — revisión completa, todo verificado`
+Commit: `3dbec4a80 docs: ESTADO.md v6 — revisión completa, todo verificado`
 
 ### Sesión 6 — Documentación y versión (2026-06-18)
 CMakeLists.txt: 8.2.0 → 8.3.0.
@@ -66,15 +66,15 @@ ESTADO.md: versión 8.2.0 → 8.3.0.
 | 11 | `migration/GDLauncherMigrator.cpp:107` | `selectSql = QString(...)` sin declarar — variable usada antes de existir | `QString selectSql = QString(...)` |
 
 **Commits de la sesión:**
-- `8a79e90` — fix: 10 errores de compilación reales (build limpia Fases 3-5) — 12 archivos, 489 ins / 23 del
-- `42bc5ed` — docs: ESTADO.md Sesión 8
+- `4c6596960` — fix: 10 errores de compilación reales (build limpia Fases 3-5) — 12 archivos, 489 ins / 23 del
+- `86c027a06` — docs: ESTADO.md Sesión 8
 
 **Estado:** build 100% limpia verificada localmente. **Pendiente: `git push` + `git tag v8.3.0`.**
 
 ### Sesión 9 — Push, tag v8.3.0 y Discord (2026-06-19)
-`git push origin main` (78adefe) + `git tag v8.3.0 && git push origin v8.3.0` → CI dispara build Linux+Windows y publica la Release automáticamente (`.github/workflows/build.yml`, job `release`, trigger `tags: [v*.*.*]`).
+`git push origin main` (5b13f53d8) + `git tag v8.3.0 && git push origin v8.3.0` → CI dispara build Linux+Windows y publica la Release automáticamente (`.github/workflows/build.yml`, job `release`, trigger `tags: [v*.*.*]`).
 
-Servidor Discord: https://discord.gg/fMbSkEd85r — badge añadido al README (commit `6346499`, link actualizado sesión 19).
+Servidor Discord: https://discord.gg/fMbSkEd85r — badge añadido al README (commit `38ff2c163`, link actualizado sesión 19).
 
 **Plan de lanzamiento (Día 1 — cerrado):**
 | Hito | Estado |
@@ -104,14 +104,14 @@ Diagnóstico confirmado con `addr2line` sobre el binario (no stripped) — backt
 
 Fix: eliminar todos los `delete response;`. El `QByteArray` sigue siendo válido durante el callback porque el `NetJob` (`m_job`, `shared_ptr`) sigue vivo en ese punto.
 
-**Verificación:** recompilado limpio (403/403) → lanzado dos veces reproduciendo el 404 real → antes crasheaba consistentemente en <3s, ahora corre estable 35+s sin generar crash dumps. Commit `8705aab`.
+**Verificación:** recompilado limpio (403/403) → lanzado dos veces reproduciendo el 404 real → antes crasheaba consistentemente en <3s, ahora corre estable 35+s sin generar crash dumps. Commit `0e5175a3a`.
 
 **Lección operativa:** "compila limpio" ≠ "funciona". A partir de ahora, todo fix de compilación que toque gestión de memoria/punteros se valida ejecutando el binario, no solo `ninja`.
 
 ### Sesión 11 — Día 2 del plan cerrado: capturas + Roadmap (2026-06-20)
 README: añadida sección **Roadmap** (pendientes reales del plan de 7 días + ideas futuras ya listadas en este documento, ahora visibles públicamente) y captura real de la ventana principal del launcher corriendo (`screenshots/ventana-principal.png`), tomada y verificada por el usuario directamente — confirma visualmente que el launcher arranca limpio con el fix de la Sesión 10: tema neón cargado, instancias reales con mods, sin crash. Corregida también una referencia obsoleta `dist/` → `packaging/` en la estructura de archivos del README (arrastrada desde la Sesión 7).
 
-Commits: `19f8f22` (Roadmap + placeholder) → `8cf6afc` (captura real, placeholder retirado).
+Commits: `ce27bbdcf` (Roadmap + placeholder) → `36e87c6a6` (captura real, placeholder retirado).
 
 **Plan de lanzamiento — estado consolidado:**
 | Día | Hito | Estado |
@@ -126,7 +126,7 @@ Commits: `19f8f22` (Roadmap + placeholder) → `8cf6afc` (captura real, placehol
 | 6 | Publicar en r/feedthebeast, r/Minecraft, Discord de Prism Launcher | ⏳ |
 | 7 | Formulario claude.com/contact-sales/claude-for-oss (deadline 30/06/2026) | ⏳ |
 
-**Estado real del launcher a cierre de esta sesión:** compila limpio (403/403), arranca sin crashear, GUI funcional confirmada visualmente. Repo público al día (`8cf6afc`), release v8.3.0 publicada vía CI. El bloqueo principal para los Días 3-4 sigue siendo activar GitHub Pages en el repo `meta` (acción manual de navegador, pendiente #2 de la sección "Acciones manuales pendientes").
+**Estado real del launcher a cierre de esta sesión:** compila limpio (403/403), arranca sin crashear, GUI funcional confirmada visualmente. Repo público al día (`36e87c6a6`), release v8.3.0 publicada vía CI. El bloqueo principal para los Días 3-4 sigue siendo activar GitHub Pages en el repo `meta` (acción manual de navegador, pendiente #2 de la sección "Acciones manuales pendientes").
 
 ### Sesión 12 — Auditoría completa del proyecto + fix real BUG-2 (2026-06-20)
 **Contexto:** revisión de cada archivo del proyecto (README raíz, ESTADO.md, plan Claude for Open Source, scripts, tests, CMakeLists) a pedido del usuario. Dos hallazgos:
@@ -138,7 +138,7 @@ Commits: `19f8f22` (Roadmap + placeholder) → `8cf6afc` (captura real, placehol
 
 No se pudo determinar en qué sesión se hicieron estos fixes — no aparecen en el `git log` con mensaje propio ni en el historial de sesiones de este documento. Quedan documentados acá retroactivamente.
 
-**2. BUG-2 (tests de traducción) — confirmado bug real, no "posible falso-vacío" como decía la Sesión 11.** `BETELINEY_SRCDIR` sí estaba definido en `tests/CMakeLists.txt`, pero apuntaba a `${CMAKE_SOURCE_DIR}/launcher` en vez de `${CMAKE_SOURCE_DIR}`. El propio comentario del test (mismo commit inicial `2915f18`, nunca tocado después) decía explícitamente *"BETELINEY_SRCDIR que CMake define como CMAKE_SOURCE_DIR"* — la implementación nunca coincidió con su propia documentación. `BetelineyTranslation_test.cpp::readFile()` concatena `base + "/" + relPath`, y los 11 `relPath` ya incluyen el prefijo `launcher/...` → con el bug, la ruta resultante era `.../launcher/launcher/ui/...`, que no existe → `QFile::open()` falla → `QSKIP` → **los 11 tests de traducción al español pasaban en falso, sin verificar ningún string, desde el commit inicial del proyecto.** El fallback `QFINDTESTDATA("../launcher")` tenía el mismo error de raíz duplicada.
+**2. BUG-2 (tests de traducción) — confirmado bug real, no "posible falso-vacío" como decía la Sesión 11.** `BETELINEY_SRCDIR` sí estaba definido en `tests/CMakeLists.txt`, pero apuntaba a `${CMAKE_SOURCE_DIR}/launcher` en vez de `${CMAKE_SOURCE_DIR}`. El propio comentario del test (mismo commit inicial `09eb67f74`, nunca tocado después) decía explícitamente *"BETELINEY_SRCDIR que CMake define como CMAKE_SOURCE_DIR"* — la implementación nunca coincidió con su propia documentación. `BetelineyTranslation_test.cpp::readFile()` concatena `base + "/" + relPath`, y los 11 `relPath` ya incluyen el prefijo `launcher/...` → con el bug, la ruta resultante era `.../launcher/launcher/ui/...`, que no existe → `QFile::open()` falla → `QSKIP` → **los 11 tests de traducción al español pasaban en falso, sin verificar ningún string, desde el commit inicial del proyecto.** El fallback `QFINDTESTDATA("../launcher")` tenía el mismo error de raíz duplicada.
 
 **Fix** (2 líneas, no se tocaron los 11 `relPath` porque el comentario original define el contrato correcto):
 - `tests/CMakeLists.txt`: `BETELINEY_SRCDIR="${CMAKE_SOURCE_DIR}/launcher"` → `BETELINEY_SRCDIR="${CMAKE_SOURCE_DIR}"`
@@ -259,7 +259,7 @@ Tras el incidente de los hashes, antes de escribir los 3 packs verifiqué cada `
 
 Hallazgo (sesión 14, cerrado parcialmente en esa sesión por corte de mensajes): la key (prefijo `$2a$10$wIJ...`, valor completo REDACTADO de esta documentación) estaba en texto plano en `ESTADO.md`, commiteada y pusheada a `origin/main` del repo público `BetelineyLauncher`. Confirmado expuesta en vivo: `raw.githubusercontent.com` la servía con HTTP 200 sin autenticación.
 
-Hecho en esta sesión (commit `ae645db`):
+Hecho en esta sesión (commit `951562690`):
 - Redactadas las 2 ocurrencias en `ESTADO.md` (tabla de API keys + instrucciones de secret de CI).
 - Verificado que `build/` (que también tenía la key en `CMakeCache.txt` y `BuildConfig.cpp` generados) **nunca estuvo trackeado** — está en `.gitignore`, cero exposición ahí.
 - Verificado que `CMakeLists.txt` actual (HEAD) ya usa `$ENV{CURSEFORGE_API_KEY}`, sin el valor hardcodeado.
@@ -309,13 +309,13 @@ Fix aplicado (commit `04bda93` en `main` del repo `meta`):
 
 **Contexto:** se pidió revisar todo en busca de errores, fugas o cosas mal hechas, sin asumir que lo reportado en sesiones anteriores era correcto. Resultado: **el CI del repo principal (`Build BetelineyLauncher`) lleva fallando en el 100% de sus corridas desde el primer run registrado (13/06)** — 30 de 30 corridas en rojo, incluida toda la ventana de las sesiones 8 a 15. Nadie lo había verificado hasta ahora; las sesiones previas documentaban features y fixes sin confirmar que el proyecto compilara en CI.
 
-**Bug #1 — condición de carrera real en CMake (commit `c18f7bf`)**
+**Bug #1 — condición de carrera real en CMake (commit `8696cf040`)**
 
 `add_custom_target(CopyJars ...)` copia tres JARs (`JavaCheck.jar`, `NewLaunch.jar`, `NewLaunchLegacy.jar`) pero su `DEPENDS` solo listaba `JavaCheck NewLaunch` — **faltaba `NewLaunchLegacy`**. Con build paralelo (`-j`, el caso real tanto en CI como en desarrollo), ninja agendaba la copia antes de que `NewLaunchLegacy.jar` terminara de compilarse. Confirmado en el log real de CI: `[47/557] Copiando JARs` corría antes que `[49/557] Compilando NewLaunchLegacy.jar`. Fallaba en Linux con `Error copying file (if different)`; en Windows con `ninja: build stopped: cannot make progress due to previous errors` (mismo origen — el log de Windows no capturó el mensaje exacto del subproceso, pero es el mismo grafo de dependencias roto).
 
 Fix: agregar `NewLaunchLegacy` al `DEPENDS`. Verificado localmente antes de pushear — no solo en teoría: se forzó el escenario exacto (`rm -rf build/jars build/libraries/*/share`, rebuild con `-j8`) y se confirmó que ahora `NewLaunchLegacy.jar` (paso 4/5) termina antes de `CopyJars` (paso 5/5). Build completo local: 403/403 sin errores, 29/29 tests (`ctest`) pasando.
 
-**Bug #2 — include roto de un rename viejo, sin relación con el bug #1 (commit `718b158`)**
+**Bug #2 — include roto de un rename viejo, sin relación con el bug #1 (commit `022c07402`)**
 
 El push del fix #1 disparó CI real — y **volvió a fallar**, por una causa completamente distinta: `BetelineyUpdater.cpp:59` incluye `"updater/prismupdater/UpdaterDialogs.h"`, un path que ya no existe. El directorio se renombró a `updater/betelineyupdater/` en algún momento de la migración del fork de PrismLauncher, pero ese include específico no se actualizó. `fatal error: ... No such file or directory` en el runner limpio de Linux.
 
@@ -325,7 +325,7 @@ Fix: corregido el path del include. Verificado con grep recursivo que no queda n
 
 **Intento de verificación 100% limpia local — bloqueado por el entorno, no por el código:** se intentó un `rm -rf build/` completo seguido de reconfigurar y recompilar desde cero para validar ambos fixes juntos antes de pushear el segundo. La reconfiguración de CMake falló con `Could NOT find Java (missing: Java_JAVAC_EXECUTABLE Java_JAR_EXECUTABLE Java_JAVADOC_EXECUTABLE Development)` pese a tener JDK 21 instalado — un problema de detección de entorno específico del proceso en segundo plano (probablemente diferencia de `PATH`/`JAVA_HOME` entre la sesión interactiva y el proceso `nohup`), no del repositorio. No se persiguió más — la verificación autoritativa la da CI (entorno reproducible de GitHub Actions), no esta máquina.
 
-**Estado de CI al cierre de esta sesión, sin redondear:** el push del fix #2 (`718b158`) disparó la corrida `27911380966`, que seguía `in_progress` (~1m38s) al momento de escribir esto. **No confirmado todavía que ambos fixes juntos hagan pasar CI en verde.** Verificar en la próxima sesión con `gh run list --repo ElPibeCapo/BetelineyLauncher --limit 1` — si sigue en rojo, revisar el log del paso que falle; dado que se descartaron ya 2 causas reales y distintas, es razonable pero no seguro que sea la última.
+**Estado de CI al cierre de esta sesión, sin redondear:** el push del fix #2 (`022c07402`) disparó la corrida `27911380966`, que seguía `in_progress` (~1m38s) al momento de escribir esto. **No confirmado todavía que ambos fixes juntos hagan pasar CI en verde.** Verificar en la próxima sesión con `gh run list --repo ElPibeCapo/BetelineyLauncher --limit 1` — si sigue en rojo, revisar el log del paso que falle; dado que se descartaron ya 2 causas reales y distintas, es razonable pero no seguro que sea la última.
 
 **Otros hallazgos de la auditoría, sin acción requerida:**
 - El workflow `generate.yml` del repo `meta` tiene 2 fallas de 30 corridas (6.7%) en el step "Generar Forge" — el log corta sin error visible a mitad de iterar versiones de Forge, probablemente rate-limit del servidor de Forge o problema transitorio del runner. Es del workflow original de PrismLauncher (no nuestro código), se autorecupera en la siguiente corrida programada (cron cada 6h), y no bloquea nada porque tiene `continue-on-error: true`. No se investigó más a fondo — frecuencia baja, sin impacto.
@@ -339,29 +339,29 @@ Fix: corregido el path del include. Verificado con grep recursivo que no queda n
 
 **Contexto:** continuación directa de la sesión 16. Al cierre de esa sesión, CI seguía sin confirmar verde tras los 2 fixes de la race condition de `CopyJars` y el include roto de `prismupdater`. Se retomó el diagnóstico corrida por corrida, un fallo a la vez, sin asumir que arreglar uno implicara que los demás fueran del mismo tipo.
 
-**Bug #3 — namespace faltante en llamada a función (commit `6aaa17b`)**
+**Bug #3 — namespace faltante en llamada a función (commit `03bd49657`)**
 
 `BetelineyUpdater.cpp` llamaba `AttachWindowsConsole()` sin calificar, pero la función vive en el namespace `console` (`WindowsConsole.h`). Fix: `console::AttachWindowsConsole()`.
 
-**Bug #4 — JDK equivocado en el runner de Windows (mismo commit `6aaa17b`)**
+**Bug #4 — JDK equivocado en el runner de Windows (mismo commit `03bd49657`)**
 
 `NewLaunch.jar` y `JavaCheck.jar` fallaban con `javac: invalid flag: --release`. Causa: el job de Windows no fijaba una versión de JDK, y `find_package(Java 1.8)` tomaba el primero que cumpliera `>=1.8` en el `PATH` — el runner `windows-2022` expone por defecto un Temurin 8.0.492-9, cuyo `javac` no reconoce `--release` (el flag existe desde JDK 9). Fix: agregado `actions/setup-java` con Temurin 21 antes del `configure`, para que CMake detecte el JDK correcto.
 
-**Bug #5 — path de jars hardcodeado a Linux (commit `6cdbad8`)**
+**Bug #5 — path de jars hardcodeado a Linux (commit `31e95549f`)**
 
 `CopyJars` (target central en el `CMakeLists.txt` raíz) asumía el path fijo `share/${Launcher_Name}` como origen de los 3 JARs — correcto solo en Linux, donde `JARS_DEST_DIR` vale eso. En Windows `JARS_DEST_DIR="jars"`, así que los jars reales quedaban en `libraries/{javacheck,launcher}/jars/*.jar` y `CopyJars` fallaba con "No such file or directory". Fix: usar `${JARS_DEST_DIR}` en vez del literal, igual que los `CMakeLists.txt` que generan los jars.
 
-**Bug #6 — PCH inválido por definición de macro distinta (mismo commit `6cdbad8`)**
+**Bug #6 — PCH inválido por definición de macro distinta (mismo commit `31e95549f`)**
 
 `target_precompile_headers("${Launcher_Name}_updater" REUSE_FROM prism_updater_logic)` reusaba el precompiled header de una librería estática que no define `QT_NEEDS_QMAIN`, en un ejecutable `WIN32` que sí la define — con `-Werror`, eso es `invalid-pch` tratado como error fatal. Mismo patrón ya corregido antes para `Launcher_logic` y `filelink_logic` (comentarios "FIX" ya existentes ahí); solo faltaba aplicarlo a este target. Fix: generar su propio PCH en vez de reusar el de `prism_updater_logic`.
 
-**Bug #7 — race condition duplicada en javacheck (commit `e63f8d7`)**
+**Bug #7 — race condition duplicada en javacheck (commit `2e31074b5`)**
 
 `javacheck/CMakeLists.txt` tenía su propio `POST_BUILD` que copiaba `JavaCheck.jar` al mismo destino que el `CopyJars` central de la raíz (mismo origen, mismo destino: `build/jars/JavaCheck.jar`). En Windows/Ninja esa dependencia cruzada entre directorios para un `POST_BUILD` de un target utilitario no tiene garantía de orden entre sí — el propio comentario del repo ya advertía sobre este patrón ("requiere mismo directorio en CMake 4.x"). `CopyJars` espera solo el archivo de salida del target `JavaCheck`, no el paso `POST_BUILD` duplicado, así que ambos corrían sin orden garantizado. `launcher/CMakeLists.txt` ya no tenía este hack (su propio comentario decía que fue reemplazado) — solo quedaba en `javacheck`. Fix: eliminado el duplicado, `CopyJars` queda como único mecanismo.
 
 Con los bugs #3-#7 aplicados, **"Compilar" pasó en verde por primera vez** tanto en Linux como en Windows (confirmado en la corrida `28692985548`). El resto de bugs de esta sesión ya no son de C++/CMake — son del propio workflow de CI.
 
-**Bug #8 — regex de versión roto desde el commit inicial del proyecto (commit `10fc804`)**
+**Bug #8 — regex de versión roto desde el commit inicial del proyecto (commit `6f0da9f28`)**
 
 El step "Obtener version" (Linux y Windows) usaba `grep -oP 'Launcher_VERSION_NAME "\K[\d.]+' CMakeLists.txt`, pero esa línea es `set(Launcher_VERSION_NAME "${Launcher_VERSION_MAJOR}.${Launcher_VERSION_MINOR}.${Launcher_VERSION_PATCH}")` — no hay dígitos literales tras la comilla, son variables CMake sin resolver en el archivo de texto. El regex nunca matcheó nada, ni en este ni en ningún commit anterior.
 
@@ -369,7 +369,7 @@ Por qué solo se manifestaba en Windows: el shell del job Linux es `bash -e {0}`
 
 Fix: leer `Launcher_VERSION_MAJOR`/`MINOR`/`PATCH` por separado con tres greps simples y componer `VER="${MAJOR}.${MINOR}.${PATCH}"`. Probado localmente antes de pushear: `VER=8.3.0` correcto.
 
-**Bug #9 — falta el paquete de 7-Zip en el setup de MSYS2 (commit `d33322c`)**
+**Bug #9 — falta el paquete de 7-Zip en el setup de MSYS2 (commit `098a8391c`)**
 
 Con los bugs #3-#8 corregidos, "Empaquetar" en Windows falló con `7z: command not found` (exit 127). La lista de paquetes `install:` de `msys2/setup-msys2@v2` no incluía `mingw-w64-x86_64-7zip`, y el script de empaquetado invoca `7z a` directamente para generar el `.zip`. Fix: agregado `mingw-w64-x86_64-7zip` a la lista de instalación.
 
@@ -377,7 +377,7 @@ Con los bugs #3-#8 corregidos, "Empaquetar" en Windows falló con `7z: command n
 
 **Total de bugs reales de CI encontrados y corregidos entre las sesiones 16 y 17: 9.** Ninguno era el mismo tipo de error que el anterior — cada fix exponía el siguiente fallo real, nunca un síntoma repetido. Confirma la lección de la sesión 16 ("compila limpio local ≠ pasa en CI") llevada un paso más: ni siquiera "compila en CI" garantiza que el pipeline entero (empaquetado incluido) funcione — cada etapa del workflow necesitó su propia verificación independiente.
 
-**Commits de la sesión (en orden):** `6aaa17b`, `e63f8d7`, `10fc804`, `d33322c`.
+**Commits de la sesión (en orden):** `03bd49657`, `2e31074b5`, `6f0da9f28`, `098a8391c`.
 
 **Tabla de pendientes — estado real actualizado:**
 
@@ -412,7 +412,7 @@ Archivos copiados a `source/screenshots/`: `betelineypacks.png`, `perfiles-jvm.p
 
 ### Sesión 20 — Backport de Prism 11.0.0→11.0.2 testeado en la práctica (2026-07-05)
 
-**Contexto:** entre la sesión 19 y esta, se hizo un backport de 3 fixes reales de PrismLauncher upstream (commit `a7795abe7`, ya pusheado y con CI verde confirmado antes de retomar esta sesión). Se pidió documentar todo y testear en la práctica, no solo confiar en que CI pasó.
+**Contexto:** entre la sesión 19 y esta, se hizo un backport de 3 fixes reales de PrismLauncher upstream (commit `942320ab3`, ya pusheado y con CI verde confirmado antes de retomar esta sesión). Se pidió documentar todo y testear en la práctica, no solo confiar en que CI pasó.
 
 **Los 3 fixes backporteados:**
 1. `LaunchProfile::getLibraryFiles` — nuevo parámetro `addJarMods` (default `true`) para poder pedir la lista de jars sin el jar-mods merge.
@@ -672,7 +672,7 @@ Esto cierra el ciclo completo: las URLs funcionan (ya no 404), el archivo que se
 **Contexto:** continuación directa de la sesión 26. Se ejecutó el Paso 0 documentado en el bloque consolidado (bump + tag + release) y se arrancó la Fase 1 del plan (backup de mundos, sembrado de `known-hashes.json`, badge de updates).
 
 **Paso 0 — completo, verificado en GitHub:**
-1. Bump `CMakeLists.txt` líneas 179-181: `8.3.0` → `8.4.0`. Commit `7a3dbf14b` ("chore: bump version 8.3.0 → 8.4.0"), pusheado a `main`.
+1. Bump `CMakeLists.txt` líneas 179-181: `8.3.0` → `8.4.0`. Commit `ef861cdeb` ("chore: bump version 8.3.0 → 8.4.0"), pusheado a `main`.
 2. Tag `v8.4.0` creado con mensaje anotado (resumen de todo lo acumulado desde `v8.3.0`) y pusheado.
 3. Release publicado en GitHub Releases con notas reales (no genéricas) armadas a partir de las sesiones 9-26 de este documento: https://github.com/ElPibeCapo/BetelineyLauncher/releases/tag/v8.4.0
 
@@ -686,7 +686,7 @@ Esto cierra el ciclo completo: las URLs funcionan (ya no 404), el archivo que se
 - **Alcance real de esto — corrección honesta sobre lo que dice el plan de sesión 25:** esto es un backup **manual**, a pedido del usuario desde la UI de Worlds — no es todavía el "backup automático antes de actualizar el pack" que proponía la sesión 24/25. Ese automatismo requeriría enganchar el mismo `ExportToZipTask` en el punto donde arranca cada actualización de pack (distinto por proveedor: Modrinth/Flame/FTB/ATLauncher/Technic/Beteliney), lo cual es varias veces más superficie de cambio y de testeo que este botón manual. Se implementó primero la pieza manual porque es autocontenida, de bajo riesgo, y da valor inmediato por sí sola; el hook automático queda como siguiente paso explícito, no asumido como ya resuelto.
 - **Build:** compilación incremental (`ninja -C build -j$(nproc)`) — exit code 0, sin errores ni warnings pese a `-Werror` activo. Primer intento había fallado por un include faltante (`BetelineyZip.h` no lo trae `ExportToZipTask.h` automáticamente) — corregido agregando el include, no fue necesario tocar lógica.
 - **`ctest --output-on-failure`: 29/29 tests pasando**, 2.77s total. Ningún test existente cubre específicamente esta feature (no hay test dedicado a la acción de Backup), así que confirma que no rompió nada existente, no que la feature en sí sea correcta — la verificación de la feature en sí queda pendiente de una prueba manual real (ver abajo).
-- **Commit y push confirmados:** `523027d18` ("feat(worlds): botón de backup manual de mundos"), pusheado a `main` sobre el commit del bump (`7a3dbf14b`).
+- **Commit y push confirmados:** `b37308428` ("feat(worlds): botón de backup manual de mundos"), pusheado a `main` sobre el commit del bump (`ef861cdeb`).
 
 **Pendiente real, sin completar todavía:**
 1. Prueba funcional manual: usar el botón Backup sobre un mundo real dentro de la app corriendo, y confirmar que el zip se genera en `backups/worlds/`, se puede reabrir, y contiene los archivos correctos. No se hizo en esta sesión (requeriría la app corriendo con una instancia real con mundos).
@@ -703,7 +703,7 @@ Esto cierra el ciclo completo: las URLs funcionan (ya no 404), el archivo que se
 
 **`ctest --output-on-failure`: 29/29 tests pasando**, 2.88s total. Ningún test nuevo dedicado a esta feature (igual que con el backup de mundos de sesión 27) — confirma que no rompió nada existente, la validación funcional de la feature en sí queda para prueba manual con la app corriendo (ver pendiente abajo).
 
-**Commit y push confirmados:** `5c7eaa702` ("feat(mods): chequeo silencioso de actualizaciones en background al seleccionar instancia"), sobre `f7aaad0c5`, pusheado a `main`. Incluye los 5 archivos: `CMakeLists.txt`, `MainWindow.cpp`, `MainWindow.h`, `BackgroundModUpdateCheckTask.cpp`, `BackgroundModUpdateCheckTask.h` — 220 líneas insertadas.
+**Commit y push confirmados:** `2ef426dcd` ("feat(mods): chequeo silencioso de actualizaciones en background al seleccionar instancia"), sobre `5f0a62bf4`, pusheado a `main`. Incluye los 5 archivos: `CMakeLists.txt`, `MainWindow.cpp`, `MainWindow.h`, `BackgroundModUpdateCheckTask.cpp`, `BackgroundModUpdateCheckTask.h` — 220 líneas insertadas.
 
 **Qué hace la feature, en concreto:** al seleccionar una instancia (`instanceChanged()`), si es una `MinecraftInstance` y no se chequeó ya en esta sesión del launcher, se lanza `BackgroundModUpdateCheckTask` en background: escanea los mods que ya tienen metadata (nunca genera metadata nueva — eso requiere elegir provider a mano, terreno de `ResourceUpdateDialog`), corre `ModrinthCheckUpdate`/`FlameCheckUpdate` sin ningún diálogo visible, y al terminar llama `MinecraftInstance::setUpdateAvailable(bool)`. Esa función ya existía desde antes (confirmado en sesión 26 que no tenía ningún caller en todo el árbol — feature fantasma: la UI en `InstanceDelegate.cpp` ya pintaba el ícono `checkupdate` en la card, y el modelo ya emitía `propertiesChanged` al llamarla, solo faltaba quién la disparara). Timeout de seguridad de 30s por si `updateFinished()` del mod list nunca llega. `m_modUpdateCheckedInstances` evita re-pegarle a las APIs de Modrinth/CurseForge cada vez que el usuario reselecciona la misma instancia dentro de la misma sesión del launcher.
 
@@ -736,7 +736,7 @@ quedaba escribiendo sobre un puntero colgante. El `if (instance)` no protegía n
 
 **Verificación del fix:** build incremental (`ninja -C build -j$(nproc)`) — terminó solo en background (mismo patrón que sesión 27/28: la herramienta de terminal se colgó esperando el resultado, pero el proceso siguió corriendo del lado del servidor; confirmado con `stat` que `build/beteliney` (22:21) es más nuevo que ambos archivos editados (22:05), sin necesidad de re-lanzar el build). `-Werror` activo, sin warnings. `ctest --output-on-failure`: **29/29 tests pasando**, 2.85s.
 
-**Commit y push confirmados:** `6b2395ee6` ("fix(mods): usar QPointer en BackgroundModUpdateCheckTask para evitar use-after-free"), sobre `1eabc46b6`, pusheado a `main`. 2 archivos, 14 inserciones, 1 eliminación.
+**Commit y push confirmados:** `efe33a69e` ("fix(mods): usar QPointer en BackgroundModUpdateCheckTask para evitar use-after-free"), sobre `6a577b2ca`, pusheado a `main`. 2 archivos, 14 inserciones, 1 eliminación.
 
 **Nota operativa para sesiones futuras:** el servidor de Desktop Commander se sigue colgando de forma consistente en builds largos con LTO (ya van 3 sesiones seguidas con el mismo síntoma — 20, 27, 29). El proceso en sí termina bien del lado del servidor; el problema es solo que la herramienta de terminal no devuelve el resultado a tiempo. Patrón de recuperación que funciona: verificar con `stat` el timestamp del binario contra los archivos fuente modificados, en vez de asumir que el build falló o quedó a medias.
 

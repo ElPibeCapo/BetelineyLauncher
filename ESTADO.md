@@ -76,7 +76,7 @@
 
 ## HISTORIAL DE COMMITS
 
-> **Corregido en sesión 39:** este bloque estaba congelado desde ~sesión 17 (último commit real listado abajo es `a7795abe7`), mientras la tabla de IDENTIDAD DEL PROYECTO prometía que acá estaba "el último hash real en main" — falso desde hace ~20 sesiones. No se reescribe como espejo completo de `git log` (mantener eso manual a mano es justo lo que causó este desfase); en vez de eso, **la fuente de verdad es `git log --oneline` directamente**, y este bloque queda como snapshot histórico de los primeros commits del proyecto (útil para ver de dónde viene v8.2.0→v8.3.0) más un puntero corto a los commits recientes reales.
+> **Corregido en sesión 39:** este bloque estaba congelado desde ~sesión 17 (último commit real listado abajo es `942320ab3`), mientras la tabla de IDENTIDAD DEL PROYECTO prometía que acá estaba "el último hash real en main" — falso desde hace ~20 sesiones. No se reescribe como espejo completo de `git log` (mantener eso manual a mano es justo lo que causó este desfase); en vez de eso, **la fuente de verdad es `git log --oneline` directamente**, y este bloque queda como snapshot histórico de los primeros commits del proyecto (útil para ver de dónde viene v8.2.0→v8.3.0) más un puntero corto a los commits recientes reales.
 
 **Commits recientes reales (sesiones 27-39, más nuevos primero — ver `docs/CHANGELOG.md` para el detalle de cada uno):**
 ```
@@ -98,35 +98,35 @@ ef861cdeb  chore: bump version 8.3.0 → 8.4.0  ← tag v8.4.0
 
 **Snapshot histórico (commits originales del proyecto, v8.2.0 → v8.3.0, sin actualizar desde entonces):**
 ```
-a7795abe7  fix: backport 3 fixes reales de Prism 11.0.0 -> 11.0.2 upstream
-2d475330e  docs: capturas de BetelineyPacks y perfiles JVM en README, Discord corregido, Roadmap sincronizado
-8550d2550  docs: confirmar rotacion CurseForge key + CI verde en corrida 28712624812
-359498a21  ci: verificar secret CURSEFORGE_API_KEY recien rotado y cargado
-377718865  docs: ESTADO.md Sesión 17 — CI confirmado 100% verde, 5 bugs mas documentados
-d33322c  fix(ci): agrega mingw-w64-x86_64-7zip — faltaba, 'Empaquetar' fallaba con 7z: command not found
-10fc804  fix(ci): regex de version roto — Launcher_VERSION_NAME contiene variables CMake, no digitos literales
-e63f8d7  fix(windows): elimina POST_BUILD duplicado en javacheck, race condition con CopyJars central
-6cdbad8  fix(windows): 2 bugs mas del build de Windows (path jars + PCH)
-6aaa17b  fix(windows): resuelve los 2 fallos reales del build de Windows (namespace + JDK)
-8cf6afc  docs: captura real de la ventana principal verificada (Día 2 cerrado)
-19f8f22  docs: Día 2 del plan — capturas de pantalla + sección Roadmap en README
-047a2bb  docs: ESTADO.md — Sesión 10, crash crítico en ejecución real documentado
-8705aab  fix: crash crítico free(): invalid pointer en NetJob::makeByteArray (6 sitios)
-e1d1f48  docs: ESTADO.md — Sesión 9, Día 1 del plan cerrado
-6346499  docs: añadir enlace Discord al README (Hito 1.4)
-78adefe  docs: ESTADO.md v8 — Sesión 8 completa, tabla de bugs, commits actualizados
-42bc5ed  docs: ESTADO.md Sesión 8 — build 100% limpia, commit cerrado
-8a79e90  fix: 10 errores de compilación reales (build limpia Fases 3-5)
-e389cd2  docs+build+refactor: v8.3.0 — README, CHANGELOG, Flatpak→packaging/, limpieza final
-adbd887  docs: ESTADO.md v6 — revisión completa, todo verificado
-012d4b1  feat+docs: Fase 5 — Flatpak + AppImage + SmartScreen + ESTADO v5
-c9d13d8  feat: Fase 4.4 — GDLauncher Carbon importer
-11bfe87  feat: Fase 4.3+4.5 — CrashReporter + Optimizar botón VersionPage
-b5f0c3b  feat: Fase 4.1+4.2 — CheckModConflicts + MalwareScanner
-c01b787  feat: Fase 3 completa — BetelineyPacks + presets + RSS
-4174c4d  feat: BetelineyLogAnalyzer — motor de diagnóstico de logs v1.0
-ae1ddd6  fix: Q_INIT_RESOURCE dup, BUILD_TESTING OFF, CurseForge env, BUILD_ARTIFACT CI
-2915f18  BetelineyLauncher v8.2.0 — commit inicial
+942320ab3  fix: backport 3 fixes reales de Prism 11.0.0 -> 11.0.2 upstream
+c4f03c025  docs: capturas de BetelineyPacks y perfiles JVM en README, Discord corregido, Roadmap sincronizado
+ad1afc466  docs: confirmar rotacion CurseForge key + CI verde en corrida 28712624812
+98f199002  ci: verificar secret CURSEFORGE_API_KEY recien rotado y cargado
+f88c92596  docs: ESTADO.md Sesión 17 — CI confirmado 100% verde, 5 bugs mas documentados
+098a8391c  fix(ci): agrega mingw-w64-x86_64-7zip — faltaba, 'Empaquetar' fallaba con 7z: command not found
+6f0da9f28  fix(ci): regex de version roto — Launcher_VERSION_NAME contiene variables CMake, no digitos literales
+2e31074b5  fix(windows): elimina POST_BUILD duplicado en javacheck, race condition con CopyJars central
+31e95549f  fix(windows): 2 bugs mas del build de Windows (path jars + PCH)
+03bd49657  fix(windows): resuelve los 2 fallos reales del build de Windows (namespace + JDK)
+36e87c6a6  docs: captura real de la ventana principal verificada (Día 2 cerrado)
+ce27bbdcf  docs: Día 2 del plan — capturas de pantalla + sección Roadmap en README
+ab3a35a69  docs: ESTADO.md — Sesión 10, crash crítico en ejecución real documentado
+0e5175a3a  fix: crash crítico free(): invalid pointer en NetJob::makeByteArray (6 sitios)
+ef6bbd4c6  docs: ESTADO.md — Sesión 9, Día 1 del plan cerrado
+38ff2c163  docs: añadir enlace Discord al README (Hito 1.4)
+5b13f53d8  docs: ESTADO.md v8 — Sesión 8 completa, tabla de bugs, commits actualizados
+86c027a06  docs: ESTADO.md Sesión 8 — build 100% limpia, commit cerrado
+4c6596960  fix: 10 errores de compilación reales (build limpia Fases 3-5)
+8d004dc0a  docs+build+refactor: v8.3.0 — README, CHANGELOG, Flatpak→packaging/, limpieza final
+3dbec4a80  docs: ESTADO.md v6 — revisión completa, todo verificado
+e8a8091f2  feat+docs: Fase 5 — Flatpak + AppImage + SmartScreen + ESTADO v5
+9e18526a3  feat: Fase 4.4 — GDLauncher Carbon importer
+68f147ab0  feat: Fase 4.3+4.5 — CrashReporter + Optimizar botón VersionPage
+f33bf6191  feat: Fase 4.1+4.2 — CheckModConflicts + MalwareScanner
+834dc257e  feat: Fase 3 completa — BetelineyPacks + presets + RSS
+43708b311  feat: BetelineyLogAnalyzer — motor de diagnóstico de logs v1.0
+1c13a0f6d  fix: Q_INIT_RESOURCE dup, BUILD_TESTING OFF, CurseForge env, BUILD_ARTIFACT CI
+09eb67f74  BetelineyLauncher v8.2.0 — commit inicial
 ```
 
 ---
@@ -234,7 +234,7 @@ bash EMPAQUETAR_APPIMAGE.sh
 
 ## FASES DE DESARROLLO — ESTADO COMPLETO
 
-### ✅ FASE 0 — Estabilización (commits ae1ddd6, b844c53)
+### ✅ FASE 0 — Estabilización (commits 1c13a0f6d, 4725cc2d3)
 - `Q_INIT_RESOURCE(beteliney_icons)` duplicado eliminado de `main.cpp`
 - `BUILD_TESTING=OFF` por defecto en `CMakeLists.txt`
 - CurseForge API key eliminada del código → lee `$ENV{CURSEFORGE_API_KEY}`
@@ -242,7 +242,7 @@ bash EMPAQUETAR_APPIMAGE.sh
 - `Launcher_BUILD_ARTIFACT` configurado en CI → auto-updater activo en builds de CI
 - META server verificado: rama `gh-pages` tiene net.minecraft, Forge, NeoForge, Fabric, Quilt, Java (Adoptium/Azul/IBM)
 
-### ✅ FASE 1 — Motor de diagnóstico de logs (commit 4174c4d)
+### ✅ FASE 1 — Motor de diagnóstico de logs (commit 43708b311)
 
 **Archivos:** `launcher/logs/BetelineyLogAnalyzer.h` (92 líneas) + `.cpp` (639 líneas)
 
@@ -276,7 +276,7 @@ bash EMPAQUETAR_APPIMAGE.sh
 - ActionTargets: `"java"` → abre Settings Java, `"mods-folder"` → abre carpeta mods en explorador, `"search-modrinth:X"` → abre Modrinth en navegador
 - Botón ✕ para descartar, se reinicia al lanzar nueva sesión
 
-### ✅ FASE 2 — Selector de perfiles JVM en UI (commit inicial 2915f18)
+### ✅ FASE 2 — Selector de perfiles JVM en UI (commit inicial 09eb67f74)
 
 **Archivo:** `launcher/ui/widgets/JavaSettingsWidget.h/cpp/.ui` (541 líneas)
 
@@ -308,7 +308,7 @@ InstanceSettingsPage → MinecraftSettingsWidget → JavaSettingsWidget
 JavaPage (global) → JavaSettingsWidget
 ```
 
-### ✅ FASE 3 — Ecosistema Beteliney (commit c01b787)
+### ✅ FASE 3 — Ecosistema Beteliney (commit 834dc257e)
 
 **BetelineyPacks** — plataforma propia de modpacks servida desde GitHub Pages:
 - `modplatform/beteliney/BetelineyPack.h` — structs Pack, PackMod, PackIndex
@@ -344,7 +344,7 @@ JavaPage (global) → JavaSettingsWidget
 **RSS propio:** `NEWS_RSS_URL` → `https://ElPibeCapo.github.io/meta/v1/news/feed.atom`
 `BETELINEY_PACKS_URL` → `https://ElPibeCapo.github.io/meta/v1/beteliney-packs/`
 
-### ✅ FASE 4 — Features avanzados (commits b5f0c3b, 11bfe87, c9d13d8)
+### ✅ FASE 4 — Features avanzados (commits f33bf6191, 68f147ab0, 9e18526a3)
 
 **4.1 CheckModConflicts** (`launch/steps/CheckModConflicts.h/cpp` — 31+91 líneas):
 - `LaunchStep` que corre después de `ScanModFolders`, antes de lanzar Minecraft
@@ -379,7 +379,7 @@ JavaPage (global) → JavaSettingsWidget
 - No reinstala mods ya presentes (check por nombre de archivo)
 - Ícono: `QIcon::fromTheme("run-build-configure")`
 
-### ✅ FASE 5 — Distribución profesional (commit 012d4b1)
+### ✅ FASE 5 — Distribución profesional (commit e8a8091f2)
 
 **5.1 Flatpak** (`packaging/com.beteliney.BetelineyLauncher.json` — 88 líneas):
 - App ID: `com.beteliney.BetelineyLauncher`
@@ -530,7 +530,7 @@ Estas son ideas de infraestructura/distribución de largo plazo, sin investigaci
 - ctest --output-on-failure corrido directamente esta sesión: **29/29 tests pasando**, 2.86s. Sin fallos.
 - clang-format --dry-run --Werror sobre los 6 archivos nuevos: **limpio, cero violaciones**. Sobre los archivos modificados (Application.cpp, MainWindow.cpp/.h) hay violaciones de formato, pero están repartidas por todo el archivo (incluido código preexistente sin relación con este diff) — es un desfasaje preexistente entre la versión de clang-format instalada acá y estos archivos legados, no algo introducido por Fase 2. No se tocó nada de eso: está fuera de alcance.
 
-**Estado real de git al cierre de esta sección de la sesión:** nada de esto está commiteado todavía. git status muestra 6 archivos nuevos sin trackear + Application.cpp/CMakeLists.txt/MainWindow.cpp/MainWindow.h/ESTADO.md modificados sin stagear. Último commit en el árbol es ffb219f69 (threat model de sesión 30).
+**Estado real de git al cierre de esta sección de la sesión:** nada de esto está commiteado todavía. git status muestra 6 archivos nuevos sin trackear + Application.cpp/CMakeLists.txt/MainWindow.cpp/MainWindow.h/ESTADO.md modificados sin stagear. Último commit en el árbol es 6abee553b (threat model de sesión 30).
 ### Sesión 32 — Firma criptográfica Ed25519 del updater + corrección de metodología de verificación (2026-07-08)
 
 **Contexto de arranque:** la sesión anterior se cortó (MCP colgado) en medio del build de verificación, dejando el código escrito en disco pero sin confirmar compilación, sin tests, sin commit. Esta sesión arrancó reconciliando el estado real del repo (git status/log/diff contra el árbol, no contra la transcripción) antes de tocar nada.
@@ -584,7 +584,7 @@ Confirmado en `PackInstallTask.cpp:61-63`: el `JvmArgs` del manifiesto del pack 
 
 **4. `.clang-format` faltante — investigado, no es un bug.**
 
-`git log --all --diff-filter=D -- .clang-format` muestra que se borró a propósito en un commit del proyecto (`ffe84d6ec "remove some dead things"`). No se restauró — fue una decisión deliberada previa, no algo perdido por error. Queda como está salvo que se pida explícitamente restaurarlo.
+*(Corrección sesión 45: el hash citado acá originalmente, `ffe84d6ec`, no existe — no es un typo de un dígito, es un hash completamente inventado. Re-verificado desde cero: `git log --follow --diff-filter=A -- .clang-format` y `git log --oneline -- .clang-format` sobre el historial propio de este fork no devuelven NADA — el archivo nunca existió en el árbol de commits de `BetelineyLauncher`, ni agregado ni borrado. El commit `3b0ea3f91 "remove some dead things"` que aparecía citado antes de esta corrección sí es real, pero pertenece al historial de `upstream/develop` de Prism Launcher (visible solo porque los remotes de upstream están fetcheados localmente) — no es ancestro de `main` de este fork, así que no es "un commit del proyecto" como se afirmaba. Conclusión correcta: `.clang-format` simplemente nunca se agregó acá, no es una decisión deliberada de borrado documentable con un hash propio.)*
 
 **Estado de git al cierre de esta sección:** el fix de `GDLauncherMigrator.cpp` + esta documentación quedan commiteados y pusheados junto con esta sección (ver hash de commit en el mensaje de cierre de sesión si ya se hizo el push).
 
@@ -602,11 +602,11 @@ Confirmado en `PackInstallTask.cpp:61-63`: el `JvmArgs` del manifiesto del pack 
 
 **1. Intento de build completo local con LTO — CONFIRMADO que se cuelga, causa aislada de si el fix es correcto.**
 
-Se lanzó `cmake --build . -j$(nproc)` (build completo, sin restringir targets) en background sobre el commit `350227d48`. Avanzó limpio hasta compilar y linkear `Launcher_logic` (la librería estática que contiene el fix de `GDLauncherMigrator.cpp`) y linkear `beteliney_updater`, `GradleSpecifier`, `GZip` (10/38 targets) — **el fix compila y linkea limpio dentro de la librería principal**, confirmado más allá de la compilación aislada de sesión 32. Después de eso el build se colgó: proceso `ninja` vivo pero 0% CPU, log sin crecer por más de 2 minutos. Se mató el proceso (`SIGKILL`) para no dejarlo zombie. Es el mismo patrón de cuelgue con LTO ya documentado en sesiones 20/27/29/31/32 — no revela nada nuevo sobre el fix en sí, solo reconfirma que el build completo local con LTO no es confiable en este entorno para verificación. Causa raíz del cuelgue en sí: **no investigada** (sigue pendiente si se quiere resolver la herramienta de verificación local, no bloqueante para el proyecto).
+Se lanzó `cmake --build . -j$(nproc)` (build completo, sin restringir targets) en background sobre el commit `c149bb9a0`. Avanzó limpio hasta compilar y linkear `Launcher_logic` (la librería estática que contiene el fix de `GDLauncherMigrator.cpp`) y linkear `beteliney_updater`, `GradleSpecifier`, `GZip` (10/38 targets) — **el fix compila y linkea limpio dentro de la librería principal**, confirmado más allá de la compilación aislada de sesión 32. Después de eso el build se colgó: proceso `ninja` vivo pero 0% CPU, log sin crecer por más de 2 minutos. Se mató el proceso (`SIGKILL`) para no dejarlo zombie. Es el mismo patrón de cuelgue con LTO ya documentado en sesiones 20/27/29/31/32 — no revela nada nuevo sobre el fix en sí, solo reconfirma que el build completo local con LTO no es confiable en este entorno para verificación. Causa raíz del cuelgue en sí: **no investigada** (sigue pendiente si se quiere resolver la herramienta de verificación local, no bloqueante para el proyecto).
 
 **2. CI de GitHub Actions — verificado con `gh run list`, no asumido: el build completo SÍ pasó, en un entorno limpio.**
 
-El commit `350227d48` (fix de path traversal) corrió en CI y terminó `completed success` en 14m11s. El commit `36af71d2c` (firma Ed25519) también `completed success`. Esto es evidencia más fuerte que el intento local fallido: confirma que el fix de GDLauncher compila y linkea el launcher completo de punta a punta en un entorno limpio (Ubuntu 24.04 CI), aunque localmente el build se cuelgue por un problema de entorno no relacionado con el código.
+El commit `c149bb9a0` (fix de path traversal) corrió en CI y terminó `completed success` en 14m11s. El commit `77e0f40cc` (firma Ed25519) también `completed success`. Esto es evidencia más fuerte que el intento local fallido: confirma que el fix de GDLauncher compila y linkea el launcher completo de punta a punta en un entorno limpio (Ubuntu 24.04 CI), aunque localmente el build se cuelgue por un problema de entorno no relacionado con el código.
 
 **Matiz importante encontrado sobre este punto:** el workflow de CI (`.github/workflows/build.yml`, líneas 80 y 164) tiene `-DBUILD_TESTING=OFF` hardcodeado. **CI nunca corre `ctest`, ni antes ni ahora.** Esto significa que "build completo + ctest" como pendiente (ítem 5 de la lista de sesión 32) va a seguir sin poder cerrarse vía CI para siempre — la única forma de correr ctest es localmente, que es justo donde el build se cuelga con LTO. Sigue pendiente encontrar una forma de compilar+testear localmente sin disparar el cuelgue (ej: targets restringidos como se hizo en sesión 32 para el updater, aplicado ahora al launcher principal + tests).
 
@@ -618,13 +618,13 @@ Aparece en la lista de secrets del repo, fecha `2026-07-09T01:02:19Z`, coincide 
 
 `find . -name "known-hashes.json"` no devolvió resultado porque se corrió dentro del checkout de `BetelineyLauncher` (el launcher). El archivo nunca vivió ahí — vive en `~/Descargas/meta_beteliney`, el clon local del repo `meta` (rama `gh-pages`), tal como ya documentaba correctamente la sesión 27. Verificado en sesión 34 leyendo el archivo real: existe, arrays `sha256`/`sha512` vacíos por diseño honesto (sesión 14), `comment` con la investigación completa, MD5 de Bitdefender documentados aparte sin usar por el scanner, y `sourcesChecked` con las 5 fuentes revisadas. No cambia la conclusión de fondo (el scanner sigue sin proteger nada en la práctica porque los arrays reales están vacíos), pero la sesión 33 se equivocó al decir que el archivo no existía — solo buscó en el repo que no correspondía.
 
-**5. `.clang-format` — reconfirmado ausente.** `ls .clang-format` en la raíz: no existe. Sigue siendo la misma condición preexistente documentada en sesión 32 (borrado a propósito en `ffe84d6ec`), sin cambios.
+**5. `.clang-format` — reconfirmado ausente.** `ls .clang-format` en la raíz: no existe. Ver corrección de sesión 45 más arriba (sesión 32): nunca existió en el historial propio del fork, no fue "borrado" acá.
 
 **6. Estado de git al cierre — todo limpio y sincronizado, verificado con comandos directos, no asumido:**
 - `git status --porcelain`: sin salida (árbol limpio).
 - `git stash list`: vacío.
-- `git branch -vv`: `main` apunta a `350227d48`, exactamente igual que `origin/main` (`[origin/main]` sin `ahead`/`behind`).
-- `git log -1` local y `git log -1 origin/main`: mismo hash (`350227d48`) en ambos.
+- `git branch -vv`: `main` apunta a `c149bb9a0`, exactamente igual que `origin/main` (`[origin/main]` sin `ahead`/`behind`).
+- `git log -1` local y `git log -1 origin/main`: mismo hash (`c149bb9a0`) en ambos.
 
 **Nada de código se tocó esta sesión — fue puramente de verificación/auditoría externa.** Único cambio: esta sección de documentación.
 
@@ -707,7 +707,7 @@ Aparece en la lista de secrets del repo, fecha `2026-07-09T01:02:19Z`, coincide 
 
 **Verificación de compilación — nota operativa:** el primer intento de build completo (`ninja -C build -j$(nproc)`) con LTO tardó lo suficiente como para que la herramienta de terminal reportara error de timeout dos veces seguidas (mismo síntoma ya documentado en sesiones 20/27/29/31/32/33 — el proceso del lado del servidor sigue corriendo bien, solo la herramienta no espera lo suficiente). Se relanzó en background con `nohup ... & disown` + log a archivo, sondeado sin bloquear. **Build final: 35/35 sin errores ni warnings** (`-Werror` activo). `ctest`: **29/29 tests pasando**, 2.89s.
 
-**Commit:** `b49a3cbc8` ("feat(achievements): sistema de logros de marca por tiempo jugado (Fase 3)"), 8 archivos, 288 inserciones.
+**Commit:** `17880fbb0` ("feat(achievements): sistema de logros de marca por tiempo jugado (Fase 3)"), 8 archivos, 288 inserciones.
 
 **Con esto, Fase 3 del plan de sesión 25 queda con el sistema de logros cerrado.** **Backlog restante:** ítem 11 (sandboxing Bubblewrap, sesión 35) sin empezar; los 7 pendientes reales de sesión 34 sin cambios (2 de ellos bloqueados exclusivamente por acción del usuario: purgar API keys viejas del historial de git, y conseguir API key de abuse.ch).
 
@@ -717,7 +717,7 @@ Aparece en la lista de secrets del repo, fecha `2026-07-09T01:02:19Z`, coincide 
 
 ### Sesión 37 — Causa raíz del cuelgue histórico del build local con LTO, resuelta (2026-07-11)
 
-**Contexto:** continuación directa de una sesión anterior cortada por límite de mensajes justo mientras se aplicaba el fix y se lanzaba el rebuild de verificación en background. Al retomar, se confirmó primero que la sesión 36 (logros de marca) había quedado cerrada y pusheada correctamente sin intervención (`b49a3cbc8` + `f5a2476a1` + `122ea57a3`, árbol limpio en ese momento) antes de tocar nada nuevo.
+**Contexto:** continuación directa de una sesión anterior cortada por límite de mensajes justo mientras se aplicaba el fix y se lanzaba el rebuild de verificación en background. Al retomar, se confirmó primero que la sesión 36 (logros de marca) había quedado cerrada y pusheada correctamente sin intervención (`17880fbb0` + `4b6d88167` + `8109283d0`, árbol limpio en ese momento) antes de tocar nada nuevo.
 
 **Diagnóstico confirmado:** el proyecto compila con `-flto=auto` (GCC). Este flag hace que **cada link individual** paralelice internamente su propia fase LTRANS hasta `nproc()` hilos. Sin un límite a nivel de Ninja, varios de esos links (el ejecutable principal `beteliney` + las ~16 herramientas chicas del repo) corrían en simultáneo, cada uno reclamando hasta 8 hilos propios — en una máquina de 8 cores / 13GB RAM esto multiplicaba el paralelismo real muy por encima de lo disponible, generando *swap thrashing* que se manifestaba como un cuelgue total del build. Confirmado contra el histórico: mismo síntoma documentado en sesiones 20, 27, 29, 31, 32, 33 y 36.
 
@@ -732,7 +732,7 @@ Limita a 2 los links simultáneos permitidos por Ninja cuando LTO está activo. 
 
 **Limpieza de paso:** dos archivos huérfanos y vacíos (`buildconfig/BuildConfig.h.in`, `launcher/BuildConfig.h.in`, 0 bytes cada uno) quedaron sin trackear de una operación de sesión anterior — no correspondían a ningún artefacto real del sistema de build (el archivo que el proyecto trackea es `buildconfig/BuildConfig.h`, sin `.in`; el `.in` real es `BuildConfig.cpp.in`). Eliminados antes de comitear.
 
-**Commit:** `3bba3a54c` ("fix(build): job pool para links con LTO, resuelve cuelgue histórico"), 1 archivo, 11 inserciones.
+**Commit:** `af88e5b88` ("fix(build): job pool para links con LTO, resuelve cuelgue histórico"), 1 archivo, 11 inserciones.
 
 **Con esto quedan cerrados los pendientes 5 (`ctest` de GDLauncherMigrator) y 7 (causa raíz del cuelgue de LTO) que venían arrastrándose desde sesión 32.** Pendientes reales restantes: 6 puntos (ver bloque ESTADO ACTUAL), de los cuales solo 2 dependen de acción del usuario (API key de abuse.ch, confirmación de purga de historial de git). El resto (meta server sin auditar línea por línea, pruebas manuales de GUI, firma real en CI end-to-end, sandboxing con Bubblewrap) se puede seguir trabajando sin bloqueos.
 
@@ -795,11 +795,11 @@ Limita a 2 los links simultáneos permitidos por Ninja cuando LTO está activo. 
 **#5, primera mitad (clave de firma):** se buscó `/tmp/beteliney_signing/release_signing_key.pem` (mencionado en el historial de sesión 32 como pendiente de subir a GitHub Secrets) — **ya no existe**. Ambiguo: o el usuario ya la subió a `RELEASE_SIGNING_KEY` y limpió el archivo (bien), o `/tmp` se limpió solo sin que se subiera nunca (mal, la clave se perdería y habría que regenerar el par Ed25519 completo, incluyendo la pública embebida en el binario del updater). No hay forma de comprobar esto desde el entorno de Claude — GitHub Secrets no se pueden leer ni por el dueño del repo una vez cargados. Pendiente que el usuario lo confirme directamente.
 
 **#3 y #5 (segunda mitad) — el hallazgo grande:** al intentar verificar si el push estaba al día (para poder evaluar #5 de verdad), `git push origin main` fue rechazado por `non-fast-forward`. Investigando por qué:
-- `git merge-base main origin/main` no devuelve nada — **cero ancestro común** entre el `main` local (97 commits, raíz `09eb67f74` "BetelineyLauncher v8.2.0") y `origin/main` (94 commits, raíz `2915f1842`, mismo mensaje exacto, hash distinto). Se repite el mismo patrón en toda la historia (mismos mensajes de commit, hashes distintos) — firma inequívoca de una reescritura completa de historial ya ejecutada en algún momento sobre el repo local, nunca subida.
+- `git merge-base main origin/main` no devuelve nada — **cero ancestro común** entre el `main` local (97 commits, raíz `09eb67f74` "BetelineyLauncher v8.2.0") y `origin/main` (94 commits, raíz `09eb67f74`, mismo mensaje exacto, hash distinto). Se repite el mismo patrón en toda la historia (mismos mensajes de commit, hashes distintos) — firma inequívoca de una reescritura completa de historial ya ejecutada en algún momento sobre el repo local, nunca subida.
 - Para confirmar que esto correspondía al pendiente #3 (purga de la API key vieja de CurseForge) y no a otra cosa, se corrió `git log -p` sobre cada rama buscando el patrón bcrypt real de esas keys (`\$2[aby]\$[0-9]{2}\$[A-Za-z0-9./]{53}`, tomado de `tools/dev/secret_scan.sh`): **24 apariciones en `origin/main`, 0 en `main` local.** Esto confirma con certeza (no supuesto) que la purga ya se hizo en local — falta únicamente el `git push --force origin main` que reemplaza el historial público.
 - **No se ejecutó el force-push.** Es irreversible, rompe cualquier fork/clone existente de terceros, y sesiones anteriores lo marcaron explícitamente como pendiente de confirmación puntual del usuario — una instrucción general tipo "hacé todo" no cubre una acción de esta naturaleza sin que el usuario sepa específicamente qué se le está preguntando. Se le explicó la situación completa (incluyendo que la key vieja ya está rotada, o sea no es una fuga activa, solo residual en historial público) y se le preguntó puntualmente. Al momento de escribir esta entrada, la confirmación específica no había llegado — el usuario pidió documentar primero.
 
-**Consecuencia para #5:** con esto se explica por qué el paso de firma en CI nunca se probó de punta a punta — nada llega a `origin/main` desde la sesión 38 (`21e6d63fb` es el último commit real en GitHub), así que ningún workflow de CI corrió para ninguno de los ~15 commits posteriores, y no puede haber un release real que ejercite la firma.
+**Consecuencia para #5:** con esto se explica por qué el paso de firma en CI nunca se probó de punta a punta — nada llega a `origin/main` desde la sesión 38 (`254f05760` es el último commit real en GitHub), así que ningún workflow de CI corrió para ninguno de los ~15 commits posteriores, y no puede haber un release real que ejercite la firma.
 
 **Sin cambios de código en esta sesión — commit único es este de documentación.** `ESTADO.md` es el único archivo tocado: bloque `ESTADO ACTUAL` reescrito (pendientes #3 y #5 actualizados con el hallazgo), addendum de sesión 39 agregado arriba, y esta entrada.
 
