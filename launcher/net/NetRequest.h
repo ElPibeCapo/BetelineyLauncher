@@ -120,6 +120,17 @@ class NetRequest : public Task {
     int m_checksumRetryCount = 0;
     static constexpr int MAX_CHECKSUM_RETRIES = 3;
     QTimer m_retryTimer;
+
+    // Auditoría de seguridad (sesión 45, meta server): handleRedirect() llamaba a
+    // executeTask() recursivamente sin límite de profundidad ni detección de bucle.
+    // Un servidor malicioso o mal configurado (meta server comprometido, MetaURLOverride
+    // apuntando a un host hostil, o incluso un CDN con un bug real) que devuelva una
+    // cadena de redirects circular hace que esto recurse indefinidamente hasta
+    // stack overflow y crash del launcher — no es exclusivo de meta, NetRequest es la
+    // base de TODAS las descargas (mods, updater, malware scanner, meta). Fix: límite
+    // duro de redirects, mismo criterio que usan navegadores y curl (~5-10).
+    int m_redirectCount = 0;
+    static constexpr int MAX_REDIRECTS = 10;
 };
 }  // namespace Net
 

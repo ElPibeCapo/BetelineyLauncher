@@ -31,7 +31,11 @@ case "$MODE" in
   tests)
     echo "[build_fast] Reconfigurando con -DBUILD_TESTING=ON ..." | tee -a "$LOG_FILE"
     cmake -S . -B "$BUILD_DIR" -DBUILD_TESTING=ON >>"$LOG_FILE" 2>&1
-    TARGETS="Launcher_logic BetelineyTranslation_test"
+    # Sesion 45: "Launcher_logic BetelineyTranslation_test" apuntaba a un target
+    # que nunca existio (ninja: error: unknown target). El target real que
+    # compila TODOS los ejecutables de test es "tests/all"; "test" aparte
+    # es el driver de CTest que los corre (requiere que ya esten compilados).
+    TARGETS="Launcher_logic tests/all"
     ;;
   updater)
     echo "[build_fast] Reconfigurando con -DLauncher_BUILD_ARTIFACT=linux-x86_64 ..." | tee -a "$LOG_FILE"

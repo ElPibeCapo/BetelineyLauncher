@@ -262,8 +262,15 @@ auto NetRequest::handleRedirect() -> bool
         qCDebug(logCat) << getUid().toString() << "Location header:" << redirect;
     }
 
+    if (++m_redirectCount > MAX_REDIRECTS) {
+        qCCritical(logCat) << getUid().toString() << "Too many redirects (" << MAX_REDIRECTS << "), aborting to" << redirect.toString();
+        downloadError(QNetworkReply::TooManyRedirectsError);
+        return false;
+    }
+
     m_url = QUrl(redirect.toString());
-    qCDebug(logCat) << getUid().toString() << "Following redirect to" << m_url.toString();
+    qCDebug(logCat) << getUid().toString() << "Following redirect to" << m_url.toString() << "(" << m_redirectCount << "/"
+                     << MAX_REDIRECTS << ")";
     executeTask();
 
     return true;
