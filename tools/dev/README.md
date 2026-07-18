@@ -17,7 +17,7 @@ cuando pase se detecte en segundos en vez de sesiones enteras de auditoría.
 ## Uso rápido
 
 ```bash
-# Arrancar una sesión nueva sin leer 1358 líneas
+# Arrancar una sesión nueva sin leer 900+ líneas
 tools/dev/estado_actual.sh
 
 # Compilar sin colgarse (elegí el modo según qué necesitás)
