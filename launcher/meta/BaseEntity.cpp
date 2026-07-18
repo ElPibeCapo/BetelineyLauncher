@@ -45,6 +45,20 @@ class ParsingValidator : public Net::Validator {
     }
     bool write(QByteArray& data) override
     {
+        // Auditoría de seguridad (sesión 45, meta server): sin este tope, un meta
+        // server comprometido (o cualquier respuesta HTTP inesperada, feed roto,
+        // MetaURLOverride hostil) podía mandar una respuesta de tamaño arbitrario
+        // y esto la acumulaba entera en memoria sin límite -> agotamiento de RAM.
+        // El archivo de meta real mas grande medido en el repo (net.minecraftforge/
+        // index.json) pesa ~1.7 MB; 32 MB deja margen de sobra para crecimiento
+        // legitimo sin permitir un blowup arbitrario.
+        static constexpr qint64 MAX_META_RESPONSE_BYTES = 32 * 1024 * 1024;
+        if (m_data.size() + data.size() > MAX_META_RESPONSE_BYTES) {
+            qWarning() << "Meta response for" << m_entity->localFilename() << "exceeds"
+                       << (MAX_META_RESPONSE_BYTES / (1024 * 1024)) << "MB, aborting";
+            m_data.clear();
+            return false;
+        }
         this->m_data.append(data);
         return true;
     }

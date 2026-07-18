@@ -60,6 +60,19 @@ class ByteArraySink : public Sink {
 
     auto write(QByteArray& data) -> Task::State override
     {
+        // Auditoría de seguridad (sesión 45, meta server / NetRequest): sin este tope,
+        // cualquier respuesta HTTP dirigida a un ByteArraySink (auth MSA, búsquedas de
+        // mods CurseForge/Modrinth/ATLauncher/Technic/FTB, manifests de versión Minecraft,
+        // BetelineyPacks) se acumulaba entera en memoria sin límite -> agotamiento de RAM
+        // ante un servidor comprometido o una respuesta inesperadamente grande. No cubre
+        // descargas de archivos de mods: esas usan FileSink (streaming a disco), no este.
+        // 64 MB deja margen de sobra sobre cualquier JSON de listado/manifest real visto
+        // en este codebase (el más pesado documentado, meta/index.json, pesa ~1.7 MB).
+        static constexpr qint64 MAX_BYTEARRAY_SINK_BYTES = 64 * 1024 * 1024;
+        if (m_output.size() + data.size() > MAX_BYTEARRAY_SINK_BYTES) {
+            m_fail_reason = QString("Response exceeds %1 MB limit, aborting").arg(MAX_BYTEARRAY_SINK_BYTES / (1024 * 1024));
+            return Task::State::Failed;
+        }
         m_output.append(data);
         if (writeAllValidators(data))
             return Task::State::Running;
