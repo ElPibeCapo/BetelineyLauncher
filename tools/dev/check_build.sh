@@ -9,7 +9,10 @@ set -uo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 LOG_DIR="$REPO_ROOT/tools/dev/.buildlogs"
-BUILD_DIR="${BUILD_DIR:-$REPO_ROOT/build}"
+# Sesion 45: default cambiado a build-dev/ (sin LTO) para que coincida con el
+# nuevo default de build_fast.sh. Usar BUILD_DIR=build para chequear un build
+# de release real (Release+LTO) lanzado con "build_fast.sh release".
+BUILD_DIR="${BUILD_DIR:-$REPO_ROOT/build-dev}"
 BINARY="${1:-$BUILD_DIR/beteliney}"
 
 if [[ ! -f "$LOG_DIR/last_pid" ]]; then
