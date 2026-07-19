@@ -26,7 +26,14 @@
 | Commit | Cambio |
 |---|---|
 | `efe33a69e` | **Use-after-free en `BackgroundModUpdateCheckTask`** — `m_instance` era un puntero crudo a `MinecraftInstance`; si el usuario borraba la instancia mientras el chequeo de mods en background seguía en red, el callback final escribía sobre memoria liberada. Fix: `QPointer<MinecraftInstance>` (Qt lo pone en `nullptr` solo al destruirse el objeto) + guard defensivo adicional. |
-| `af88e5b88` | **Cuelgue histórico del build local con LTO, causa raíz resuelta** — cada link con `-flto=auto` paralelizaba internamente hasta `nproc()` hilos propios; sin límite, Ninja corría varios links en simultáneo multiplicando el paralelismo muy por encima de cores/RAM disponibles, generando swap thrashing (síntoma arrastrado desde sesiones 20/27/29/31/32/33/36). Fix: `JOB_POOLS lto_link_pool=2`, limita a 2 links simultáneos. |
+| `af88e5b88` | **Cuelgue histórico del build local con LTO, causa raíz resuelta (parcial)** — cada link con `-flto=auto` paralelizaba internamente hasta `nproc()` hilos propios; sin límite, Ninja corría varios links en simultáneo multiplicando el paralelismo muy por encima de cores/RAM disponibles, generando swap thrashing (síntoma arrastrado desde sesiones 20/27/29/31/32/33/36). Fix de ese momento: `JOB_POOLS lto_link_pool=2`, limita a 2 links simultáneos — mitigó el cuelgue pero no la causa de fondo, ver `8d6d34cf8`. |
+| `8d6d34cf8` | **`build-dev/` sin LTO, causa de fondo del punto anterior resuelta** — `lto_link_pool=2` seguía sobre-suscribiendo el CPU al doble (2 links simultáneos × `-flto=auto` = hasta `2×nproc` procesos `lto1` compitiendo por `nproc` núcleos reales), porque `build/` quedaba cacheado como `Release`+`ENABLE_LTO=ON` para cada iteración de desarrollo, no solo para releases. Medido: build completo desde cero en `build/` llegó a 9 horas sin terminar (31/51 targets, load average ~15); el mismo build en `build-dev/` nuevo (`RelWithDebInfo`, LTO off, linker `lld`) tardó 19m51s, 0 errores, 31/31 tests. `tools/dev/build_fast.sh`/`check_build.sh` usan `build-dev/` por defecto ahora; `build/` (Release+LTO real) queda para verificación final pre-release (`build_fast.sh release`). |
+
+### Correcciones
+
+| Commit | Cambio |
+|---|---|
+| `b5dfbd239` | **Badge de detección de GraalVM mostraba una cifra de rendimiento sin fuente verificable** (`JavaSettingsWidget.cpp`) — "+10-20% FPS en Minecraft", la misma cifra que `ESTADO.md` (sesión 42) ya había marcado como no verificada, cita mal puesta en un documento externo apuntando a un artículo sin relación con JVM. La documentación se había corregido pero el texto de UI (visible al usuario real) había quedado sin tocar. Se saca el número; queda solo la afirmación técnica real (JIT más agresivo que OpenJDK), sin comprometerse con ninguna cifra hasta medirla en hardware propio. |
 
 ### Nuevas funciones
 
