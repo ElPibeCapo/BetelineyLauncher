@@ -125,7 +125,15 @@ JavaSettingsWidget::JavaSettingsWidget(BaseInstance* instance, QWidget* parent)
                 proc->deleteLater();
                 if (out.contains("GraalVM", Qt::CaseInsensitive)) {
                     // Extraer versión GraalVM del output
-                    QString badge = tr("⬡ GraalVM CE detectado — JIT mejorado (+10-20% FPS en Minecraft)");
+                    // Sesión 45: la cifra "+10-20% FPS" que estaba acá venía de una fuente
+                    // ya marcada como no verificada/cita mal puesta en ESTADO.md (sesión 42,
+                    // "Hoja de Ruta de Excelencia Técnica 2026" — su referencia sobre GraalVM
+                    // apuntaba a un artículo sin relación con JVM). Se corrigió la documentación
+                    // pero este texto de UI, que el usuario ve de verdad, había quedado sin
+                    // tocar mostrando la misma cifra sin respaldo. Se saca el número; queda
+                    // solo la afirmación técnica real (JIT más agresivo, documentado por
+                    // GraalVM/Oracle) sin comprometerse con ningún porcentaje sin medir.
+                    QString badge = tr("⬡ GraalVM CE detectado — compilador JIT más agresivo que OpenJDK");
                     QString vendor = "GraalVM";
                     // Buscar "GraalVM CE X.Y.Z" en output
                     QRegularExpression re(R"(GraalVM CE [\d.]+)");
