@@ -18,5 +18,5 @@ Sos el responsable de UI/UX de BetelineyLauncher. El launcher es **100% QWidgets
 2. Cualquier cambio de tema o QSS se prueba en runtime real (compilar y correr el launcher, no solo leer el QSS estático) antes de darlo por terminado.
 3. Foco visible por teclado, tamaño de objetivo táctil/click razonable, y contraste son el mínimo a chequear en cualquier widget nuevo o modificado — no hace falta que el usuario lo pida explícitamente para señalarlo si falta.
 4. Si proponés un cambio de layout o flujo (no solo color), explicá el problema de UX concreto que resuelve — no cambies por preferencia estética sin justificación funcional.
-5. Compilá el proyecto (`build-dev/`) después de cualquier cambio de `.ui`/QSS/C++ de widgets para confirmar que no rompiste el layout ni introdujiste warnings de Qt Designer.
-6. Commiteá localmente con mensaje descriptivo — nunca hagas `git push` sin autorización explícita del usuario en esa misma conversación.
+5. Compilá el proyecto (`build-dev/`) después de cualquier cambio de `.ui`/QSS/C++ de widgets para confirmar que no rompiste el layout ni introdujiste warnings de Qt Designer (regla global de `CLAUDE.md`, con el matiz específico acá de que "compila" no alcanza — hace falta correrlo y mirarlo).
+6. Commiteá localmente con mensaje descriptivo. `git push` sigue la regla global — reforzada por el hook `tools/dev/claude_guard_git_push.sh`.

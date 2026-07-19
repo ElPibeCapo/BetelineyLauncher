@@ -13,6 +13,7 @@ cuando pase se detecte en segundos en vez de sesiones enteras de auditoría.
 | `check_meta_urls.sh` | `keep_files:false` en el workflow de `meta` borraba todo el contenido Beteliney (packs/malware/news) cada 6h por cron | 15 |
 | `secret_scan.sh` + `install_hooks.sh` | La API key de CurseForge quedó commiteada en texto plano y expuesta públicamente | 15 |
 | `estado_actual.sh` | `ESTADO.md` pasó las 1300+ líneas; el propio documento pide leer solo la sección "ESTADO ACTUAL" para arrancar, pero nadie automatizó extraerla | — |
+| `claude_guard_git_push.sh` | La regla "`git push` requiere autorización explícita" vivía solo como texto en `CLAUDE.md`/cada agente — no determinístico. Hook `PreToolUse` de Claude Code (`.claude/settings.json`), no un git hook: fuerza el prompt de confirmación real ante cualquier `git push`, en este repo o en `meta` | 48 |
 
 ## Uso rápido
 
