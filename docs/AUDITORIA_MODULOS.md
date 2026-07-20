@@ -1,0 +1,186 @@
+# Auditoría de Módulos — Registro de Estado de Revisión
+
+> Documento vivo. Se crea el **2026-07-19** (chat separado, fuera de la numeración de sesiones de
+> Claude Code que usa `ESTADO.md` — ver nota en ese documento) a partir de un fallo real: durante 48
+> sesiones,
+> ninguna documentación distinguía "módulo verificado" de "módulo heredado de Prism y nunca mirado" —
+> lo que llevó a asumir por defecto que todo estaba en orden simplemente porque nadie había reportado
+> un problema. `minecraft/auth/` (login Microsoft, manejo de tokens de sesión) llevaba **cero commits
+> de revisión desde el fork**, y nadie lo había documentado como hueco hasta que se preguntó explícitamente.
+> Este documento existe para que esa ambigüedad no vuelva a pasar desapercibida.
+
+## Regla de mantenimiento — leer antes de tocar cualquier carpeta de `launcher/`
+
+Si una carpeta no aparece acá con evidencia de revisión (commit real + fecha + qué se encontró), se
+trata como **NO REVISADA**, nunca como "probablemente bien". Cualquier sesión que audite, toque o
+descarte una carpeta debe actualizar su fila. No se permite marcar "revisado" sin un commit real o una
+verificación reproducible (comando corrido, resultado observado) que lo respalde — ninguna entrada de
+esta tabla se basa en memoria ni en suposición. Mismo estándar que ya rige el resto de `ESTADO.md`.
+
+## Metodología
+
+Para cada subcarpeta de `launcher/`: `git log --oneline 09eb67f74..HEAD -- launcher/<carpeta>/`
+(`09eb67f74` es el commit de fork real, confirmado contra el tag `11.0.0` de upstream — diff limpio en
+archivos no tocados por branding), filtrando commits de branding/docs para aislar trabajo real de
+revisión de lógica. Esa parte (revisión propia contra la propia historia) es correcta tal cual y no
+cambió.
+
+Para comparar contra lo que upstream arregló y este fork **no trajo**, la base correcta es el tag de
+upstream `11.0.0` (no `09eb67f74` — ver nota de auto-corrección más abajo), contra el tag más reciente
+(`11.0.3`). Ese proceso ya no se corre a mano: `tools/dev/audit_upstream.sh` lo automatiza completo
+(agrega/actualiza el remote `upstream`, detecta el último tag real, filtra por palabras clave de
+seguridad, y chequea con `git merge-base --is-ancestor` cuáles ya están aplicados en `main`). Correrlo
+de nuevo cada vez que Prism saque un tag nuevo, o periódicamente — no solo cuando surge la duda.
+
+## Tabla de estado por módulo (`launcher/`)
+
+| Carpeta | Origen | Commits de revisión propia* | Último commit real | Estado |
+|---|---|---|---|---|
+| `net/` | Heredado | 2 | `f9acc39a4` (2026-07-18) | ✅ Auditado — límite de redirects, tope de memoria, crash fix |
+| `meta/` | Heredado | 3 | `f9acc39a4` (2026-07-18) | ✅ Auditado — 2 path traversal + tope de memoria |
+| `migration/` | Mixto | 3 | `c149bb9a0` (2026-07-08) | ✅ Auditado — path traversal en importador GDLauncher |
+| `updater/` | Propio | 6 | `067aaa01b` (2026-07-15) | ✅ Auditado — mayormente código propio (BetelineyUpdater) |
+| `minecraft/mod/` | Heredado | 5 | `efe33a69e` (2026-07-07) | ⚠️ Parcial — 1 use-after-free real corregido, resto sin revisar a fondo |
+| `minecraft/launch/` | Mixto | 3 | `da70d0e6b` (2026-07-11) | ⚠️ Parcial — trabajo fue feature propia (sandboxing), no auditoría de lo heredado |
+| `ui/` | Mixto | 11 | `b5dfbd239` (2026-07-18) | ⚠️ Parcial — mayoría features/temas propios, no auditoría de seguridad de lo heredado |
+| `launch/` (steps) | Heredado | 1 | `f33bf6191` (2026-06-17) | ⚠️ Parcial — solo se agregó una feature encima (CheckModConflicts), resto sin tocar |
+| `crash/` | Propio | 2 | `4c6596960` (2026-06-19) | N/A — código propio (CrashReporter) |
+| `logs/` | Propio | 1 | `43708b311` (2026-06-16) | N/A — código propio (LogAnalyzer) |
+| `modplatform/` | Heredado (salvo `beteliney/`) | 3, ninguno de fondo | `a3eb3e767` (2026-07-06) | ❌ **Nunca auditado** — ver hallazgo abajo |
+| `minecraft/auth/` | 100% heredado | 0 | nunca | ⚠️ Parcial — 2 de 11 fixes priorizados verificados (ninguno aplica, ya resueltos por otra vía) + investigación a fondo de `MSAStep.cpp` cerrada como no-problema (2026-07-19). Sin auditoría línea por línea todavía de `Parsers.cpp`/`AccountData.cpp`/`MinecraftAccount.cpp` ni del resto de `steps/` |
+| `minecraft/skins/` | 100% heredado | 0 | nunca | ❌ Nunca auditado |
+| `minecraft/update/` | 100% heredado | 0 | nunca | ❌ Nunca auditado |
+| `tasks/` | 100% heredado | 0 | nunca | ❌ Nunca auditado (infraestructura transversal — riesgo medio-alto por eso mismo) |
+| `java/` | 100% heredado | 0 | nunca | ❌ Nunca auditado (detección/lanzamiento de binarios Java — riesgo medio) |
+| `settings/` | 100% heredado | 0 | nunca | ❌ Nunca auditado |
+| `archive/` | 100% heredado | 0 | nunca | ❌ Nunca auditado |
+| `console/` | 100% heredado | 0 | nunca | ❌ Nunca auditado |
+| `filelink/` | 100% heredado | 0 | nunca | ❌ Nunca auditado |
+| `news/` | 100% heredado | 0 | nunca | ❌ Nunca auditado |
+| `tools/` | 100% heredado | 0 | nunca | ❌ Nunca auditado |
+| `icons/` | 100% heredado | 0 | nunca | ❌ Nunca auditado (riesgo bajo — solo íconos) |
+| `macsandbox/` | 100% heredado | 0 | nunca | ❌ Nunca auditado (no compila en Linux — riesgo bajo para el hardware objetivo) |
+
+\* Excluye commits de branding/traducción/docs. Un número >0 no implica auditoría de seguridad completa
+— ver columna Estado para el detalle real de qué se hizo.
+
+## Hallazgo concreto — corregido: no son 3, son 53 (ver nota de auto-corrección abajo)
+
+**Nota de auto-corrección (2026-07-19, mismo día):** la primera versión de este documento reportaba
+"3 fixes reales de upstream sin aplicar", encontrados corriendo el diff a mano. Al convertir ese
+proceso en un script repetible (`tools/dev/audit_upstream.sh`, ver más abajo) salieron dos bugs en el
+método manual, no en los 3 hallazgos en sí (esos siguen siendo reales y siguen sin aplicar):
+
+- El rango de comparación usaba `09eb67f74` (el primer commit de *este* repo) como base contra tags
+  de *upstream* — pero ese commit no vive en la misma línea de historia que upstream, así que un rango
+  `A..B` con esa base no refleja lo que se buscaba comparar. La base correcta es el tag de upstream con
+  el que ese commit tiene diff limpio: `11.0.0`.
+- Una vez corregida la base, el filtro de palabras clave (`git log --grep -iE ...`) tenía un typo de
+  sintaxis (`-iE` no es una flag válida de git, se necesita `-i -E` por separado) que fallaba con
+  `fatal: argumento no reconocido`, error que quedaba silenciado por un `2>/dev/null` — el script
+  reportaba "0 encontrados" cuando en realidad estaba fallando por completo, no encontrando cero por
+  auditoría limpia. Ese es exactamente el patrón de "ausencia de evidencia interpretada como evidencia
+  de ausencia" contra el que existe este documento — corregido en el propio script para que un error
+  de `git` aborte con mensaje explícito en vez de imprimir un resultado vacío.
+
+Con la base y el filtro corregidos, `tools/dev/audit_upstream.sh` (rango `11.0.0..11.0.3`, mismas
+palabras clave que la búsqueda manual original) encuentra **53 commits** de upstream con mensajes de
+seguridad/crash/leak que tocan carpetas heredadas y **ninguno de los 53 está aplicado en `main`**
+(confirmado por el script con `git merge-base --is-ancestor` contra cada hash). Los 3 originales siguen
+adentro de esos 53. De los 53, el siguiente subconjunto es el de mayor severidad real —
+path traversal, overflow, use-after-free, o etiquetado `security(...)` explícitamente por upstream —
+priorizado sobre el resto, que son en su mayoría crashes puntuales y memory leaks reales pero de menor
+severidad:
+
+1. **`0c2b3b384`** — *fix atl path traversal* (`modplatform/`). Mismo tipo de vulnerabilidad ya cerrada
+   en el importador GDLauncher y en el feed de meta, pero en un rincón de `modplatform/` nunca tocado.
+2. **`56936cf48`** — *fix zip path traversal* (`minecraft/launch/`, `archive/`).
+3. **`5a0931d3c`** — *fix heap overflow with unstable version comparation* (`modplatform/`).
+4. **`3967fde40`** — *fix heap buffer overflow* (`modplatform/`), confirmado por el mantenedor upstream.
+5. **`5f874330d`** — *security(modrinth) reorder hash algo priority, prefer stronger hashes* (`modplatform/`).
+6. **`ac13579b9`** — *fix heap-use-after-free in modrinth creation task* (`modplatform/`).
+7. **`ded77e618`** — *Fix NetJob use-after-free* (`modplatform/`).
+8. **`9cd199a49`** — *fix use-after-free crash caused by QtConcurrent* (`archive/`).
+9. ~~**`345641f7d`** — *sanitize some MSA auth logging*~~ — **verificado 2026-07-19, NO aplica: ver
+   nota de re-verificación más abajo.** Su archivo base (`minecraft/auth/flows/AuthContext.cpp`,
+   arquitectura vieja) ya no existe — reemplazado por la arquitectura `steps/` actual, que resuelve el
+   mismo problema (tokens crudos en logs) de forma mejor: `qCDebug(authCredentials())` con
+   `DEFAULT_SEVERITY Warning` (`launcher/CMakeLists.txt`), o sea que esos logs no imprimen nada salvo
+   que el usuario habilite el debug de esa categoría a mano. Cherry-pick intentado y descartado — sin
+   diff que aplicar.
+10. ~~**`f4b22dae9`** — *fix accounts crash*~~ — **verificado 2026-07-19, NO aplica.** `git cherry-pick`
+    con `--no-commit` produjo diff vacío: el campo `m_name` que causaba el crash ya no existe en
+    `AccountList.cpp`/`.h` actuales — el bug ya no está presente, aparentemente resuelto por una
+    refactorización posterior no relacionada a este commit puntual.
+11. **`710789b70`** — *security-scoped bookmarks* (`settings/`, macOS) — prioridad baja para este
+    proyecto, el hardware/SO objetivo es Linux, no macOS.
+
+**Nota de re-verificación (2026-07-19, misma tarde, al intentar aplicar los cherry-picks):** de los 11
+priorizados, se intentaron los 2 de `minecraft/auth/` primero, autorizado por el usuario. Ninguno de
+los 2 aplicaba — ver el tachado en los ítems 9 y 10 arriba. Esto revela una limitación real del método
+del script: `merge-base --is-ancestor` solo detecta si el commit exacto está en la historia, no si el
+problema que soluciona ya fue resuelto por una vía distinta (refactor posterior, arquitectura
+reemplazada). Los 9 restantes de la lista de 11 no fueron re-verificados todavía — quedan con el mismo
+nivel de confianza que antes (fix real, según mensaje de commit; no garantizado que apliquen limpio
+hasta intentarlo uno por uno).
+
+**Hallazgo de `MSAStep.cpp`, investigado a fondo y cerrado como no-problema (2026-07-19, misma tarde):**
+la primera lectura de este documento decía que `qWarning() << "OAuth2 request failed:" << reply->readAll();`
+podía filtrar el `code=` de la redirección OAuth. Verificado contra la documentación oficial de Qt
+(`QAbstractOAuthReplyHandler::networkReplyFinished`: *"After the server determines whether the request
+is valid this function will be called... to get the data received from the server"*) y confirmado que
+ese lectura era incorrecta: `networkReplyFinished` no maneja el callback local del navegador — es el
+hook que Qt dispara cuando termina la petición saliente de **intercambio de token** contra
+`login.microsoftonline.com/consumers/oauth2/v2.0/token`. `reply` es la respuesta de Microsoft a esa
+petición, no la redirección del navegador. Verificado además contra `git show 11.0.3:.../MSAStep.cpp`:
+el patrón es idéntico, línea por línea, a upstream actual — no es código de Beteliney. Y verificado
+contra la documentación de Microsoft Entra sobre errores de OAuth2 (`reference-error-codes`): el cuerpo
+de error de ese endpoint contiene únicamente `error`, `error_description`, `error_codes`, `trace_id`,
+`correlation_id`, `timestamp` — nunca el `access_token`, `refresh_token`, ni el código de autorización
+(por definición, un intercambio fallido no emite tokens). Conclusión real: **no es una fuga de
+credenciales**, es logging de diagnóstico estándar de OAuth2 (útil para depurar "no puedo iniciar
+sesión", el reporte de soporte más común de cualquier launcher), heredado sin cambios de upstream, y no
+justifica un parche local unilateral contra el propio criterio del proyecto original. Cerrado — no
+requiere acción.
+
+
+
+Los 42 restantes son crashes puntuales y memory leaks reales de `modplatform/`, `minecraft/mod/`,
+`net/`, `tasks/`, `java/` — no re-listados acá uno por uno para no inflar este documento; correr
+`tools/dev/audit_upstream.sh` de nuevo para verlos todos con hash y carpeta.
+
+**Pendiente de acción — actualizado tras el intento real:** de los 11 priorizados, 2 (`auth/`) ya están
+descartados (no aplican, ver arriba); quedan 9 sin intentar. Seguir con esos 9 uno por uno, luego
+evaluar los 42 restantes (no en bloque — cherry-pick masivo sin revisar cada diff individual sería
+repetir el mismo error de fondo que generó este documento, solo que más rápido). Compilar y correr
+`ctest` completo después de cada tanda. Requiere autorización del usuario antes de tocar el árbol de
+trabajo — mismo criterio ya usado para autorizar el intento de hoy.
+
+## Hallazgo documentado, sin acción tomada — almacenamiento de tokens en `minecraft/auth/`
+
+`AccountData.cpp`/`.h` serializa `accessToken`/`refresh_token` (Microsoft/Xbox/Minecraft) como JSON
+plano en disco (`accounts.json`), sin cifrar. No es un bug introducido por este proyecto — es el diseño
+estándar heredado de PrismLauncher/MultiMC, y el mismo patrón que usan prácticamente todos los
+launchers de este tipo (protección delegada al permiso de archivo del sistema operativo, sin capa
+propia). Se documenta acá como **pregunta abierta, no como hallazgo cerrado**: nunca se evaluó
+explícitamente si vale la pena agregar cifrado a nivel SO (`libsecret`/keyring en Linux, DPAPI en
+Windows) dado el modelo de amenaza real de este proyecto. Sin decisión tomada.
+
+## Próximos pasos recomendados, en orden de prioridad real (actualizado 2026-07-19, tras el intento real)
+
+1. Cherry-pick de los **9 fixes restantes** de mayor severidad (de los 11 originales, 2 ya se
+   descartaron — ver arriba): `0c2b3b384`, `56936cf48`, `5a0931d3c`, `3967fde40`, `5f874330d`,
+   `ac13579b9`, `ded77e618`, `9cd199a49`, `710789b70` — uno por uno, no en bloque, compilando y
+   corriendo `ctest` después de cada uno. Requiere autorización explícita antes de tocar el árbol de
+   trabajo, mismo criterio ya usado hoy.
+2. Evaluar los 42 fixes de severidad menor restantes, uno por uno.
+3. Primera auditoría línea por línea (no solo diff de mensajes de commit) de `Parsers.cpp`,
+   `AccountData.cpp`, `MinecraftAccount.cpp` y el resto de `minecraft/auth/steps/` no cubierto
+   todavía — lo que se hizo hoy fue puntual (2 commits + `MSAStep.cpp`), no una pasada completa de la
+   carpeta.
+4. Primera pasada sobre `modplatform/` más allá de los fixes puntuales ya identificados por el script —
+   sigue siendo la carpeta con más superficie de código externo nunca mirado (Modrinth, CurseForge,
+   FTB, Technic, Packwiz, ATLauncher).
+5. **[Hecho — 2026-07-19]** Repetir el diff contra `upstream` cada vez que Prism saque un tag nuevo:
+   convertido en `tools/dev/audit_upstream.sh`, ya no depende de acordarse ni de repetir comandos a
+   mano.
