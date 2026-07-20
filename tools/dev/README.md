@@ -14,6 +14,7 @@ cuando pase se detecte en segundos en vez de sesiones enteras de auditoría.
 | `secret_scan.sh` + `install_hooks.sh` | La API key de CurseForge quedó commiteada en texto plano y expuesta públicamente | 15 |
 | `estado_actual.sh` | `ESTADO.md` pasó las 1300+ líneas; el propio documento pide leer solo la sección "ESTADO ACTUAL" para arrancar, pero nadie automatizó extraerla | — |
 | `claude_guard_git_push.sh` | La regla "`git push` requiere autorización explícita" vivía solo como texto en `CLAUDE.md`/cada agente — no determinístico. Hook `PreToolUse` de Claude Code (`.claude/settings.json`), no un git hook: fuerza el prompt de confirmación real ante cualquier `git push`, en este repo o en `meta` | 48 |
+| `audit_upstream.sh` | `minecraft/auth/` y `modplatform/` (código 100% heredado de Prism) llevaban 0 y ~0 commits de revisión propia desde el fork respectivamente, sin que ningún documento lo distinguiera de "revisado" — ver `docs/AUDITORIA_MODULOS.md` | — |
 
 ## Uso rápido
 
@@ -38,6 +39,10 @@ tools/dev/check_meta_urls.sh
 
 # Una sola vez, para que nunca más se filtre una key sin querer
 tools/dev/install_hooks.sh
+
+# Periódicamente, o cada vez que Prism saque un tag nuevo — para no
+# repetir el hueco de auth/modplatform nunca auditados
+tools/dev/audit_upstream.sh
 ```
 
 ## Notas de diseño
