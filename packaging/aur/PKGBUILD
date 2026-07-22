@@ -1,0 +1,119 @@
+# Maintainer: El_PibeCapo <elpibecapoofficial@gmail.com>
+#
+# Nota de diseño (verificar antes de tocar esto en el futuro):
+# Se eligió variante -git (compila desde el HEAD real de main) en vez de
+# empaquetar contra el tag v8.4.0 porque, a fecha de escritura de este
+# PKGBUILD, ese tag es de 2026-07-07 y quedaron ~20 sesiones de trabajo real
+# sin release nueva -- incluyendo fixes de seguridad (path traversal en
+# uid/version del meta server, límite de redirects en NetRequest, topes de
+# tamaño en memoria) que un paquete -release NO tendría. Empaquetar código
+# viejo y sin esos fixes para distribuirlo públicamente sería peor que no
+# empaquetar nada. Cuando exista una release nueva y actualizada de verdad
+# (ver docs/CHANGELOG.md y ESTADO.md para el estado real), evaluar sumar
+# también un paquete betelineylauncher (sin -git) contra el tarball de esa
+# release, con sha256sums reales del asset -- no antes.
+#
+# Dependencias verificadas contra el sistema real (pacman -Qi / pacman -Si),
+# no adivinadas -- en particular tomadas del propio `pacman -Si prismlauncher`
+# (mismo linaje de proyecto, Prism Launcher, empaquetado oficial en Arch/CachyOS),
+# más libsodium que Prism upstream no necesita (Ed25519 del updater, exclusivo
+# de este fork) y el módulo Qt NetworkAuth que sí está en el find_package()
+# real de este CMakeLists.txt.
+
+pkgname=betelineylauncher-git
+pkgver=8.4.0.r0.g0000000
+pkgrel=1
+pkgdesc="Launcher de Minecraft basado en Prism Launcher: perfiles JVM optimizados (incluye ZGC generacional), tema gamer neón + Alto Contraste WCAG AA, sandboxing opcional con Bubblewrap, firma Ed25519 fail-closed en el updater (compilado desde el HEAD real de main, no desde la última release publicada)"
+arch=('x86_64')
+url="https://github.com/ElPibeCapo/BetelineyLauncher"
+license=('GPL-3.0-only')
+depends=(
+  'qt6-base'
+  'qt6-networkauth'
+  'qt6-svg'
+  'libarchive'
+  'zlib'
+  'qrencode'
+  'tomlplusplus'
+  'cmark'
+  'libsodium'
+  'hicolor-icon-theme'
+  'libgl'
+  'pciutils'
+)
+makedepends=('cmake' 'ninja' 'git' 'extra-cmake-modules')
+optdepends=(
+  'glfw: usar librerías GLFW del sistema en vez de las que trae Minecraft'
+  'openal: usar librerías OpenAL del sistema en vez de las que trae Minecraft'
+  'gamemode: optimizaciones de Feral GameMode al lanzar instancias'
+  'java-runtime: usar versiones de Java ya instaladas en vez del downloader integrado'
+  'bubblewrap: sandboxing opcional del proceso de Minecraft (Linux)'
+)
+provides=('betelineylauncher')
+conflicts=('betelineylauncher')
+source=("$pkgname::git+https://github.com/ElPibeCapo/BetelineyLauncher.git")
+sha256sums=('SKIP')  # SKIP es lo estándar en paquetes -git de Arch: el hash de un checkout git vivo no es fijo, se confía en HTTPS/firmas del clon. No es una omisión.
+
+
+pkgver() {
+  cd "$pkgname"
+  # --match 'v*' acota a los tags propios del fork (v8.3.0, v8.4.0, ...) e
+  # ignora a propósito los cientos de tags numéricos sin "v" heredados del
+  # remoto `upstream` (PrismLauncher, ej. 10.0.5, 11.0.2) que conviven en el
+  # mismo repo local mediante `git tag -l` pero no son releases de este fork.
+  #
+  # Fallback verificado necesario, no defensivo por las dudas: probado contra
+  # un clon real de origin/main (2026-07-19) y confirmado con
+  # `git merge-base --is-ancestor v8.4.0 HEAD` que el tag v8.4.0 quedó
+  # huérfano (no es ancestro de main) por el mismo force-push de la Sesión 40
+  # que ya se sabía había roto ~50 hashes de commit citados en ESTADO.md --
+  # esta vez el daño colateral es un tag real en GitHub, no solo texto. Hasta
+  # que se retaguee v8.4.0 sobre el commit correcto (o se corte una release
+  # nueva) y se pushee, `git describe` no encuentra ningún tag alcanzable y
+  # el esquema r<commits-desde-tag>.g<hash> no es viable -- se usa en cambio
+  # <commits-totales>.g<hash>, que sigue siendo monótonamente creciente para
+  # que pacman/paru detecten updates bien, aunque no exprese versión semántica.
+  if git describe --long --tags --match 'v*' &>/dev/null; then
+    git describe --long --tags --match 'v*' | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g'
+  else
+    printf 'r%s.g%s' "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+  fi
+}
+
+build() {
+  cd "$pkgname"
+  # Se invoca cmake directo (no vía CMakePresets.json) para no depender de
+  # las variables de entorno $penv{ARTIFACT_NAME}/$penv{BUILD_PLATFORM} que
+  # usa el preset "linux" ni del generador Ninja Multi-Config (que exigiría
+  # --config Release en cada paso) -- misma config final (Release + LTO),
+  # invocación más simple y determinística para un chroot de makepkg limpio.
+  # Es Linux: no se pasa CMAKE_TOOLCHAIN_FILE de vcpkg (eso es solo para
+  # Windows/macOS); acá todo sale de los paquetes de sistema en depends().
+  #
+  # Fix real, no preventivo -- confirmado con un `makepkg -f` real que falló
+  # en 8 archivos distintos con "error: '_FORTIFY_SOURCE' redefined
+  # [-Werror]": /etc/makepkg.conf inyecta -Wp,-D_FORTIFY_SOURCE=3 en
+  # CFLAGS/CXXFLAGS por defecto en Arch, y el propio CMakeLists.txt del
+  # proyecto (líneas 97-98, decisión de hardening del proyecto, no tocada
+  # acá) fuerza -D_FORTIFY_SOURCE=2 en CMAKE_CXX/C_FLAGS_RELEASE. Dos
+  # definiciones del mismo macro con -Werror del proyecto (-Wall -Wextra
+  # -Wpedantic -Werror) es error fatal. Nunca apareció en los builds
+  # manuales de sesiones anteriores (build/, build-dev/) porque esos no
+  # pasan por /etc/makepkg.conf. Se saca la inyección del entorno de build
+  # de Arch para que sobreviva una sola definición -- la propia del
+  # proyecto -- sin debilitar ni tocar su nivel de hardening real.
+  export CFLAGS="${CFLAGS//-Wp,-D_FORTIFY_SOURCE=[0-9]/}"
+  export CXXFLAGS="${CXXFLAGS//-Wp,-D_FORTIFY_SOURCE=[0-9]/}"
+  cmake -S . -B build \
+    -G Ninja \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=/usr \
+    -DENABLE_LTO=ON \
+    -DLauncher_ENABLE_JAVA_DOWNLOADER=ON
+  cmake --build build
+}
+
+package() {
+  cd "$pkgname"
+  DESTDIR="$pkgdir" cmake --install build
+}
