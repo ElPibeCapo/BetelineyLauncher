@@ -1182,3 +1182,49 @@ Los 31 tests pasan, incluido `Packwiz` (17/31, donde se había resuelto el confl
 **`MinecraftAccount.cpp` (290 líneas) — auditado, sin hallazgos nuevos de código, 1 nota arquitectónica.** `fillSession()` arma `session->session = "token:" + accessToken + ":" + profileId` — el token de acceso queda en texto plano en la cadena de sesión que se pasa como argumento de lanzamiento a la JVM del cliente de Minecraft. Esto es inherente al protocolo de lanzamiento legacy de Minecraft (visible por diseño vía `ps` a otros usuarios locales de la máquina) y no es algo que el launcher pueda evitar sin romper compatibilidad con el propio juego — el launcher vainilla de Mojang/Microsoft tiene exactamente la misma característica. Se documenta como contexto conocido, no como hallazgo accionable. `uuidFromUsername()` reimplementa correctamente `UUID.nameUUIDFromBytes` de Java (MD5 + bits de versión/variante RFC4122) para cuentas offline — coincide bit a bit con el algoritmo real de Minecraft, sin problema. El resto (manejo de `m_currentTask`, estados de `authFailed`) es lógica de control de estado sin superficie de seguridad.
 
 **Estado real de la auditoría de `minecraft/auth/` tras esta sesión:** 3 de 12 archivos del directorio raíz cubiertos (`Parsers.cpp`, `AccountData.cpp`, `MinecraftAccount.cpp`). Faltan `AccountList.cpp` (714 líneas, sin empezar), `AuthFlow.cpp`, `AuthSession.cpp`, `AuthStep.h` y los 9 archivos de `steps/` (el flujo completo de device-code / Xbox / entitlements, probablemente donde más superficie de red hay). No se tocó código, no hubo cambios de comportamiento — sesión puramente de lectura y documentación, cero riesgo de regresión, sin necesidad de compilar ni testear.
+
+
+### Sesión 51 cont. — Auditoría de `minecraft/auth/` COMPLETADA: `AccountList.cpp`, `AuthFlow.cpp`, `AuthSession.cpp`, `AuthStep.h`, y los 9 archivos de `steps/` (2026-07-22)
+
+**1 bug real encontrado y corregido, compilado y testeado — `AccountList::data()`.** El chequeo de
+límites era `if (index.row() > count()) return QVariant();`, debería ser `>=`. Con `index.row() ==
+count()`, pasaba la validación y dos líneas después llamaba `at(index.row())` — lectura fuera de rango
+sobre `m_accounts` (`QList::at()` en release no valida el índice). Confirmado con `git blame` contra
+`09eb67f74`: **heredado del fork tal cual, presente en PrismLauncher upstream también**, nunca tocado.
+Un carácter de diferencia. Corregido, compilado (`ninja Launcher_logic`, limpio con `-Werror`), 31/31
+tests pasando (`ctest`), commiteado local (`611b50894`). No se reportó a upstream esta sesión — queda
+pendiente si vale la pena mandar el PR río arriba.
+
+**`AuthFlow.cpp` (157L), `AuthSession.cpp` (36L), `AuthStep.h` (43L) — limpios.** Orquestador de
+estados y clase base abstracta, sin parseo de datos externos ni construcción de requests acá.
+
+**Los 9 archivos de `steps/` — 6 limpios, 3 con el mismo patrón de hallazgo (no nuevo bug, ya
+heredado, verificado con `git blame` contra `09eb67f74` en los 3 casos):**
+
+- **Limpios:** `EntitlementsStep.cpp`, `GetSkinStep.cpp`, `MSADeviceCodeStep.cpp` (usa `QUrlQuery` para
+  el body form-urlencoded y `QJsonDocument`/structs para parsear la respuesta — el patrón correcto),
+  `MSAStep.cpp` (ya investigado a fondo en sesión 19, delega todo a `QOAuth2AuthorizationCodeFlow` de
+  Qt, no arma JSON a mano — confirmado hoy que sigue siendo así), `MinecraftProfileStep.cpp`,
+  `XboxProfileStep.cpp`.
+- **`LauncherLoginStep.cpp`, `XboxAuthorizationStep.cpp`, `XboxUserStep.cpp` — arman el body JSON de
+  la request a mano con `QString::arg()` sobre un template R"XXX(...)XXX"**, interpolando
+  `mojangservicesToken.extra["uhs"]`, `mojangservicesToken.token`, `userToken.token`, `msaToken.token`
+  (y en un caso `m_relyingParty`, que sí es una constante literal nuestra, no dato externo) **sin
+  escapar comillas ni backslashes** — el patrón clásico de "JSON armado por interpolación de string" en
+  vez de `QJsonObject`/`QJsonDocument`. Explotabilidad real: bajísima — los 3 valores externos vienen
+  de la respuesta de Microsoft/Xbox Live sobre TLS, no de input de usuario ni de un tercero no confiable;
+  para que esto rompa algo (o inyecte un campo extra al JSON) Microsoft tendría que devolver un token con
+  comillas/backslashes en el valor, algo que no hace en la práctica (son JWTs/hashes con charset
+  restringido). No es un bug explotable hoy, es una deuda de robustez: si alguna vez cambia el formato
+  de esos valores, esto rompe en silencio o produce JSON malformado en vez de fallar con un error claro.
+  **No se tocó el código** — a diferencia del fix de `AccountList.cpp`, esto es lógica de red de
+  autenticación en vivo (OAuth/XSTS) sin forma de testear el flujo completo sin credenciales reales de
+  Microsoft en este entorno; un refactor a `QJsonObject` que rompa el formato exacto que Microsoft/Xbox
+  esperan tumbaría el login para todo el mundo sin que ningún test lo detecte. Queda documentado como
+  hallazgo real, recomendado para una sesión dedicada con testing manual del flujo de login completo.
+
+**`minecraft/auth/` queda auditado por completo esta sesión** — los 21 archivos de implementación
+(`.cpp`/`AuthStep.h`) del directorio raíz + `steps/` tienen ahora revisión línea por línea documentada.
+Es la primera carpeta 100% heredada de la lista de `docs/AUDITORIA_MODULOS.md` que pasa de "nunca
+auditada" a "auditada completa" en una sola racha de sesiones (50→51), en vez de quedar parcial como
+`minecraft/mod/`, `minecraft/launch/`, `ui/`, etc.

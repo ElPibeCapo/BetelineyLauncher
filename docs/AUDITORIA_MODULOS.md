@@ -47,7 +47,7 @@ de nuevo cada vez que Prism saque un tag nuevo, o periódicamente — no solo cu
 | `crash/` | Propio | 2 | `4c6596960` (2026-06-19) | N/A — código propio (CrashReporter) |
 | `logs/` | Propio | 1 | `43708b311` (2026-06-16) | N/A — código propio (LogAnalyzer) |
 | `modplatform/` | Heredado (salvo `beteliney/`) | 3, ninguno de fondo | `a3eb3e767` (2026-07-06) | ❌ **Nunca auditado** — ver hallazgo abajo |
-| `minecraft/auth/` | 100% heredado | 0 | nunca | ⚠️ Parcial — 2 de 11 fixes priorizados verificados (ninguno aplica) + `MSAStep.cpp` cerrado como no-problema (2026-07-19). **Auditoría línea por línea: `Parsers.cpp` (496L, sin hallazgos), `AccountData.cpp` (369L, 1 hallazgo bajo — ver abajo), `MinecraftAccount.cpp` (290L, sin hallazgos, 1 nota arquitectónica) cubiertos 2026-07-22.** Sin auditar aún: `AccountList.cpp` (714L), `AuthFlow.cpp`, `AuthSession.cpp`, `AuthStep.h`, y los 9 archivos de `steps/` |
+| `minecraft/auth/` | 100% heredado | 1 (`AccountList.cpp`, off-by-one) | `611b50894` (2026-07-22) | ✅ **Auditado completo — 2026-07-22.** Los 21 archivos de implementación (raíz + `steps/`) revisados línea por línea. 1 bug real corregido (OOB read en `AccountList::data()`, heredado de upstream, 1 char de fix). 1 hallazgo de robustez sin corregir (JSON armado por interpolación de string sin escapar en `LauncherLoginStep.cpp`/`XboxAuthorizationStep.cpp`/`XboxUserStep.cpp` — ver sección de hallazgos abajo). Resto limpio. |
 | `minecraft/skins/` | 100% heredado | 0 | nunca | ❌ Nunca auditado |
 | `minecraft/update/` | 100% heredado | 0 | nunca | ❌ Nunca auditado |
 | `tasks/` | 100% heredado | 0 | nunca | ❌ Nunca auditado (infraestructura transversal — riesgo medio-alto por eso mismo) |
@@ -201,20 +201,33 @@ el consumidor (`MinecraftAccount::getFace()`) chequea el `bool` de retorno de `Q
 — un base64 corrupto produce como mucho una cara sin cargar, no un crash. Queda como TODO legítimo de
 completitud, no como vulnerabilidad activa. Sin decisión tomada sobre si vale la pena cerrarlo.
 
+## Hallazgo documentado, sin acción tomada — JSON armado por interpolación de string en 3 pasos de `minecraft/auth/steps/`
+
+`LauncherLoginStep.cpp`, `XboxAuthorizationStep.cpp` y `XboxUserStep.cpp` arman el body JSON de sus
+requests con `QString::arg()` sobre un template crudo, interpolando valores de tokens (`uhs`, `xToken`,
+`userToken.token`, `msaToken.token`) sin escapar comillas/backslashes — contraste directo con el resto
+del archivo (`MSADeviceCodeStep.cpp` usa `QUrlQuery` para su body, y todos usan `QJsonDocument` para
+parsear respuestas). **Confirmado heredado del fork** vía `git blame` contra `09eb67f74`, presente igual
+en upstream. **Explotabilidad real: bajísima** — los valores vienen de la respuesta de Microsoft/Xbox
+Live sobre TLS (JWTs/hashes de charset restringido), no de un tercero no confiable. Es deuda de
+robustez, no vulnerabilidad activa hoy: si el formato de esos valores cambiara alguna vez, esto rompería
+en silencio en vez de fallar con un error claro. **Sin tocar** — es lógica de red de autenticación en
+vivo (OAuth/XSTS) sin forma de testear el flujo completo sin credenciales reales de Microsoft en este
+entorno; un refactor a `QJsonObject` que no replique el formato exacto tumbaría el login para todo el
+mundo sin que ningún test automatizado lo detecte. Recomendado para sesión dedicada con testing manual
+del login completo antes de tocarlo.
+
 ## Próximos pasos recomendados, en orden de prioridad real (actualizado 2026-07-22)
 
 1. **[Cerrado — 2026-07-21, sesión 50]** Los 9 cherry-picks restantes ya se intentaron uno por uno:
    8 no aplican (ya resueltos por otra vía), 1 (`710789b70`, macOS) queda en backlog de baja prioridad
    sin intentar. Ver tabla de cherry-picks arriba.
 2. Evaluar los 42 fixes de severidad menor restantes, uno por uno.
-3. Continuar la auditoría línea por línea de `minecraft/auth/`: **hecho** `Parsers.cpp`,
-   `AccountData.cpp`, `MinecraftAccount.cpp` (2026-07-22, sesión 51). **Falta** `AccountList.cpp`
-   (714L), `AuthFlow.cpp`, `AuthSession.cpp`, `AuthStep.h`, y los 9 archivos de `steps/` no cubierto
-   todavía — lo que se hizo hoy fue puntual (2 commits + `MSAStep.cpp`), no una pasada completa de la
-   carpeta.
-4. Primera pasada sobre `modplatform/` más allá de los fixes puntuales ya identificados por el script —
-   sigue siendo la carpeta con más superficie de código externo nunca mirado (Modrinth, CurseForge,
-   FTB, Technic, Packwiz, ATLauncher).
+3. **[Cerrado — 2026-07-22, sesión 51]** Auditoría línea por línea de `minecraft/auth/`: completa,
+   los 21 archivos de implementación revisados. 1 bug corregido (`AccountList.cpp`), 1 hallazgo de
+   robustez sin tocar (ver arriba, JSON sin escapar en 3 `steps/`). Ver tabla arriba.
+4. Primera pasada sobre `modplatform/` — sigue siendo la carpeta con más superficie de código externo
+   nunca mirado (Modrinth, CurseForge, FTB, Technic, Packwiz, ATLauncher).
 5. **[Hecho — 2026-07-19]** Repetir el diff contra `upstream` cada vez que Prism saque un tag nuevo:
    convertido en `tools/dev/audit_upstream.sh`, ya no depende de acordarse ni de repetir comandos a
    mano.
