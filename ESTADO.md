@@ -1228,3 +1228,19 @@ heredado, verificado con `git blame` contra `09eb67f74` en los 3 casos):**
 Es la primera carpeta 100% heredada de la lista de `docs/AUDITORIA_MODULOS.md` que pasa de "nunca
 auditada" a "auditada completa" en una sola racha de sesiones (50→51), en vez de quedar parcial como
 `minecraft/mod/`, `minecraft/launch/`, `ui/`, etc.
+
+
+### Sesión 51 fin — `packaging/aur/PKGBUILD` trackeado (2026-07-22)
+
+Estaba terminado desde el 19-jul (evidencia de `makepkg -f` real corrido y fixeado en sus propios
+comentarios: conflicto de `_FORTIFY_SOURCE` entre `/etc/makepkg.conf` de Arch y el `CMakeLists.txt`
+del proyecto), pero nunca se trackeó en git ni se mencionó acá — quedó huérfano. Agregado tal cual,
+sin tocar contenido (`308375485`). No se re-corrió `makepkg -f` esta sesión para reverificar contra el
+estado actual del árbol — el archivo documenta su propia validación previa, y no hubo cambios en
+`CMakeLists.txt` ni en dependencias desde entonces que lo invaliden. Si se quiere publicar en el AUR de
+verdad, falta: crear el repo `aur.archlinux.org/betelineylauncher-git.git`, correr `makepkg --printsrcinfo
+> .SRCINFO`, y el primer push ahí — nada de eso se hizo, es publicación real fuera del repo del launcher.
+
+**Estado del árbol al cierre de sesión 51:** 13 commits locales sin pushear a `origin/main` (los 3 de
+sesión 49 cont. + 4 de esta sesión: cierre cherry-picks, auditoría auth parte 1, fix off-by-one +
+auditoría auth parte 2, PKGBUILD). Esperando autorización explícita para `git push`, como siempre.
