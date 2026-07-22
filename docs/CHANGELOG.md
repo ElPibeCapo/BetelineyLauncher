@@ -2,11 +2,11 @@
 
 > Historial de versiones desde v7.0.0. Antes hubo 6 versiones sin documentar (1 a 6, sin ceros ni puntos) de las que no quedó registro de contenido.
 > Numerado real: `7.0.0 → 7.1.0 → ... → 7.9.0 → 8.0.0 → 8.1.0 → 8.2.0 → 8.3.0 → 8.4.0`. El patch (tercer número) siempre es `0` — nunca se publicó una versión con patch distinto de cero. Entradas que aparecían antes como `7.3.2`, `7.6.1`, `7.8.1`, `7.9.1` y `7.9.2` no fueron releases reales; eran trabajo del mismo ciclo que quedó mal fragmentado en una reconstrucción previa de este documento. Ya están fusionadas en su versión base correspondiente.
-> Actualizado: **2026-07-14** · Versión actual en código: **v8.4.0** (tag publicado, pero contiene solo el bump de versión — todo lo de abajo son commits reales en `main` posteriores al tag, sin release nueva todavía). Autor: **El_PibeCapo**
+> Actualizado: **2026-07-22** · Versión actual en código: **v8.4.0** (tag publicado, pero contiene solo el bump de versión — todo lo de abajo son commits reales en `main` posteriores al tag, sin release nueva todavía). Autor: **El_PibeCapo**
 
 ---
 
-## Sin publicar aún — commits en `main` desde `v8.4.0` (2026-07-06 a 2026-07-14)
+## Sin publicar aún — commits en `main` desde `v8.4.0` (2026-07-06 a 2026-07-22)
 
 > Nota: `v8.4.0` se taggeó sin contenido nuevo (solo bump 8.3.0→8.4.0 + limpieza de docs). Todo lo real de esta sección vive en `main` sin tag propio todavía — la próxima release debería llevar estos cambios y bumpear a `v8.5.0` (ver `## VERSIONES` en `ESTADO.md`: nunca reusar `v8.3.0`/`v8.4.0`).
 
@@ -23,6 +23,7 @@
 | `73e640b1c` | **Path traversal en el importador ATLauncher** (`modplatform/`, cherry-pick de upstream `0c2b3b384`) — mismo patrón ya cerrado en el importador GDLauncher y en el feed de meta, pero presente en un rincón de `modplatform/` nunca auditado. Aplicado limpio, sin conflictos. |
 | `f31924b6c` | **Path traversal al extraer zips vía symlink/hardlink** (`minecraft/launch/`, `archive/`, cherry-pick de upstream `56936cf48`) — libarchive podía seguir un symlink/hardlink hostil dentro del zip y escribir fuera del directorio de destino esperado. Aplicado limpio, sin conflictos. |
 | `71e275b9e` | **Heap overflow real por comparación de versión inestable** (`modplatform/`, cherry-pick de upstream `5a0931d3c`) — reescribe `Version.cpp`/`.h` completos a un comparador FlexVer con `operator<=>` (C++20). Conflicto real resuelto en `Packwiz.cpp`: el fork ordenaba versiones de mods con `sort()` lexicográfico plano sin dedup (bug real, "1.10" ordenaba antes que "1.9"), reemplazado por el sort semántico + dedup de upstream. Build limpio y `ctest` 31/31 verificados post-aplicación. |
+| `611b50894` | **Lectura fuera de rango en `AccountList::data()`** (`minecraft/auth/`) — chequeo de límites `if (index.row() > count())` debía ser `>=`; con `index.row() == count()` pasaba la validación y llamaba `at(index.row())` dos líneas después, un acceso OOB sobre `m_accounts`. Heredado del fork tal cual (`git blame` contra `09eb67f74` confirma que ya estaba en el commit original, y en upstream). Un carácter de fix. Auditoría línea por línea de `minecraft/auth/` completa (21 archivos), primera vez que se audita esa carpeta desde el fork. Build limpio, `ctest` 31/31. |
 
 ### Confiabilidad
 
@@ -31,6 +32,7 @@
 | `efe33a69e` | **Use-after-free en `BackgroundModUpdateCheckTask`** — `m_instance` era un puntero crudo a `MinecraftInstance`; si el usuario borraba la instancia mientras el chequeo de mods en background seguía en red, el callback final escribía sobre memoria liberada. Fix: `QPointer<MinecraftInstance>` (Qt lo pone en `nullptr` solo al destruirse el objeto) + guard defensivo adicional. |
 | `af88e5b88` | **Cuelgue histórico del build local con LTO, causa raíz resuelta (parcial)** — cada link con `-flto=auto` paralelizaba internamente hasta `nproc()` hilos propios; sin límite, Ninja corría varios links en simultáneo multiplicando el paralelismo muy por encima de cores/RAM disponibles, generando swap thrashing (síntoma arrastrado desde sesiones 20/27/29/31/32/33/36). Fix de ese momento: `JOB_POOLS lto_link_pool=2`, limita a 2 links simultáneos — mitigó el cuelgue pero no la causa de fondo, ver `8d6d34cf8`. |
 | `8d6d34cf8` | **`build-dev/` sin LTO, causa de fondo del punto anterior resuelta** — `lto_link_pool=2` seguía sobre-suscribiendo el CPU al doble (2 links simultáneos × `-flto=auto` = hasta `2×nproc` procesos `lto1` compitiendo por `nproc` núcleos reales), porque `build/` quedaba cacheado como `Release`+`ENABLE_LTO=ON` para cada iteración de desarrollo, no solo para releases. Medido: build completo desde cero en `build/` llegó a 9 horas sin terminar (31/51 targets, load average ~15); el mismo build en `build-dev/` nuevo (`RelWithDebInfo`, LTO off, linker `lld`) tardó 19m51s, 0 errores, 31/31 tests. `tools/dev/build_fast.sh`/`check_build.sh` usan `build-dev/` por defecto ahora; `build/` (Release+LTO real) queda para verificación final pre-release (`build_fast.sh release`). |
+| `e031c5df7` | **Crash al actualizar datapacks vía Modrinth** (`ModrinthCheckUpdate.cpp`, cherry-pick de upstream `d958a91ce`) — `modLoaderTypesToList(*loader).first()` sobre una lista vacía: los datapacks se tratan como `ModLoaderType` internamente pero no son un modloader real, así que para loader=64 (datapack) la lista podía salir vacía y `.first()` sobre `QList` vacío es UB. Fix: chequear `isEmpty()` antes. Build limpio, `ctest` 31/31. |
 
 ### Correcciones
 
