@@ -1244,3 +1244,43 @@ verdad, falta: crear el repo `aur.archlinux.org/betelineylauncher-git.git`, corr
 **Estado del árbol al cierre de sesión 51:** 13 commits locales sin pushear a `origin/main` (los 3 de
 sesión 49 cont. + 4 de esta sesión: cierre cherry-picks, auditoría auth parte 1, fix off-by-one +
 auditoría auth parte 2, PKGBUILD). Esperando autorización explícita para `git push`, como siempre.
+
+
+### Sesión 52 — `tools/dev/audit_upstream.sh` corrido en vivo (11.0.0..11.0.3), triage real de los standalone, cluster grande identificado y dejado sin tocar a propósito (2026-07-22)
+
+**El script encontró 53 candidatos**, no 42 — el número de sesiones anteriores estaba desactualizado
+(upstream sacó más tags/commits desde la última corrida). **Limitación real del script confirmada en la
+práctica esta sesión:** usa `git merge-base --is-ancestor <hash> HEAD`, que compara el hash exacto del
+commit de upstream — un cherry-pick genera un hash nuevo, así que **todo lo que ya se aplicó por
+cherry-pick (los 4 reales de sesiones 49-52) sigue apareciendo como "PENDIENTE"**, igual que lo que se
+resolvió por refactor propio. El script detecta candidatos, no estado real — hay que seguir
+verificando uno por uno, como ya se sabía.
+
+**6 candidatos standalone intentados de verdad (`git cherry-pick` real, no lectura de diff):**
+
+| Commit | Resultado |
+|---|---|
+| `450b73328` (crash con nombre de instancia no-latino) | No aplica — ya resuelto vía `FS::getPathNameInLocal8bit()`, función centralizada que hace exactamente lo mismo que el fix de upstream (verificado línea por línea, mismo algoritmo `shortPathName`/`fitsInLocal8bit`) |
+| `fe5aee261` (crash con formato de skin) | Ya aplicado — diff vacío |
+| `2981d9109` (crash al fallar descarga) | Ya aplicado — diff vacío |
+| `1dd0728a5` (crash con mrpack inválido) | No aplica — mismo patrón que `ac13579b9`/`1dd0728a5`: firma de retorno ya refactorizada (`nullptr` en vez de `false`), el guard ya existe |
+| `d958a91ce` (crash actualizando datapacks) | **APLICADO de verdad** — `.first()` sobre lista potencialmente vacía en `ModrinthCheckUpdate.cpp`, real. Compilado (`ninja Launcher_logic`, limpio), 31/31 tests (`ctest`), commit `e031c5df7` |
+| `21de7a2d9` (crash cargando versión de componente ATLauncher) | Ya aplicado — diff vacío |
+
+**Resultado: 1 fix real nuevo aplicado y verificado, 5 ya resueltos.** Mismo patrón que sesión 50 —
+la mayoría de lo que parece "pendiente" por hash ya está resuelto de otra forma, pero cada uno lo
+confirma un intento real, no una suposición.
+
+**El resto (~46 de los 53, sin intentar) forma un cluster grande y coherente, no candidatos sueltos —
+decisión consciente de no tocarlo hoy.** Intenté uno (`0626e354a`, quilt mod info) para confirmar la
+hipótesis: conflicto real en `LocalModParseTask.cpp`, un archivo que el propio listado incluye la
+entrada `97a74d5c1 refactor: adapt rest of the codebase to the new resource model` — upstream reescribió
+la propiedad de objetos del `FolderModel` (de punteros crudos a un modelo de recursos con
+`shared_ptr`/ownership distinto) en una serie larga de commits relacionados (los ~12 de `minecraft/mod/`
+y buena parte de los ~26 de `modplatform/` en la lista: memory leaks por referencia cíclica, "don't give
+shared pointers out to foldermodels", "raw-pointers and leaks in ModFolderLoadTask", etc., son todos
+parches sobre ese mismo refactor o consecuencia directa de no tenerlo). **No es una lista de 46
+cherry-picks independientes — es "¿adoptamos el refactor completo de ownership de recursos de upstream,
+o no?", una decisión de arquitectura, no un fix puntual.** Intentar cherry-pickearlos uno por uno sin la
+base del refactor va a seguir generando el mismo tipo de conflicto en cascada, archivo por archivo, sin
+converger. Queda pendiente como pregunta abierta para el dueño del proyecto, no como TODO técnico.

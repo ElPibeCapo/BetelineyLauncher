@@ -222,7 +222,13 @@ del login completo antes de tocarlo.
 1. **[Cerrado — 2026-07-21, sesión 50]** Los 9 cherry-picks restantes ya se intentaron uno por uno:
    8 no aplican (ya resueltos por otra vía), 1 (`710789b70`, macOS) queda en backlog de baja prioridad
    sin intentar. Ver tabla de cherry-picks arriba.
-2. Evaluar los 42 fixes de severidad menor restantes, uno por uno.
+2. **[Parcial — 2026-07-22, sesión 52]** De los 42 fixes de severidad menor originales, `tools/dev/audit_upstream.sh` corrido en vivo hoy encontró en realidad **53** (el número había quedado
+   desactualizado). 6 standalone intentados de verdad: 1 aplicado real (`d958a91ce`, commit `e031c5df7`,
+   compilado+testeado), 5 ya resueltos de otra forma. **Los ~46 restantes no son candidatos sueltos —
+   forman un cluster ligado al refactor de ownership de recursos de upstream** (`FolderModel` de
+   punteros crudos a modelo con `shared_ptr`, serie larga de commits relacionados en
+   `minecraft/mod/` y `modplatform/`). Adoptarlo es una decisión de arquitectura del dueño del proyecto,
+   no un TODO técnico — no intentar cherry-pickear archivo por archivo sin decidir eso primero.
 3. **[Cerrado — 2026-07-22, sesión 51]** Auditoría línea por línea de `minecraft/auth/`: completa,
    los 21 archivos de implementación revisados. 1 bug corregido (`AccountList.cpp`), 1 hallazgo de
    robustez sin tocar (ver arriba, JSON sin escapar en 3 `steps/`). Ver tabla arriba.
