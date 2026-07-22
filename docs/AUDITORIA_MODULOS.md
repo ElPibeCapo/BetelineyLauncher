@@ -47,7 +47,7 @@ de nuevo cada vez que Prism saque un tag nuevo, o periódicamente — no solo cu
 | `crash/` | Propio | 2 | `4c6596960` (2026-06-19) | N/A — código propio (CrashReporter) |
 | `logs/` | Propio | 1 | `43708b311` (2026-06-16) | N/A — código propio (LogAnalyzer) |
 | `modplatform/` | Heredado (salvo `beteliney/`) | 3, ninguno de fondo | `a3eb3e767` (2026-07-06) | ❌ **Nunca auditado** — ver hallazgo abajo |
-| `minecraft/auth/` | 100% heredado | 0 | nunca | ⚠️ Parcial — 2 de 11 fixes priorizados verificados (ninguno aplica, ya resueltos por otra vía) + investigación a fondo de `MSAStep.cpp` cerrada como no-problema (2026-07-19). Sin auditoría línea por línea todavía de `Parsers.cpp`/`AccountData.cpp`/`MinecraftAccount.cpp` ni del resto de `steps/` |
+| `minecraft/auth/` | 100% heredado | 0 | nunca | ⚠️ Parcial — 2 de 11 fixes priorizados verificados (ninguno aplica) + `MSAStep.cpp` cerrado como no-problema (2026-07-19). **Auditoría línea por línea: `Parsers.cpp` (496L, sin hallazgos), `AccountData.cpp` (369L, 1 hallazgo bajo — ver abajo), `MinecraftAccount.cpp` (290L, sin hallazgos, 1 nota arquitectónica) cubiertos 2026-07-22.** Sin auditar aún: `AccountList.cpp` (714L), `AuthFlow.cpp`, `AuthSession.cpp`, `AuthStep.h`, y los 9 archivos de `steps/` |
 | `minecraft/skins/` | 100% heredado | 0 | nunca | ❌ Nunca auditado |
 | `minecraft/update/` | 100% heredado | 0 | nunca | ❌ Nunca auditado |
 | `tasks/` | 100% heredado | 0 | nunca | ❌ Nunca auditado (infraestructura transversal — riesgo medio-alto por eso mismo) |
@@ -190,16 +190,26 @@ propia). Se documenta acá como **pregunta abierta, no como hallazgo cerrado**: 
 explícitamente si vale la pena agregar cifrado a nivel SO (`libsecret`/keyring en Linux, DPAPI en
 Windows) dado el modelo de amenaza real de este proyecto. Sin decisión tomada.
 
-## Próximos pasos recomendados, en orden de prioridad real (actualizado 2026-07-19, tras el intento real)
+## Hallazgo documentado, sin acción tomada — validación de base64 en `AccountData.cpp`
 
-1. Cherry-pick de los **9 fixes restantes** de mayor severidad (de los 11 originales, 2 ya se
-   descartaron — ver arriba): `0c2b3b384`, `56936cf48`, `5a0931d3c`, `3967fde40`, `5f874330d`,
-   `ac13579b9`, `ded77e618`, `9cd199a49`, `710789b70` — uno por uno, no en bloque, compilando y
-   corriendo `ctest` después de cada uno. Requiere autorización explícita antes de tocar el árbol de
-   trabajo, mismo criterio ya usado hoy.
+`profileFromJSONV3` (`AccountData.cpp`) decodifica `skin.data`/`cape.data` con
+`QByteArray::fromBase64()` sin `AbortOnBase64DecodingErrors` — a diferencia de `Parsers.cpp`, que sí
+usa esa opción para el mismo tipo de dato. Dos `// TODO: validate base64` explícitos en el código lo
+marcan como sabido. **Verificado 2026-07-22, severidad baja, no explotable:** el dato viene de
+`accounts.json` local (no de red directa — si ese archivo ya está comprometido hay problemas peores), y
+el consumidor (`MinecraftAccount::getFace()`) chequea el `bool` de retorno de `QPixmap::loadFromData()`
+— un base64 corrupto produce como mucho una cara sin cargar, no un crash. Queda como TODO legítimo de
+completitud, no como vulnerabilidad activa. Sin decisión tomada sobre si vale la pena cerrarlo.
+
+## Próximos pasos recomendados, en orden de prioridad real (actualizado 2026-07-22)
+
+1. **[Cerrado — 2026-07-21, sesión 50]** Los 9 cherry-picks restantes ya se intentaron uno por uno:
+   8 no aplican (ya resueltos por otra vía), 1 (`710789b70`, macOS) queda en backlog de baja prioridad
+   sin intentar. Ver tabla de cherry-picks arriba.
 2. Evaluar los 42 fixes de severidad menor restantes, uno por uno.
-3. Primera auditoría línea por línea (no solo diff de mensajes de commit) de `Parsers.cpp`,
-   `AccountData.cpp`, `MinecraftAccount.cpp` y el resto de `minecraft/auth/steps/` no cubierto
+3. Continuar la auditoría línea por línea de `minecraft/auth/`: **hecho** `Parsers.cpp`,
+   `AccountData.cpp`, `MinecraftAccount.cpp` (2026-07-22, sesión 51). **Falta** `AccountList.cpp`
+   (714L), `AuthFlow.cpp`, `AuthSession.cpp`, `AuthStep.h`, y los 9 archivos de `steps/` no cubierto
    todavía — lo que se hizo hoy fue puntual (2 commits + `MSAStep.cpp`), no una pasada completa de la
    carpeta.
 4. Primera pasada sobre `modplatform/` más allá de los fixes puntuales ya identificados por el script —
