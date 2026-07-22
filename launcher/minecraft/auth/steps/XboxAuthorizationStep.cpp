@@ -1,6 +1,8 @@
 #include "XboxAuthorizationStep.h"
 
+#include <QJsonArray>
 #include <QJsonDocument>
+#include <QJsonObject>
 #include <QJsonParseError>
 #include <QNetworkRequest>
 
@@ -22,19 +24,16 @@ QString XboxAuthorizationStep::describe()
 
 void XboxAuthorizationStep::perform()
 {
-    QString xbox_auth_template = R"XXX(
-{
-    "Properties": {
-        "SandboxId": "RETAIL",
-        "UserTokens": [
-            "%1"
-        ]
-    },
-    "RelyingParty": "%2",
-    "TokenType": "JWT"
-}
-)XXX";
-    auto xbox_auth_data = xbox_auth_template.arg(m_data->userToken.token, m_relyingParty);
+    // BETELINEY: armado vía QJsonObject en vez de interpolación de string cruda
+    // (evita romper el JSON si userToken.token alguna vez trajera comillas o backslashes)
+    QJsonObject properties;
+    properties["SandboxId"] = "RETAIL";
+    properties["UserTokens"] = QJsonArray{ m_data->userToken.token };
+    QJsonObject body;
+    body["Properties"] = properties;
+    body["RelyingParty"] = m_relyingParty;
+    body["TokenType"] = "JWT";
+    auto xbox_auth_data = QJsonDocument(body).toJson(QJsonDocument::Compact);
     // http://xboxlive.com
     QUrl url("https://xsts.auth.xboxlive.com/xsts/authorize");
     auto headers = QList<Net::HeaderPair>{
@@ -42,7 +41,7 @@ void XboxAuthorizationStep::perform()
         { "Accept", "application/json" },
         { "x-xbl-contract-version", "1" }
     };
-    auto [request, response] = Net::Upload::makeByteArray(url, xbox_auth_data.toUtf8());
+    auto [request, response] = Net::Upload::makeByteArray(url, xbox_auth_data);
     m_request = request;
     m_request->addHeaderProxy(std::make_unique<Net::RawHeaderProxy>(headers));
     m_request->enableAutoRetry(true);

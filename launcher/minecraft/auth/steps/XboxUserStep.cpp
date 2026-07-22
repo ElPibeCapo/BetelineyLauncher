@@ -1,5 +1,7 @@
 #include "XboxUserStep.h"
 
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QNetworkRequest>
 
 #include "Application.h"
@@ -16,18 +18,17 @@ QString XboxUserStep::describe()
 
 void XboxUserStep::perform()
 {
-    QString xbox_auth_template = R"XXX(
-{
-    "Properties": {
-        "AuthMethod": "RPS",
-        "SiteName": "user.auth.xboxlive.com",
-        "RpsTicket": "d=%1"
-    },
-    "RelyingParty": "http://auth.xboxlive.com",
-    "TokenType": "JWT"
-}
-)XXX";
-    auto xbox_auth_data = xbox_auth_template.arg(m_data->msaToken.token);
+    // BETELINEY: armado vía QJsonObject en vez de interpolación de string cruda
+    // (evita romper el JSON si msaToken.token alguna vez trajera comillas o backslashes)
+    QJsonObject properties;
+    properties["AuthMethod"] = "RPS";
+    properties["SiteName"] = "user.auth.xboxlive.com";
+    properties["RpsTicket"] = QString("d=%1").arg(m_data->msaToken.token);
+    QJsonObject body;
+    body["Properties"] = properties;
+    body["RelyingParty"] = "http://auth.xboxlive.com";
+    body["TokenType"] = "JWT";
+    auto xbox_auth_data = QJsonDocument(body).toJson(QJsonDocument::Compact);
 
     QUrl url("https://user.auth.xboxlive.com/user/authenticate");
     auto headers = QList<Net::HeaderPair>{
@@ -37,7 +38,7 @@ void XboxUserStep::perform()
         // https://learn.microsoft.com/en-us/gaming/gdk/_content/gc/reference/live/rest/additional/httpstandardheaders
         { "x-xbl-contract-version", "1" }
     };
-    auto [request, response] = Net::Upload::makeByteArray(url, xbox_auth_data.toUtf8());
+    auto [request, response] = Net::Upload::makeByteArray(url, xbox_auth_data);
     m_request = request;
     m_request->addHeaderProxy(std::make_unique<Net::RawHeaderProxy>(headers));
     m_request->enableAutoRetry(true);

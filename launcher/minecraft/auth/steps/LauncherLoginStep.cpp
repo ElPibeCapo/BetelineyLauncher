@@ -1,5 +1,7 @@
 #include "LauncherLoginStep.h"
 
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QNetworkRequest>
 #include <QUrl>
 
@@ -23,20 +25,19 @@ void LauncherLoginStep::perform()
     auto uhs = m_data->mojangservicesToken.extra["uhs"].toString();
     auto xToken = m_data->mojangservicesToken.token;
 
-    QString mc_auth_template = R"XXX(
-{
-    "xtoken": "XBL3.0 x=%1;%2",
-    "platform": "PC_LAUNCHER"
-}
-)XXX";
-    auto requestBody = mc_auth_template.arg(uhs, xToken);
+    // BETELINEY: armado vía QJsonObject en vez de interpolación de string cruda
+    // (evita romper el JSON si uhs/xToken alguna vez trajeran comillas o backslashes)
+    QJsonObject body;
+    body["xtoken"] = QString("XBL3.0 x=%1;%2").arg(uhs, xToken);
+    body["platform"] = "PC_LAUNCHER";
+    auto requestBody = QJsonDocument(body).toJson(QJsonDocument::Compact);
 
     auto headers = QList<Net::HeaderPair>{
         { "Content-Type", "application/json" },
         { "Accept", "application/json" },
     };
 
-    auto [request, response] = Net::Upload::makeByteArray(url, requestBody.toUtf8());
+    auto [request, response] = Net::Upload::makeByteArray(url, requestBody);
     m_request = request;
     m_request->addHeaderProxy(std::make_unique<Net::RawHeaderProxy>(headers));
     m_request->enableAutoRetry(true);
