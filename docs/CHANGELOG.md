@@ -20,6 +20,9 @@
 | `77e0f40cc` | **Firma Ed25519 fail-closed para actualizaciones** — el updater (`BetelineyUpdater`) ahora descarga y verifica una firma `.sig` con clave pública embebida antes de instalar cualquier update; si falta la firma o no valida, borra el archivo y aborta (no hay "instalar de todos modos"). Usa `libsodium` (nueva dependencia vcpkg). CI firma el release con un secret (`RELEASE_SIGNING_KEY`) antes de publicar. |
 | `a53076fc6` | **Límite de 10 redirects en `NetRequest`** — `handleRedirect()` recursaba en `executeTask()` sin límite de profundidad ni detección de bucle; un servidor con redirects circulares (meta comprometido, `MetaURLOverride` hostil, CDN roto) causaba stack overflow y crash. Afecta toda descarga del launcher, no solo meta. Fix: contador con tope duro, reseteado al arrancar una request nueva. |
 | `f9acc39a4` | **Tope de tamaño en respuestas HTTP acumuladas en memoria** — `ParsingValidator::write()` (parseo de meta, `BaseEntity.cpp`) y `ByteArraySink::write()` (auth, búsquedas de mods, manifests, uploads) no tenían límite superior. Fix: cap de 32 MB y 64 MB respectivamente; no afecta descargas de mods, esas van por `FileSink` a disco. |
+| `73e640b1c` | **Path traversal en el importador ATLauncher** (`modplatform/`, cherry-pick de upstream `0c2b3b384`) — mismo patrón ya cerrado en el importador GDLauncher y en el feed de meta, pero presente en un rincón de `modplatform/` nunca auditado. Aplicado limpio, sin conflictos. |
+| `f31924b6c` | **Path traversal al extraer zips vía symlink/hardlink** (`minecraft/launch/`, `archive/`, cherry-pick de upstream `56936cf48`) — libarchive podía seguir un symlink/hardlink hostil dentro del zip y escribir fuera del directorio de destino esperado. Aplicado limpio, sin conflictos. |
+| `71e275b9e` | **Heap overflow real por comparación de versión inestable** (`modplatform/`, cherry-pick de upstream `5a0931d3c`) — reescribe `Version.cpp`/`.h` completos a un comparador FlexVer con `operator<=>` (C++20). Conflicto real resuelto en `Packwiz.cpp`: el fork ordenaba versiones de mods con `sort()` lexicográfico plano sin dedup (bug real, "1.10" ordenaba antes que "1.9"), reemplazado por el sort semántico + dedup de upstream. Build limpio y `ctest` 31/31 verificados post-aplicación. |
 
 ### Confiabilidad
 
@@ -34,6 +37,7 @@
 | Commit | Cambio |
 |---|---|
 | `b5dfbd239` | **Badge de detección de GraalVM mostraba una cifra de rendimiento sin fuente verificable** (`JavaSettingsWidget.cpp`) — "+10-20% FPS en Minecraft", la misma cifra que `ESTADO.md` (sesión 42) ya había marcado como no verificada, cita mal puesta en un documento externo apuntando a un artículo sin relación con JVM. La documentación se había corregido pero el texto de UI (visible al usuario real) había quedado sin tocar. Se saca el número; queda solo la afirmación técnica real (JIT más agresivo que OpenJDK), sin comprometerse con ninguna cifra hasta medirla en hardware propio. |
+| `79c59445c` | **`Launcher_Git` apuntaba a la org vieja** (`program_info/CMakeLists.txt`) — el valor se compila directo al diálogo "Acerca de" real (`AboutDialog.cpp`) y apuntaba a `github.com/beteliney/BetelineyLauncher`, un remoto que no existe. Corregido al remoto real, `ElPibeCapo/BetelineyLauncher`. |
 
 ### Nuevas funciones
 
