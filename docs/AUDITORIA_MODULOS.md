@@ -94,13 +94,35 @@ severidad:
 
 1. **`0c2b3b384`** — *fix atl path traversal* (`modplatform/`). Mismo tipo de vulnerabilidad ya cerrada
    en el importador GDLauncher y en el feed de meta, pero en un rincón de `modplatform/` nunca tocado.
+   **APLICADO 2026-07-20** (commit local `73e640b1c`), limpio sin conflictos. Build+ctest verificados
+   2026-07-21 (31/31). Ver `ESTADO.md` → `### Sesión 49 cont.`.
 2. **`56936cf48`** — *fix zip path traversal* (`minecraft/launch/`, `archive/`).
+   **APLICADO 2026-07-20** (commit local `f31924b6c`), limpio sin conflictos. Build+ctest verificados
+   2026-07-21 (31/31). Ver `ESTADO.md` → `### Sesión 49 cont.`.
 3. **`5a0931d3c`** — *fix heap overflow with unstable version comparation* (`modplatform/`).
-4. **`3967fde40`** — *fix heap buffer overflow* (`modplatform/`), confirmado por el mantenedor upstream.
-5. **`5f874330d`** — *security(modrinth) reorder hash algo priority, prefer stronger hashes* (`modplatform/`).
-6. **`ac13579b9`** — *fix heap-use-after-free in modrinth creation task* (`modplatform/`).
-7. **`ded77e618`** — *Fix NetJob use-after-free* (`modplatform/`).
-8. **`9cd199a49`** — *fix use-after-free crash caused by QtConcurrent* (`archive/`).
+   **APLICADO 2026-07-20** (commit local `71e275b9e`), reescribe `Version.cpp` completo a FlexVer con
+   `operator<=>`. Conflicto real en `Packwiz.cpp` (sort lexicográfico sin dedup del fork vs. sort
+   semántico + dedup de upstream) resuelto a favor de upstream. Build+ctest verificados 2026-07-21
+   (31/31, incluido `Packwiz` y `Version`). Ver `ESTADO.md` → `### Sesión 49 cont.` para el detalle
+   completo de la resolución de conflicto y la verificación de que la API externa no se rompe.
+4. ~~**`3967fde40`** — *fix heap buffer overflow*~~ — **verificado 2026-07-21, NO aplica.** Corrige un
+   comparador `<=` (no estrictamente débil) en el sort de `Packwiz.cpp` — el mismo bloque que
+   `5a0931d3c` ya reescribió con `sortMCVersions()` (`operator<=>` + desempate por string). Sin bug que
+   corregir. Conflicto real al intentarlo, abortado.
+5. ~~**`5f874330d`** — *security(modrinth) reorder hash algo priority*~~ — **verificado 2026-07-21, NO
+   aplica.** El fix reordena una cadena de fallback sha1→sha512→sha256. Verificado con `git blame`
+   hasta el commit de fork: nuestra línea nunca tuvo fallback, exige sha512 y falla si falta — más
+   estricta que la versión ya corregida de upstream. Conflicto real, abortado.
+6. ~~**`ac13579b9`** — *fix heap-use-after-free in modrinth creation task*~~ — **verificado 2026-07-21,
+   NO aplica.** El fix agrega un guard `if (!ended_well) { liberar, retornar temprano }` tras el loop.
+   Nuestro código ya tiene el equivalente (variables renombradas). Conflicto real, abortado.
+7. ~~**`ded77e618`** — *Fix NetJob use-after-free*~~ — **verificado 2026-07-21, NO aplica.** El archivo
+   que toca (`NetworkResourceAPI.cpp`) ya no existe, refactorizado a `ResourceAPI.cpp`. Ahí el patrón
+   real usa `netJob.toWeakRef()` + `.lock()` dentro del lambda — más seguro que capturar por valor
+   (lo que hace el fix de upstream). Conflicto de modificar/eliminar, abortado.
+8. ~~**`9cd199a49`** — *fix use-after-free crash caused by QtConcurrent*~~ — **verificado 2026-07-21,
+   NO aplica.** Único que mergeó sin conflicto — y dio diff vacío. Ya está aplicado palabra por palabra.
+   `git cherry-pick --skip`, sin commit vacío.
 9. ~~**`345641f7d`** — *sanitize some MSA auth logging*~~ — **verificado 2026-07-19, NO aplica: ver
    nota de re-verificación más abajo.** Su archivo base (`minecraft/auth/flows/AuthContext.cpp`,
    arquitectura vieja) ya no existe — reemplazado por la arquitectura `steps/` actual, que resuelve el
@@ -149,12 +171,14 @@ Los 42 restantes son crashes puntuales y memory leaks reales de `modplatform/`, 
 `net/`, `tasks/`, `java/` — no re-listados acá uno por uno para no inflar este documento; correr
 `tools/dev/audit_upstream.sh` de nuevo para verlos todos con hash y carpeta.
 
-**Pendiente de acción — actualizado tras el intento real:** de los 11 priorizados, 2 (`auth/`) ya están
-descartados (no aplican, ver arriba); quedan 9 sin intentar. Seguir con esos 9 uno por uno, luego
-evaluar los 42 restantes (no en bloque — cherry-pick masivo sin revisar cada diff individual sería
-repetir el mismo error de fondo que generó este documento, solo que más rápido). Compilar y correr
-`ctest` completo después de cada tanda. Requiere autorización del usuario antes de tocar el árbol de
-trabajo — mismo criterio ya usado para autorizar el intento de hoy.
+**Pendiente de acción — actualizado 2026-07-21, sesión 50:** de los 11 priorizados originales, **3
+aplicados** (`0c2b3b384`, `56936cf48`, `5a0931d3c`, sesión 49 cont.), **7 descartados por ya estar
+resueltos de otra forma o no aplicar** (`345641f7d`, `f4b22dae9`, `3967fde40`, `5f874330d`,
+`ac13579b9`, `ded77e618`, `9cd199a49` — ver arriba cada uno), y **1 sin intentar por baja prioridad de
+plataforma** (`710789b70`, macOS, hardware/SO objetivo del proyecto es Linux). No queda ningún
+cherry-pick accionable en Linux de esta lista de 11. Siguiente paso real: evaluar los 42 fixes de
+severidad menor restantes (no en bloque — cherry-pick masivo sin revisar cada diff individual sería
+repetir el mismo error de fondo que generó este documento, solo que más rápido).
 
 ## Hallazgo documentado, sin acción tomada — almacenamiento de tokens en `minecraft/auth/`
 
