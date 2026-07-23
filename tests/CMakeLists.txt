@@ -92,3 +92,6 @@ ecm_add_test(AnonymizeLog_test.cpp LINK_LIBRARIES Launcher_logic Qt${QT_VERSION_
 
 ecm_add_test(BetelineyZip_test.cpp LINK_LIBRARIES Launcher_logic Qt${QT_VERSION_MAJOR}::Test
     TEST_NAME BetelineyZip)
+
+ecm_add_test(AccountList_test.cpp LINK_LIBRARIES Launcher_logic Qt${QT_VERSION_MAJOR}::Test
+    TEST_NAME AccountList)
