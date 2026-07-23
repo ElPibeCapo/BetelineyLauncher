@@ -47,7 +47,7 @@ de nuevo cada vez que Prism saque un tag nuevo, o periódicamente — no solo cu
 | `crash/` | Propio | 2 | `4c6596960` (2026-06-19) | N/A — código propio (CrashReporter) |
 | `logs/` | Propio | 1 | `43708b311` (2026-06-16) | N/A — código propio (LogAnalyzer) |
 | `modplatform/` | Heredado (salvo `beteliney/`) | 3, ninguno de fondo | `a3eb3e767` (2026-07-06) | ❌ **Nunca auditado** — ver hallazgo abajo |
-| `minecraft/auth/` | 100% heredado | 1 (`AccountList.cpp`, off-by-one) | `611b50894` (2026-07-22) | ✅ **Auditado completo — 2026-07-22.** Los 21 archivos de implementación (raíz + `steps/`) revisados línea por línea. 1 bug real corregido (OOB read en `AccountList::data()`, heredado de upstream, 1 char de fix). 1 hallazgo de robustez sin corregir (JSON armado por interpolación de string sin escapar en `LauncherLoginStep.cpp`/`XboxAuthorizationStep.cpp`/`XboxUserStep.cpp` — ver sección de hallazgos abajo). Resto limpio. |
+| `minecraft/auth/` | 100% heredado | 2 (`AccountList.cpp` off-by-one, JSON sin escapar en 3 `steps/`) | `34a101ec6` (2026-07-22) | ✅ **Auditado completo — 2026-07-22.** Los 21 archivos de implementación (raíz + `steps/`) revisados línea por línea. 2 bugs reales corregidos. 1 hallazgo abierto de severidad baja no explotable (base64 sin validar en `AccountData.cpp`, decisión consciente de no tocar). Resto limpio. |
 | `minecraft/skins/` | 100% heredado | 0 | nunca | ❌ Nunca auditado |
 | `minecraft/update/` | 100% heredado | 0 | nunca | ❌ Nunca auditado |
 | `tasks/` | 100% heredado | 0 | nunca | ❌ Nunca auditado (infraestructura transversal — riesgo medio-alto por eso mismo) |
@@ -201,21 +201,16 @@ el consumidor (`MinecraftAccount::getFace()`) chequea el `bool` de retorno de `Q
 — un base64 corrupto produce como mucho una cara sin cargar, no un crash. Queda como TODO legítimo de
 completitud, no como vulnerabilidad activa. Sin decisión tomada sobre si vale la pena cerrarlo.
 
-## Hallazgo documentado, sin acción tomada — JSON armado por interpolación de string en 3 pasos de `minecraft/auth/steps/`
+## Hallazgo — JSON armado por interpolación de string en 3 pasos de `minecraft/auth/steps/` — **resuelto 2026-07-22**
 
-`LauncherLoginStep.cpp`, `XboxAuthorizationStep.cpp` y `XboxUserStep.cpp` arman el body JSON de sus
+`LauncherLoginStep.cpp`, `XboxAuthorizationStep.cpp` y `XboxUserStep.cpp` armaban el body JSON de sus
 requests con `QString::arg()` sobre un template crudo, interpolando valores de tokens (`uhs`, `xToken`,
-`userToken.token`, `msaToken.token`) sin escapar comillas/backslashes — contraste directo con el resto
-del archivo (`MSADeviceCodeStep.cpp` usa `QUrlQuery` para su body, y todos usan `QJsonDocument` para
-parsear respuestas). **Confirmado heredado del fork** vía `git blame` contra `09eb67f74`, presente igual
-en upstream. **Explotabilidad real: bajísima** — los valores vienen de la respuesta de Microsoft/Xbox
-Live sobre TLS (JWTs/hashes de charset restringido), no de un tercero no confiable. Es deuda de
-robustez, no vulnerabilidad activa hoy: si el formato de esos valores cambiara alguna vez, esto rompería
-en silencio en vez de fallar con un error claro. **Sin tocar** — es lógica de red de autenticación en
-vivo (OAuth/XSTS) sin forma de testear el flujo completo sin credenciales reales de Microsoft en este
-entorno; un refactor a `QJsonObject` que no replique el formato exacto tumbaría el login para todo el
-mundo sin que ningún test automatizado lo detecte. Recomendado para sesión dedicada con testing manual
-del login completo antes de tocarlo.
+`userToken.token`, `msaToken.token`) sin escapar comillas/backslashes. Confirmado heredado del fork vía
+`git blame` contra `09eb67f74`. Explotabilidad real siempre fue bajísima (valores vienen de Microsoft/
+Xbox Live sobre TLS). **Corregido:** los 3 reemplazados por `QJsonObject`/`QJsonDocument`, mismo
+esquema y campos, escapado automático. Compilado + `ctest` 31/31, commit `34a101ec6`. No se hizo login
+real de punta a punta con cuenta de Microsoft para confirmar en producción — recomendado antes de la
+próxima release.
 
 ## Próximos pasos recomendados, en orden de prioridad real (actualizado 2026-07-22)
 
