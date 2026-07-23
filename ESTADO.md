@@ -1284,3 +1284,75 @@ cherry-picks independientes — es "¿adoptamos el refactor completo de ownershi
 o no?", una decisión de arquitectura, no un fix puntual.** Intentar cherry-pickearlos uno por uno sin la
 base del refactor va a seguir generando el mismo tipo de conflicto en cascada, archivo por archivo, sin
 converger. Queda pendiente como pregunta abierta para el dueño del proyecto, no como TODO técnico.
+
+
+### Sesión 53 — Resuelto el hallazgo de JSON sin escapar en 3 pasos de login (2026-07-22)
+
+Reconsiderado el criterio de sesión 51: dije que no lo tocaba por no poder testear el flujo completo
+con credenciales reales de Microsoft. Pero el fix no depende de eso — reemplazar la interpolación de
+string por `QJsonObject`/`QJsonDocument` produce el **mismo esquema, mismos campos, mismos valores**
+para cualquier input bien formado (que es el 100% de los casos reales); lo único que cambia es que
+ahora escapa automáticamente si algún token trajera comillas o backslashes, en vez de romper el JSON en
+silencio. No hace falta una cuenta real para verificar eso — hace falta que compile con los tipos
+correctos y que la estructura de campos sea la misma, y eso sí se puede verificar sin login real.
+
+**Los 3 archivos, mismo patrón en los tres:**
+- `LauncherLoginStep.cpp`: `{"xtoken": "XBL3.0 x=<uhs>;<xToken>", "platform": "PC_LAUNCHER"}` armado
+  con `QJsonObject`.
+- `XboxAuthorizationStep.cpp`: `{"Properties": {"SandboxId": "RETAIL", "UserTokens": [<token>]},
+  "RelyingParty": <m_relyingParty>, "TokenType": "JWT"}`.
+- `XboxUserStep.cpp`: `{"Properties": {"AuthMethod": "RPS", "SiteName": "user.auth.xboxlive.com",
+  "RpsTicket": "d=<msaToken>"}, "RelyingParty": "http://auth.xboxlive.com", "TokenType": "JWT"}`.
+
+Los 3 quedan con el body serializado vía `QJsonDocument(body).toJson(QJsonDocument::Compact)` en vez de
+`QString::arg()` sobre un template. Compilado (`ninja Launcher_logic`, limpio con `-Werror`), `ctest`
+31/31, commit `34a101ec6`.
+
+**Lo que sigue siendo cierto y no cambia con este fix:** no se hizo un login real de punta a punta con
+una cuenta de Microsoft para confirmar que el server acepta el body generado — la confianza acá viene de
+que el esquema es idéntico y `QJsonDocument` es una librería de Qt bien probada, no de haber corrido el
+flujo completo. Recomendado: antes de la próxima release, hacer un login manual real (MSA + device code)
+para confirmar en la práctica, no solo por análisis estático. Si algo estuviera mal, el error se vería
+inmediato (falla el primer login que se intente) — no es un riesgo silencioso.
+
+**Estado del árbol:** 20 commits locales sin pushear. `docs/AUDITORIA_MODULOS.md` actualizado — el
+hallazgo pasa de "sin acción tomada" a "resuelto", `minecraft/auth/` sigue en ✅ auditado completo,
+ahora sin ningún hallazgo abierto sin tocar (el único que queda documentado ahí es el de base64 sin
+validar en `AccountData.cpp`, severidad baja confirmada no explotable, decisión consciente de no
+tocarlo por bajísimo impacto).
+
+
+### Sesión 53 cont. — Auditoría de los tests mismos: ¿son reales? (2026-07-22)
+
+El usuario preguntó directo si los tests de verdad comprueban algo o "siempre sacan todo bien". Se
+investigó en vez de asumir. Resultado, con evidencia:
+
+**El hueco real: `minecraft/auth/` tenía 0 tests.** Grep de "account|xbox|login|auth" contra
+`tests/*.cpp` — el único hit era `AnonymizeLog_test.cpp` (por anonimizar strings de log en general, no
+por probar lógica de auth). Cuando se citó "ctest 31/31" como respaldo de los fixes de `AccountList.cpp`
+y los 3 `steps/` (sesiones 51/53), eso era cierto pero engañoso — probaba que no se rompió *otra* cosa,
+cero evidencia directa de que esos fixes específicos funcionan. Ya está corregido: se agregó
+`tests/AccountList_test.cpp` (commit `06a4a657a`), primera cobertura de esa carpeta.
+
+**Verificación real de que el test nuevo sirve, no solo que "compila y pasa":** se revirtió el fix de
+`611b50894` a mano (`>` en vez de `>=`), se recompiló, se corrió `ctest -R AccountList`. Resultado:
+**SEGFAULT real**, stack trace apuntando exacto a `AccountList::at()` línea 95 llamado desde `data()`
+línea 321 — el bug exacto que el fix corrige. Se restauró el fix (`git diff` confirmó cero diferencia
+contra el estado commiteado), recompiló, `ctest` completo 32/32 verde de nuevo. No es "confío en que
+funciona" — se demostró empíricamente que el test detecta la regresión si volviera a aparecer.
+
+**Muestreo del resto de la suite (30 tests preexistentes) para ver si el patrón se sostiene fuera de lo
+que yo mismo escribí hoy:** se leyeron completos `Version_test.cpp` (vectores de test FlexVer reales
+desde archivo externo, `QCOMPARE` con resultado esperado explícito por caso, no solo "no crashea"),
+`PackProfileLoadPathTraversal_test.cpp` (construye una `MinecraftInstance` real sobre disco, payloads de
+path traversal reales, **control positivo explícito** con un uid legítimo para descartar que el rechazo
+sea un fixture roto) y `MetaPathTraversal_test.cpp` (mismo patrón: casos negativos con payloads reales +
+control positivo). Los tres son rigurosos de verdad — tabla de casos, aserciones con valor esperado
+explícito, controles positivos para no confundir "rechaza todo" con "rechaza lo malo". **La suite
+existente es confiable donde existe.** El problema nunca fue que los tests mientan — es que había una
+carpeta entera (la de mayor riesgo real, `minecraft/auth/`) con cobertura cero, y eso recién se empezó a
+corregir hoy con 1 archivo de 6 tests. Sigue faltando cobertura de `AuthFlow.cpp`, `MinecraftAccount.cpp`,
+`AccountData.cpp`, y los 9 archivos de `steps/` (los 3 arreglados hoy incluidos) — todo eso sigue
+verificado solo por lectura de código + compilación, no por test automatizado.
+
+**Estado del árbol:** 22 commits locales sin pushear.
