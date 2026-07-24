@@ -1356,3 +1356,80 @@ corregir hoy con 1 archivo de 6 tests. Sigue faltando cobertura de `AuthFlow.cpp
 verificado solo por lectura de código + compilación, no por test automatizado.
 
 **Estado del árbol:** 22 commits locales sin pushear.
+
+
+### Sesión 54 — Cobertura de tests en `minecraft/auth/`, parte 2: `AccountData` y `MinecraftAccount` (2026-07-23)
+
+Continuación directa de la sesión 53 (que dejó "seguir cubriendo `minecraft/auth/` con tests reales"
+como lo próximo). Se cubrieron los dos archivos que seguían sin ningún test propio: `AccountData.cpp`
+(el formato de guardado V3 real de toda cuenta MSA/offline) y `MinecraftAccount.cpp` (creación de
+cuentas, algoritmo de UUID offline, `shouldRefresh()`, `fillSession()`).
+
+**`AccountData_test.cpp` tenía un bug de verdad, sin detectar desde que se escribió.** El archivo se
+había creado al final de la sesión anterior pero nunca se había compilado (quedó como `?? ` sin
+trackear en git, sin correr `ninja` sobre él ni una vez). Al intentar compilarlo hoy: error real,
+`QJsonArray()` usado en 3 tests sin el include `<QJsonArray>` (solo llegaba una forward-declaration vía
+`qmetatype.h`, insuficiente para instanciar el tipo). Corregido agregando el include. Una vez compilado,
+sus 10 tests (round-trip MSA completo, cuenta offline, token no-persistente que no se guarda, migración
+del token legacy `"offline"`→`"0"`, `type` ausente/desconocido falla limpio, fallback de entitlement a
+`Assumed` cuando hay perfil válido pero no hay bloque entitlement, ese mismo fallback NO ocurre sin
+perfil válido, base64 corrupto en piel no crashea ni bloquea el resto del perfil, fallback de
+`profileName()` a string localizado, perfil sin campo `skin` obligatorio rechaza el perfil completo)
+pasan limpio. Leccion: "está escrito y no rompe la compilación de la suite" no es lo mismo que "se
+compiló y corrió" — con `ecm_add_test` un archivo nuevo sin registrar en `CMakeLists.txt` (que este
+tampoco lo estaba) no se ejerce nunca por accidente.
+
+**`MinecraftAccount_test.cpp`, 18 tests nuevos**, cubriendo solo lógica pura sin red ni `Task`
+(`login()`/`refresh()`, que sí arrancan un `AuthFlow` real, quedan fuera a propósito — eso requiere
+mockear la red, no es responsabilidad de esta clase):
+- `createOffline()`/`createBlankMSA()`: defaults esperados, `typeString()`, `hasProfile()`,
+  `ownsMinecraft()` en falso.
+- `uuidFromUsername()`: verificado contra 3 usernames (`Steve`, `ElPibeCapo`, `Alex`) calculados de
+  forma **independiente en Python** (`hashlib.md5` + los mismos bitmasks de versión/variante) antes de
+  escribir el test, no copiados de la implementación bajo test — así el test puede detectar un bug real
+  del algoritmo, no solo confirmar lo que el código ya hace.
+- `internalId()` único por cuenta (dos `createOffline()` sucesivos no deben colisionar).
+- Round-trip `saveToJson()`/`loadFromJsonV3()` a nivel del wrapper `MinecraftAccount` (ya cubierto a
+  nivel `AccountData`, esto confirma que el wrapper no pierde nada), y `loadFromJsonV3()` devolviendo
+  `nullptr` limpio ante JSON inválido o `type` no reconocido.
+- `ownsMinecraft()`: regla de negocio explícita de que una cuenta offline nunca es dueña del juego, ni
+  siquiera si el entitlement quedara en `true` por un dato corrupto o mal migrado — se fuerza el campo a
+  `true` a mano en el test para confirmar que igual devuelve `false`.
+- `shouldRefresh()`, los 5 casos reales de esa lógica de fechas: en uso (`UseLock`) siempre gana sobre
+  cualquier otra condición; `Validity::None` nunca refresca; `Validity::Assumed` siempre refresca;
+  `Validity::Certain` con `notAfter` lejos (>12h) no refresca, cerca (<12h) sí; y el fallback a 24h desde
+  `issueInstant` cuando `notAfter` es inválido (token emitido hace 13h → vencimiento asumido en 11h,
+  menos de 12 → debe pedir refresh).
+- `fillSession()`: arma bien `access_token`/`player_name`/`uuid`/`user_type`/`session`; cae a
+  `uuidFromUsername()` cuando `profileId` está vacío; `session` queda en `"-"` (no `"token::..."`) sin
+  `access_token`.
+
+**Verificación real de que el test de `shouldRefresh()` sirve, mismo estándar que la sesión 53 con
+`AccountList`:** se rompió a propósito el umbral de 12hs en `MinecraftAccount.cpp` (cambiado a 2hs),
+recompilado, corrido — fallaron exactamente los 2 tests que dependen de esa ventana temporal
+(`test_shouldRefreshTrueWhenCertainAndWithin12HoursOfExpiry` y
+`test_shouldRefreshFallsBackTo24hFromIssueInstantWhenNotAfterInvalid`) y ningún otro de los 18. Revertido
+el cambio, recompilado, `ctest -R AccountList\|AccountData\|MinecraftAccount` 3/3 verde de nuevo.
+
+**Ambos archivos quedaron registrados en `tests/CMakeLists.txt`** vía `ecm_add_test` — ninguno de los dos
+estaba enganchado al build antes de hoy (por eso el bug del include en `AccountData_test.cpp` nunca se
+había detectado).
+
+**Incidente de infraestructura, no del código:** el MCP local (Desktop Commander, usado en esta sesión en
+vez del run_command directo de pibe-mcp) se colgó dos veces durante builds largos (>4 min sin responder,
+sin matar el proceso real del lado del servidor — el build siguió y terminó igual del otro lado, se
+confirmó leyendo el binario/log después de que la herramienta volvió a responder). Sin impacto en el
+resultado, pero forzó a lanzar el build completo final en background (`nohup ... &`, polling del log en
+vez de esperar bloqueado) para poder confirmarlo sin volver a colgar la herramienta.
+
+**Build completo + suite completa, no solo los 3 archivos tocados:** `cmake --build .` sin target
+específico (con `-Werror` activado en `Launcher_logic`), 0 errores. `ctest` completo: **34/34 verde**
+(31 preexistentes + los 3 de `minecraft/auth/`: `AccountList`, `AccountData`, `MinecraftAccount`).
+
+**Estado del árbol:** nada de esto está commiteado todavía — `AccountData_test.cpp` (nuevo + fix del
+include), `MinecraftAccount_test.cpp` (nuevo), `tests/CMakeLists.txt` (2 líneas de `ecm_add_test`
+agregadas). Sigue pendiente cobertura de `AuthFlow.cpp` y los 9 archivos de `steps/` — con esto,
+`minecraft/auth/` pasa de "1 de 12 archivos con test propio" a "3 de 12", los tres de lógica pura sin
+red. `AuthFlow.cpp` y `steps/` son justamente los que sí hablan con la red — necesitan mockear
+`NetworkTask/Task` para poder testear la lógica de parseo/estado sin depender de un servidor real, cosa
+que no se abordó hoy.
