@@ -168,12 +168,15 @@ tools/dev/                             8 herramientas de desarrollo (build_fast.
 packaging/
 └── com.beteliney.BetelineyLauncher.json  Manifest Flatpak
 
-docs/
-├── CHANGELOG.md       Historial completo de cambios
-├── ARQUITECTURA.md    Documento técnico de módulos
-├── PERFILES_JVM.md    Flags G1GC explicados
-├── TROUBLESHOOTING.md Problemas frecuentes y soluciones
-└── COMPILAR_WINDOWS.md Guía de compilación Windows
+docs/ (ver índice completo en docs/README.md)
+├── CHANGELOG.md         Historial completo de cambios
+├── ARQUITECTURA.md      Documento técnico de módulos
+├── AUDITORIA_MODULOS.md Estado de auditoría por carpeta heredada de Prism
+├── PERFILES_JVM.md      Flags G1GC/ZGC explicados
+├── TROUBLESHOOTING.md   Problemas frecuentes y soluciones
+├── COMPILAR_WINDOWS.md  Guía de compilación Windows
+├── CONTRIBUTING.md      Cómo contribuir código al proyecto
+└── GESTORES_Y_SKILLS.md Diseño de subagentes/skills/hooks de Claude Code
 
 ESTADO.md              Estado completo del proyecto (fuente de verdad)
 EMPAQUETAR_APPIMAGE.sh Script para generar AppImage
