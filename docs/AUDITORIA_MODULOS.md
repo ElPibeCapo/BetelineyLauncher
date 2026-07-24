@@ -234,3 +234,36 @@ próxima release.
 5. **[Hecho — 2026-07-19]** Repetir el diff contra `upstream` cada vez que Prism saque un tag nuevo:
    convertido en `tools/dev/audit_upstream.sh`, ya no depende de acordarse ni de repetir comandos a
    mano.
+6. **[Nuevo — sesión 54 cont., 2026-07-23, hallazgo real, no solo re-lectura]** El dueño del proyecto
+   decidió adoptar el refactor de ownership del ítem 2 (respuesta explícita: "adoptarlo completo").
+   Antes de tocar código se intentó `git cherry-pick --no-commit` real sobre los 35 candidatos que
+   quedaban del ítem 2 (no solo lectura) para separar qué es genuinamente parte del refactor de qué
+   no. Resultado, verificado uno por uno:
+   - **3 más resultan diff vacío** (`fe5aee261`, `2981d9109`, `21de7a2d9`) — ya resueltos de otra forma
+     en este fork, sin relación con el refactor. Sube el total de "ya resuelto de otra forma, detectado
+     tarde" a **10 de 53** (7 del ítem 2 original + estos 3). Ninguno se commiteó (diff vacío, nada que
+     commitear).
+   - **`17ea51ce2`** (leak de Windows en `JavaUtils.cpp`, no tenía nada que ver con el refactor por
+     archivo) sí dio conflicto real, pero al revisar el código actual **el leak ya no existe** —
+     nuestro `FindJavaFromRegistryKey` fue reescrito distinto (una sola asignación, sin duplicar) en
+     algún momento sin quedar documentado como tal. Se suma a la lista de "ya resuelto de otra forma":
+     **11 de 53.**
+   - **Hallazgo de fondo, el importante:** el cluster de "~46" del ítem 2 **no es un solo refactor,
+     son al menos DOS features completos de upstream nunca adoptados**, y `tools/dev/audit_upstream.sh`
+     no puede verlos porque solo busca palabras clave de seguridad/crash en el *mensaje* del commit —
+     no detecta una dependencia de API. Se confirmó intentando `1b3ff96ff` (leak de `NetJob`, parecía
+     independiente por archivo — `ConcurrentTask.cpp`, `FileResolvingTask.cpp`): el conflicto real
+     mostró que ese commit llama a `updateStepProgress(progress, Operation::REMOVED/CHANGED)`, un
+     método y un enum que **no existen en absoluto** en este fork. Rastreando con
+     `git log -S "updateStepProgress"` aparece el origen real: `f997529cd`/`fae250d50`,
+     **"feat: better task tracking"** (upstream, 2023-03-30) — una feature de UI completa y separada
+     (barra de progreso por sub-tarea en vivo: `SubTaskProgressBar.cpp/.h/.ui` nuevos, cambios en
+     `Task.h/.cpp`, `ConcurrentTask.h/.cpp`, `Download.cpp/.h`, `NetAction.h`, `ProgressDialog.*`) que
+     nunca se adoptó en este fork y que ningún documento había registrado como pendiente hasta ahora.
+     **Es una decisión de adopción de feature aparte, no parte de la decisión ya tomada sobre el
+     refactor de ownership de recursos** — el dueño del proyecto todavía no se expidió sobre esta.
+     Cherry-pick de `1b3ff96ff` abortado limpio, árbol restaurado a `f36da8702` sin nada a medio
+     resolver. El resto de los ~30 candidatos sin intentar individualmente todavía puede repartirse
+     entre estos dos features (ownership de recursos / task tracking) o ser genuinamente independiente
+     — no asumido, pendiente de repetir este mismo método (`cherry-pick --no-commit` real, uno por uno)
+     antes de escribir una sola línea de más.
