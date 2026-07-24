@@ -204,7 +204,7 @@ EMPAQUETAR_APPIMAGE.sh Script para generar AppImage
 
 - [x] Activar GitHub Pages en el repo `meta` (causa raíz era `build_type` mal configurado, no falta de activación)
 - [x] 3 BetelineyPacks publicados (Vanilla Optimizado, PvP Competitivo, Pesado NeoForge — mods verificados contra la API de Modrinth)
-- [x] `known-hashes.json` en el meta server — publicado vacío por diseño honesto (no había fuente pública de hashes reales de Fractureiser al momento de crearlo). **Actualización:** sí existe una fuente real (MalwareBazaar/abuse.ch, API pública) — sembrar la lista con datos reales queda en el plan priorizado (ver checklist de abajo)
+- [x] `known-hashes.json` en el meta server — publicado vacío por diseño honesto (no había fuente pública de hashes reales de Fractureiser al momento de crearlo). Sembrado con datos reales el 2026-07-18 (API de MalwareBazaar/abuse.ch, hash SHA-256 real de `Fractureiser` verificado y trazable, `sha512` sigue vacío porque esa API no lo expone)
 - [x] Rotación de la CurseForge API key expuesta + secret cargado en CI
 - [x] Capturas de BetelineyPacks y perfiles JVM
 - [ ] Captura del panel de diagnóstico de logs (requiere forzar un crash de lanzamiento para activarlo)
@@ -223,13 +223,12 @@ EMPAQUETAR_APPIMAGE.sh Script para generar AppImage
 - [x] Sistema de logros ligado a la marca (gamificación por tiempo jugado)
 - [x] Sandboxing opcional del proceso Minecraft con Bubblewrap (Linux)
 - [x] Firma Ed25519 fail-closed en el updater
+- [x] Tema de Alto Contraste (WCAG AA) — accesibilidad baja visión/daltonismo
 
 **Ideas de mejora futuras (investigadas y verificadas, no confirmadas aún — ver bloque "ESTADO CONSOLIDADO" al final de `ESTADO.md` para el plan completo y priorizado):**
 
-- [ ] Sembrar `known-hashes.json` con datos reales de MalwareBazaar (ver corrección arriba — bloqueado por API key de abuse.ch, requiere que el usuario la consiga)
-- [ ] Discord Rich Presence a nivel de proceso launcher/juego
+- [ ] Discord Rich Presence a nivel de proceso launcher/juego (librería oficial `discord-rpc` deprecada por Discord, forks comunitarios activos siguen siendo viables técnicamente — decisión de implementación sin tomar)
 - [ ] Preset de BetelineyPacks con fuente CurseForge (esfuerzo medio — limitado por el "Project Distribution Toggle" de CurseForge)
-- [ ] Tema de alto contraste (accesibilidad — ningún launcher competidor lo tiene)
 - [ ] Búsqueda combinada Modrinth+CurseForge en una sola pestaña (mediano/largo plazo)
 
 ---

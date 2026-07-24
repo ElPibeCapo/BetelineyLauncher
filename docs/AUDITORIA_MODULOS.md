@@ -47,7 +47,7 @@ de nuevo cada vez que Prism saque un tag nuevo, o periódicamente — no solo cu
 | `crash/` | Propio | 2 | `4c6596960` (2026-06-19) | N/A — código propio (CrashReporter) |
 | `logs/` | Propio | 1 | `43708b311` (2026-06-16) | N/A — código propio (LogAnalyzer) |
 | `modplatform/` | Heredado (salvo `beteliney/`) | 3, ninguno de fondo | `a3eb3e767` (2026-07-06) | ❌ **Nunca auditado** — ver hallazgo abajo |
-| `minecraft/auth/` | 100% heredado | 2 (`AccountList.cpp` off-by-one, JSON sin escapar en 3 `steps/`) | `34a101ec6` (2026-07-22) | ✅ **Auditado completo — 2026-07-22.** Los 21 archivos de implementación (raíz + `steps/`) revisados línea por línea. 2 bugs reales corregidos. 1 hallazgo abierto de severidad baja no explotable (base64 sin validar en `AccountData.cpp`, decisión consciente de no tocar). Resto limpio. |
+| `minecraft/auth/` | 100% heredado | 2 (`AccountList.cpp` off-by-one, JSON sin escapar en 3 `steps/`) | `00f72e3d3` (2026-07-23) | ✅ **Auditado completo — 2026-07-22.** Los 21 archivos de implementación (raíz + `steps/`) revisados línea por línea. 2 bugs reales corregidos. 1 hallazgo abierto de severidad baja no explotable (base64 sin validar en `AccountData.cpp`, decisión consciente de no tocar). Test unitario propio: 3/12 archivos (`AccountList`, `AccountData`, `MinecraftAccount`), verificado con prueba de control real. Falta `AuthFlow.cpp` + 9 de `steps/` (requiere mock de `Task`/`NetworkTask`). |
 | `minecraft/skins/` | 100% heredado | 0 | nunca | ❌ Nunca auditado |
 | `minecraft/update/` | 100% heredado | 0 | nunca | ❌ Nunca auditado |
 | `tasks/` | 100% heredado | 0 | nunca | ❌ Nunca auditado (infraestructura transversal — riesgo medio-alto por eso mismo) |
@@ -212,7 +212,9 @@ esquema y campos, escapado automático. Compilado + `ctest` 31/31, commit `34a10
 real de punta a punta con cuenta de Microsoft para confirmar en producción — recomendado antes de la
 próxima release.
 
-## Próximos pasos recomendados, en orden de prioridad real (actualizado 2026-07-22)
+## Próximos pasos recomendados, en orden de prioridad real (actualizado 2026-07-23)
+
+0. **[Nuevo — cobertura de test real, sesiones 53 cont./54, 2026-07-23]** La auditoría de `minecraft/auth/` (ítem 3 de abajo) fue de lectura de código — no había ni un test unitario propio sobre esa carpeta hasta ahora. Se agregaron 3: `AccountList_test.cpp` (verifica la regresión del off-by-one de `611b50894`), `AccountData_test.cpp` (round-trip de serialización, migración de token legacy, fallbacks) y `MinecraftAccount_test.cpp` (18 tests: `createOffline`/`createBlankMSA`, `uuidFromUsername`, `ownsMinecraft()`, los 5 casos de `shouldRefresh()`, `fillSession()`). Los tres verificados con prueba de control real (romper el bug/umbral a propósito, confirmar que el test lo detecta, revertir). Cobertura de `minecraft/auth/`: **3 de 12 archivos con test propio.** Pendiente real: `AuthFlow.cpp` y los 9 archivos de `steps/` — el flujo que sí habla con la red vía OAuth/XSTS, requiere mockear `Task`/`NetworkTask` para poder testearlo sin depender de un servidor real ni de credenciales de Microsoft. No es trivial, pero es el hueco de cobertura más grande que queda en esta carpeta.
 
 1. **[Cerrado — 2026-07-21, sesión 50]** Los 9 cherry-picks restantes ya se intentaron uno por uno:
    8 no aplican (ya resueltos por otra vía), 1 (`710789b70`, macOS) queda en backlog de baja prioridad
