@@ -267,3 +267,26 @@ próxima release.
      entre estos dos features (ownership de recursos / task tracking) o ser genuinamente independiente
      — no asumido, pendiente de repetir este mismo método (`cherry-pick --no-commit` real, uno por uno)
      antes de escribir una sola línea de más.
+7. **[Nuevo — sesión 54 cont., 2026-07-23 — cambio de método, hallazgo mayor]** Investigando `1b3ff96ff`
+   más a fondo (¿de dónde sale `updateStepProgress`/`Operation` si no existen en ningún lado?) se
+   encontró que **ese mecanismo tampoco existe en la punta actual de upstream (`11.0.3`)** — lo
+   introdujo `1b3ff96ff` en 2023 y el propio upstream lo sacó después (`6b918daf7`/`c5592a446`,
+   sep-2024, *"Remove all the slowdown code from ConcurrentTask"*, por ser lento). Comparando
+   `launcher/tasks/ConcurrentTask.cpp` actual contra `11.0.3` directamente (no contra el commit
+   histórico): **son idénticos** — no hay ninguna brecha ahí. Lo mismo con
+   `launcher/modplatform/flame/FileResolvingTask.cpp`: el "leak" que `1b3ff96ff` decía arreglar ya no
+   está presente en ninguna de las dos puntas; la única diferencia real contra upstream es un feature
+   chico y no relacionado (`FallbackMRBlockedMods`, un toggle de settings para reintentar descargas de
+   mods bloqueados en Modrinth, que este fork no tiene). **Conclusión metodológica, la importante:**
+   comparar contra commits históricos individuales (`merge-base --is-ancestor`, cherry-pick por hash)
+   da falsos positivos sistemáticos en archivos que cambiaron mucho — un commit puede quedar "sin
+   aplicar" simplemente porque upstream lo revirtió o reescribió después, no porque el problema siga
+   presente. **El método correcto es diff directo del archivo actual contra la punta actual de
+   upstream (`11.0.3`), no contra commits sueltos.** Corrida esa comparación sobre las 3 carpetas
+   completas (`minecraft/mod/`, `modplatform/`, `tasks/`, filtrando branding/copyright/whitespace):
+   **45 archivos con diferencia real**, de 3 a 316 líneas de diff cada uno — lista completa por tamaño
+   en el registro de sesión 54 cont. de `ESTADO.md`. Esto reemplaza al "cluster de ~46 commits" como
+   la unidad de trabajo real: no todo ese diff es un bug sin aplicar — una parte es divergencia propia
+   intencional de Beteliney (features/branding propios) y otra parte real puede ser mejoras o fixes de
+   upstream sin traer. Separar una cosa de la otra, archivo por archivo, empezando por los más chicos,
+   es el trabajo real pendiente — no cherry-pickear hashes sueltos.
