@@ -425,7 +425,7 @@ Section "@Launcher_DisplayName@"
     WriteRegStr HKCU "${UNINST_KEY}" "UninstallString" '"$INSTDIR\uninstall.exe" _?=$INSTDIR'
     WriteRegStr HKCU "${UNINST_KEY}" "QuietUninstallString" '"$INSTDIR\uninstall.exe" /S _?=$INSTDIR'
     WriteRegStr HKCU "${UNINST_KEY}" "InstallLocation" "$INSTDIR"
-    WriteRegStr HKCU "${UNINST_KEY}" "Publisher" "@Launcher_DisplayName@ Contributors"
+    WriteRegStr HKCU "${UNINST_KEY}" "Publisher" "El_PibeCapo"
     WriteRegStr HKCU "${UNINST_KEY}" "Version" "@Launcher_VERSION_NAME4@"
     WriteRegStr HKCU "${UNINST_KEY}" "DisplayVersion" "@Launcher_VERSION_NAME@"
     WriteRegStr HKCU "${UNINST_KEY}" "VersionMajor" "@Launcher_VERSION_MAJOR@"

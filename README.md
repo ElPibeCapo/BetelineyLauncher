@@ -236,8 +236,15 @@ EMPAQUETAR_APPIMAGE.sh Script para generar AppImage
 
 ---
 
+## Autor
+
+**El_PibeCapo** — creador y director del proyecto.
+
+Contacto: [elpibecapoofficial@gmail.com](mailto:elpibecapoofficial@gmail.com) (personal) · [betelineylauncher@gmail.com](mailto:betelineylauncher@gmail.com) (proyecto)
+
 ## Licencia
 
 Código del launcher: **GPL-3.0-only** — mismo que Prism Launcher.
 Logo y assets visuales: **CC BY-SA 4.0**.
 No afiliado con el proyecto Prism Launcher.
+Copyright (C) 2026 El_PibeCapo — ver [`docs/COPYING.md`](docs/COPYING.md) para el texto completo y los avisos de copyright heredados.
