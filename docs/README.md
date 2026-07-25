@@ -32,6 +32,8 @@ Para Linux, la chuleta rápida es [`LEEME.txt`](../LEEME.txt) (raíz) — comand
 
 ## Sobre el uso de IA en este proyecto
 
+**[`FILOSOFIA_Y_METODOLOGIA.md`](FILOSOFIA_Y_METODOLOGIA.md)** — el *por qué* detrás de cómo se construye Beteliney: metodología de trabajo con IA, filosofía de documentación, visión de largo plazo, origen del nombre. No es fuente de estado (para eso, `ESTADO.md`).
+
 **[`GESTORES_Y_SKILLS.md`](GESTORES_Y_SKILLS.md)** — investigación y diseño de los subagentes, skills y hooks de Claude Code configurados en `.claude/` (qué es cada capa, por qué se decidió así, qué se descartó y por qué). Leer antes de tocar `.claude/agents/`, `.claude/skills/` o `.claude/settings.json`.
 
 **[`ESTRATEGIA_IA.md`](../ESTRATEGIA_IA.md)** (raíz) — comparación de modelos de IA (costos, capacidades) evaluados para el flujo de desarrollo del proyecto.
