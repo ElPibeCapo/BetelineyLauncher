@@ -257,10 +257,41 @@ jobs:
           fi
           echo "$RELEASE_SIGNING_KEY" > /tmp/release_signing_key.pem
           chmod 600 /tmp/release_signing_key.pem
+
+          # Self-check (sesion 38): antes de firmar nada, confirmar que la clave
+          # publica que el updater tiene embebida (UpdateVerify.cpp) corresponde
+          # exactamente al par de RELEASE_SIGNING_KEY. Si alguna vez se rota una
+          # sin la otra, el updater rechazaria TODOS los releases en silencio -
+          # mejor fallar aca, en CI, con un mensaje claro.
+          EMBEDDED_PUBKEY=$(sed -n '/kReleasePublicKey\[/,/};/p' launcher/updater/betelineyupdater/UpdateVerify.cpp \
+            | grep -oE '0x[0-9a-fA-F]{2}' | sed 's/0x//' | tr -d '\n' | tr 'A-F' 'a-f')
+          openssl pkey -in /tmp/release_signing_key.pem -pubout -outform DER -out /tmp/release_pub.der
+          DERIVED_PUBKEY=$(tail -c 32 /tmp/release_pub.der | xxd -p -c 32 | tr -d '\n')
+          openssl pkey -in /tmp/release_signing_key.pem -pubout -out /tmp/release_pub.pem
+
+          if [ "$EMBEDDED_PUBKEY" != "$DERIVED_PUBKEY" ]; then
+            echo "::error::La clave publica embebida en UpdateVerify.cpp NO corresponde al secret RELEASE_SIGNING_KEY actual."
+            echo "::error::Embebida:  $EMBEDDED_PUBKEY"
+            echo "::error::Derivada:  $DERIVED_PUBKEY"
+            echo "::error::El updater rechazaria este release. Aborta y sincroniza la clave publica en UpdateVerify.cpp con el secret, o viceversa."
+            shred -u /tmp/release_signing_key.pem 2>/dev/null || rm -f /tmp/release_signing_key.pem
+            exit 1
+          fi
+          echo "Self-check OK: clave publica embebida coincide con RELEASE_SIGNING_KEY ($EMBEDDED_PUBKEY)"
+
           for f in artifacts/*; do
             [ -f "$f" ] || continue
             openssl pkeyutl -sign -inkey /tmp/release_signing_key.pem -rawin -in "$f" -out "$f.sig"
-            echo "Firmado: $f -> $f.sig"
+            # Verificacion independiente (misma forma en que lo haria un
+            # verificador externo con la clave publica, sin depender de que
+            # libsodium este disponible en este runner): si esto falla, el
+            # updater tambien fallaria, asi que abortamos antes de publicar.
+            if ! openssl pkeyutl -verify -pubin -inkey /tmp/release_pub.pem -rawin -in "$f" -sigfile "$f.sig" >/dev/null 2>&1; then
+              echo "::error::La firma generada para $f no se auto-verifica. Abortando release."
+              shred -u /tmp/release_signing_key.pem 2>/dev/null || rm -f /tmp/release_signing_key.pem
+              exit 1
+            fi
+            echo "Firmado y verificado: $f -> $f.sig"
           done
           shred -u /tmp/release_signing_key.pem 2>/dev/null || rm -f /tmp/release_signing_key.pem
 
