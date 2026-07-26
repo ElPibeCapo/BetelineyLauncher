@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Discord — dudas y soporte general
+    url: https://discord.gg/fMbSkEd85r
+    about: Para preguntas de uso, configuración, o si no estás seguro de si es un bug real. Respuesta más rápida que un issue.
+  - name: 🔒 Reportar una vulnerabilidad de seguridad
+    url: https://github.com/ElPibeCapo/BetelineyLauncher/security/advisories/new
+    about: No la reportes como issue público — ver SECURITY.md.

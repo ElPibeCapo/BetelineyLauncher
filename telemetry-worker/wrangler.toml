@@ -1,0 +1,12 @@
+name = "beteliney-telemetry"
+main = "src/index.js"
+compatibility_date = "2026-07-01"
+
+# El database_id se completa solo al correr:
+#   npm run db:create
+# (o "wrangler d1 create beteliney-telemetry" directo). Copia el id que
+# devuelve la terminal y pegalo abajo antes de correr db:migrate:remote / deploy.
+[[d1_databases]]
+binding = "DB"
+database_name = "beteliney-telemetry"
+database_id = "REEMPLAZAR-DESPUES-DE-CREAR-LA-DB"

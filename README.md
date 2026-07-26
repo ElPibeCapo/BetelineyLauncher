@@ -18,6 +18,12 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/ElPibeCapo/BetelineyLauncher/actions/workflows/build.yml"><img alt="Build" src="https://github.com/ElPibeCapo/BetelineyLauncher/actions/workflows/build.yml/badge.svg"></a>
+  <a href="https://github.com/ElPibeCapo/BetelineyLauncher/releases/latest"><img alt="Última release" src="https://img.shields.io/github/v/release/ElPibeCapo/BetelineyLauncher?label=release"></a>
+  <a href="LICENSE"><img alt="Licencia" src="https://img.shields.io/badge/licencia-GPL--3.0-blue"></a>
+</p>
+
+<p align="center">
   <img src="screenshots/ventana-principal.png" alt="Ventana principal de Beteliney Launcher" width="85%">
 </p>
 <p align="center"><i>Ventana principal — instancias con tema neón.</i></p>

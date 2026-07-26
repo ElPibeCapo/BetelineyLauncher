@@ -1,0 +1,71 @@
+name: 🐛 Reporte de bug
+description: Algo no funciona como debería
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Antes de abrir el issue, revisá [`docs/TROUBLESHOOTING.md`](../../docs/TROUBLESHOOTING.md) — el problema puede tener solución conocida ahí.
+        Si es una vulnerabilidad de seguridad (no un crash común), **no la reportes acá** — seguí [`SECURITY.md`](../../SECURITY.md).
+
+  - type: input
+    id: version
+    attributes:
+      label: Versión de Beteliney Launcher
+      description: Ayuda → Acerca de, o el nombre del archivo descargado.
+      placeholder: "8.4.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Sistema operativo
+      options:
+        - Windows 10/11
+        - Linux (especificar distro abajo)
+        - macOS
+    validations:
+      required: true
+
+  - type: input
+    id: os-detail
+    attributes:
+      label: Distro / versión exacta del SO
+      placeholder: "CachyOS, kernel 7.0.9 / Windows 11 24H2"
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: Qué pasó
+      description: Descripción clara de qué esperabas que pasara y qué pasó en realidad.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Pasos para reproducir
+      placeholder: |
+        1. Abrir instancia X
+        2. Hacer click en Y
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Log relevante
+      description: Si el crash generó un reporte automático (Ayuda → Reportar crash), pegalo acá. Si es un crash de Minecraft, el launcher mismo debería haberte mostrado el diagnóstico — pegá también ese mensaje.
+      render: shell
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Confirmación
+      options:
+        - label: Ya revisé que no exista un issue abierto igual a este.
+          required: true
+        - label: Estoy usando una versión oficial descargada de Releases (no un build propio modificado).
+          required: false

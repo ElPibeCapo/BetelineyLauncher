@@ -162,6 +162,16 @@
             </property>
            </widget>
           </item>
+          <item>
+           <widget class="QCheckBox" name="telemetryCheckBox">
+            <property name="toolTip">
+             <string>Envía un identificador aleatorio, la versión del launcher y el sistema operativo. No incluye nombre de usuario, cuenta de Minecraft ni IP.</string>
+            </property>
+            <property name="text">
+             <string>Enviar estadísticas de uso anónimas</string>
+            </property>
+           </widget>
+          </item>
          </layout>
         </widget>
        </item>

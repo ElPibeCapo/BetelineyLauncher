@@ -131,6 +131,7 @@
 #include "KonamiCode.h"
 
 #include "BetelineyAchievements.h"  // Beteliney Fase 3
+#include "BetelineyTelemetry.h"  // Beteliney Fase 4
 #include "ui/widgets/AchievementToast.h"  // Beteliney Fase 3
 
 #include "InstanceCopyTask.h"
@@ -322,6 +323,18 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWi
                 [this](const Beteliney::Achievement& achievement) {
                     m_achievementToast->showAchievement(achievement.name, achievement.description);
                 });
+    }
+
+    // Beteliney Fase 4: telemetria anonima de uso (usuarios activos / instalaciones historicas)
+    {
+        Beteliney::Telemetry::instance().start(APPLICATION->network());
+        if (Beteliney::Telemetry::instance().shouldShowFirstRunNotice()) {
+            QMessageBox::information(
+                this, tr("Beteliney Launcher"),
+                tr("BetelineyLauncher envía estadísticas de uso completamente anónimas (un identificador "
+                   "aleatorio, versión y sistema operativo — nada que te identifique) para saber cuánta gente "
+                   "usa el launcher.\n\nPodés desactivarlo cuando quieras en Configuración > Launcher."));
+        }
     }
 
     // Add the news label to the news toolbar.

@@ -60,7 +60,7 @@ Flags de compilación dedicados a esta CPU:
 
 ## Estructura de directorios
 
-> **Corregido en esta revisión** — el árbol de abajo estaba completamente inventado en la versión vieja del documento (raíz `BetelineyLauncher_v7/`, `docs/PENDIENTES.md`, `docs/ESTRUCTURA.md`, `docs/SESIONES.md`, `docs/AUDITORIA.md`, `tools/verify.py`, `tools/fix_icons.py` — ninguno de esos existe). Esto es lo que hay realmente en `"/home/pibe/Descargas/Beteliney Launcher [Minecraft]/BetelineyLauncher/source/"` (raíz del repo git):
+> **Corregido en esta revisión** — el árbol de abajo estaba completamente inventado en la versión vieja del documento (raíz `BetelineyLauncher_v7/`, `docs/PENDIENTES.md`, `docs/ESTRUCTURA.md`, `docs/SESIONES.md`, `docs/AUDITORIA.md`, `tools/verify.py`, `tools/fix_icons.py` — ninguno de esos existe). Esto es lo que hay realmente en la raíz del repo git (`source/`, el checkout local puede estar en cualquier ruta):
 
 ```
 source/                          Raíz del repo (== raíz del proyecto, sin carpeta v7 envolvente)

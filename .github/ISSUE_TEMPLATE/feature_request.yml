@@ -1,0 +1,38 @@
+name: ✨ Propuesta de feature
+description: Idea para algo nuevo en el launcher
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Revisá el [roadmap del README](../../README.md#roadmap) primero — puede que ya esté planeado o descartado con una razón explícita.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Qué problema resuelve
+      description: No empieces por la solución — contá qué te está costando trabajo hoy con el launcher tal como está.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Cómo te imaginás que funcione
+      description: Si tenés una idea concreta de la UI/UX o el flujo, describila. No hace falta que sea perfecta.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternativas consideradas
+      description: ¿Hay algún mod, launcher, o workaround que ya resuelva esto parcialmente?
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Confirmación
+      options:
+        - label: Ya revisé que no exista un issue o discusión abierta pidiendo lo mismo.
+          required: true

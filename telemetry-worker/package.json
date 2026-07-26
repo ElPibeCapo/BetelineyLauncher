@@ -1,0 +1,16 @@
+{
+  "name": "beteliney-telemetry",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail",
+    "db:create": "wrangler d1 create beteliney-telemetry",
+    "db:migrate:local": "wrangler d1 execute beteliney-telemetry --local --file=schema.sql",
+    "db:migrate:remote": "wrangler d1 execute beteliney-telemetry --remote --file=schema.sql"
+  },
+  "devDependencies": {
+    "wrangler": "^4.114.0"
+  }
+}

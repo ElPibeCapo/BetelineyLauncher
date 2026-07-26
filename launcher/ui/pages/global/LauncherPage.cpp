@@ -48,6 +48,7 @@
 
 #include <FileSystem.h>
 #include "Application.h"
+#include "BetelineyTelemetry.h"  // Beteliney Fase 4
 #include "BuildConfig.h"
 #include "DesktopServices.h"
 #include "settings/SettingsObject.h"
@@ -202,6 +203,9 @@ void LauncherPage::applySettings()
 
     s->set("MenuBarInsteadOfToolBar", ui->preferMenuBarCheckBox->isChecked());
 
+    // Beteliney Fase 4: telemetria anonima de uso
+    Beteliney::Telemetry::instance().setEnabled(ui->telemetryCheckBox->isChecked());
+
     s->set("NumberOfConcurrentTasks", ui->numberOfConcurrentTasksSpinBox->value());
     s->set("NumberOfConcurrentDownloads", ui->numberOfConcurrentDownloadsSpinBox->value());
     s->set("NumberOfManualRetries", ui->numberOfManualRetriesSpinBox->value());
@@ -258,6 +262,9 @@ void LauncherPage::loadSettings()
     }
 
     ui->preferMenuBarCheckBox->setChecked(s->get("MenuBarInsteadOfToolBar").toBool());
+
+    // Beteliney Fase 4: telemetria anonima de uso
+    ui->telemetryCheckBox->setChecked(Beteliney::Telemetry::instance().isEnabled());
 
     ui->numberOfConcurrentTasksSpinBox->setValue(s->get("NumberOfConcurrentTasks").toInt());
     ui->numberOfConcurrentDownloadsSpinBox->setValue(s->get("NumberOfConcurrentDownloads").toInt());

@@ -1132,6 +1132,9 @@ SET(LAUNCHER_SOURCES
     # Beteliney Fase 3: logros de marca por tiempo jugado
     BetelineyAchievements.h
     BetelineyAchievements.cpp
+    # Beteliney Fase 4: telemetria anonima de uso
+    BetelineyTelemetry.h
+    BetelineyTelemetry.cpp
 
     ui/dialogs/MSALoginDialog.cpp
     ui/dialogs/MSALoginDialog.h
