@@ -6,14 +6,21 @@
 #
 # Uso manual: tools/dev/secret_scan.sh
 # Uso como hook: instalado automáticamente por install_hooks.sh
+# Uso con lista explícita de archivos (sesión 56, para pre_push_checklist.sh,
+# que necesita escanear solo el rango de commits por pushear, no todo el
+# árbol ni el índice): tools/dev/secret_scan.sh archivo1 archivo2 ...
 set -uo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$REPO_ROOT"
 
-FILES=$(git diff --cached --name-only --diff-filter=ACM 2>/dev/null)
-if [[ -z "$FILES" ]]; then
-  FILES=$(git ls-files)
+if [[ $# -gt 0 ]]; then
+  FILES=$(printf '%s\n' "$@")
+else
+  FILES=$(git diff --cached --name-only --diff-filter=ACM 2>/dev/null)
+  if [[ -z "$FILES" ]]; then
+    FILES=$(git ls-files)
+  fi
 fi
 
 PATTERNS=(
