@@ -21,3 +21,12 @@ dist/
 tools/dev/.buildlogs/
 tools/dev/__pycache__/
 *.bak_*
+
+# Documentacion interna / privada (sesion 57): purgada del historial publico,
+# se mantiene en disco local para continuidad entre sesiones de IA.
+/ESTRATEGIA_IA.md
+/ESTADO.md
+/ESTADO_HISTORICO.md
+/.claude/
+/docs/FILOSOFIA_Y_METODOLOGIA.md
+/docs/GESTORES_Y_SKILLS.md
