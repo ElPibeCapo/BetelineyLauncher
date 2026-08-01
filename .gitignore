@@ -30,6 +30,9 @@ tools/dev/__pycache__/
 /.claude/
 /docs/FILOSOFIA_Y_METODOLOGIA.md
 /docs/GESTORES_Y_SKILLS.md
+/docs/AUDITORIA_UI.md
+/docs/HANDOFF-CLAUDE-CODE.md
+/docs/rediseno-v2/
 
 # ── Scripts y documentos internos (no van al repo publico) ──
 # Agregado 2026-07-29 tras la purga. Estos archivos siguen existiendo en
