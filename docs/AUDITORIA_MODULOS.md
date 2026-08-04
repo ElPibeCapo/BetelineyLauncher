@@ -7,6 +7,8 @@
 > de revisión desde el fork**, y nadie lo había documentado como hueco hasta que se preguntó explícitamente.
 > Este documento existe para que esa ambigüedad no vuelva a pasar desapercibida.
 
+> **Nota de integridad de hashes:** el commit `dd7ae4354` purgó con `git filter-repo` parte del historial de docs internos. Algunos hashes citados acá abajo pueden no ser reconstruibles por ese motivo — no asumir error de tipeo sin chequear primero contra `dd7ae4354` y su fecha.
+
 ## Regla de mantenimiento — leer antes de tocar cualquier carpeta de `launcher/`
 
 Si una carpeta no aparece acá con evidencia de revisión (commit real + fecha + qué se encontró), se
@@ -34,18 +36,18 @@ de nuevo cada vez que Prism saque un tag nuevo, o periódicamente — no solo cu
 
 | Carpeta | Origen | Commits de revisión propia* | Último commit real | Estado |
 |---|---|---|---|---|
-| `net/` | Heredado | 2 | `f9acc39a4` (2026-07-18) | ✅ Auditado — límite de redirects, tope de memoria, crash fix |
-| `meta/` | Heredado | 3 | `f9acc39a4` (2026-07-18) | ✅ Auditado — 2 path traversal + tope de memoria |
-| `migration/` | Mixto | 3 | `c149bb9a0` (2026-07-08) | ✅ Auditado — path traversal en importador GDLauncher |
-| `updater/` | Propio | 6 | `067aaa01b` (2026-07-15) | ✅ Auditado — mayormente código propio (BetelineyUpdater) |
-| `minecraft/mod/` | Heredado | 5 | `efe33a69e` (2026-07-07) | ⚠️ Parcial — 1 use-after-free real corregido, resto sin revisar a fondo |
-| `minecraft/launch/` | Mixto | 3 | `da70d0e6b` (2026-07-11) | ⚠️ Parcial — trabajo fue feature propia (sandboxing), no auditoría de lo heredado |
-| `ui/` | Mixto | 11 | `b5dfbd239` (2026-07-18) | ⚠️ Parcial — mayoría features/temas propios, no auditoría de seguridad de lo heredado |
-| `launch/` (steps) | Heredado | 1 | `f33bf6191` (2026-06-17) | ⚠️ Parcial — solo se agregó una feature encima (CheckModConflicts), resto sin tocar |
-| `crash/` | Propio | 2 | `4c6596960` (2026-06-19) | N/A — código propio (CrashReporter) |
+| `net/` | Heredado | 2 | `8d6dfe6bc` (2026-07-18) | ✅ Auditado — límite de redirects, tope de memoria, crash fix |
+| `meta/` | Heredado | 3 | `8d6dfe6bc` (2026-07-18) | ✅ Auditado — 2 path traversal + tope de memoria |
+| `migration/` | Mixto | 3 | `0e0ca32a8` (2026-07-08) | ✅ Auditado — path traversal en importador GDLauncher |
+| `updater/` | Propio | 6 | `977ebb010` (2026-07-15) | ✅ Auditado — mayormente código propio (BetelineyUpdater) |
+| `minecraft/mod/` | Heredado | 5 | `290e01071` (2026-07-07) | ⚠️ Parcial — 1 use-after-free real corregido, resto sin revisar a fondo |
+| `minecraft/launch/` | Mixto | 3 | `977a1f83e` (2026-07-11) | ⚠️ Parcial — trabajo fue feature propia (sandboxing), no auditoría de lo heredado |
+| `ui/` | Mixto | 11 | `77a199f3a` (2026-07-18) | ⚠️ Parcial — mayoría features/temas propios, no auditoría de seguridad de lo heredado |
+| `launch/` (steps) | Heredado | 1 | `0bf83eae3` (2026-06-17) | ⚠️ Parcial — solo se agregó una feature encima (CheckModConflicts), resto sin tocar |
+| `crash/` | Propio | 2 | `0d3577558` (2026-06-19) | N/A — código propio (CrashReporter) |
 | `logs/` | Propio | 1 | `43708b311` (2026-06-16) | N/A — código propio (LogAnalyzer) |
-| `modplatform/` | Heredado (salvo `beteliney/`) | 3, ninguno de fondo | `a3eb3e767` (2026-07-06) | ❌ **Nunca auditado** — ver hallazgo abajo |
-| `minecraft/auth/` | 100% heredado | 2 (`AccountList.cpp` off-by-one, JSON sin escapar en 3 `steps/`) | `00f72e3d3` (2026-07-23) | ✅ **Auditado completo — 2026-07-22.** Los 21 archivos de implementación (raíz + `steps/`) revisados línea por línea. 2 bugs reales corregidos. 1 hallazgo abierto de severidad baja no explotable (base64 sin validar en `AccountData.cpp`, decisión consciente de no tocar). Test unitario propio: 3/12 archivos (`AccountList`, `AccountData`, `MinecraftAccount`), verificado con prueba de control real. Falta `AuthFlow.cpp` + 9 de `steps/` (requiere mock de `Task`/`NetworkTask`). |
+| `modplatform/` | Heredado (salvo `beteliney/`) | 3, ninguno de fondo | `9db4b0192` (2026-07-06) | ❌ **Nunca auditado** — ver hallazgo abajo |
+| `minecraft/auth/` | 100% heredado | 2 (`AccountList.cpp` off-by-one, JSON sin escapar en 3 `steps/`) | `74fb83c6b` (2026-07-23) | ✅ **Auditado completo — 2026-07-22.** Los 21 archivos de implementación (raíz + `steps/`) revisados línea por línea. 2 bugs reales corregidos. 1 hallazgo abierto de severidad baja no explotable (base64 sin validar en `AccountData.cpp`, decisión consciente de no tocar). Test unitario propio: 3/12 archivos (`AccountList`, `AccountData`, `MinecraftAccount`), verificado con prueba de control real. Falta `AuthFlow.cpp` + 9 de `steps/` (requiere mock de `Task`/`NetworkTask`). |
 | `minecraft/skins/` | 100% heredado | 0 | nunca | ❌ Nunca auditado |
 | `minecraft/update/` | 100% heredado | 0 | nunca | ❌ Nunca auditado |
 | `tasks/` | 100% heredado | 0 | nunca | ❌ Nunca auditado (infraestructura transversal — riesgo medio-alto por eso mismo) |
@@ -90,22 +92,22 @@ path traversal, overflow, use-after-free, o etiquetado `security(...)` explícit
 priorizado sobre el resto, que son en su mayoría crashes puntuales y memory leaks reales pero de menor
 severidad:
 
-1. **`0c2b3b384`** — *fix atl path traversal* (`modplatform/`). Mismo tipo de vulnerabilidad ya cerrada
+1. **`c4e99152d`** — *fix atl path traversal* (`modplatform/`). Mismo tipo de vulnerabilidad ya cerrada
    en el importador GDLauncher y en el feed de meta, pero en un rincón de `modplatform/` nunca tocado.
-   **APLICADO 2026-07-20** (commit local `73e640b1c`), limpio sin conflictos. Build+ctest verificados
+   **APLICADO 2026-07-20** (commit local `c4e99152d`), limpio sin conflictos. Build+ctest verificados
    2026-07-21 (31/31). Ver `ESTADO.md` → `### Sesión 49 cont.`.
-2. **`56936cf48`** — *fix zip path traversal* (`minecraft/launch/`, `archive/`).
-   **APLICADO 2026-07-20** (commit local `f31924b6c`), limpio sin conflictos. Build+ctest verificados
+2. **`3cce733b1`** — *fix zip path traversal* (`minecraft/launch/`, `archive/`).
+   **APLICADO 2026-07-20** (commit local `3cce733b1`), limpio sin conflictos. Build+ctest verificados
    2026-07-21 (31/31). Ver `ESTADO.md` → `### Sesión 49 cont.`.
-3. **`5a0931d3c`** — *fix heap overflow with unstable version comparation* (`modplatform/`).
-   **APLICADO 2026-07-20** (commit local `71e275b9e`), reescribe `Version.cpp` completo a FlexVer con
+3. **`94d705d68`** — *fix heap overflow with unstable version comparation* (`modplatform/`).
+   **APLICADO 2026-07-20** (commit local `94d705d68`), reescribe `Version.cpp` completo a FlexVer con
    `operator<=>`. Conflicto real en `Packwiz.cpp` (sort lexicográfico sin dedup del fork vs. sort
    semántico + dedup de upstream) resuelto a favor de upstream. Build+ctest verificados 2026-07-21
    (31/31, incluido `Packwiz` y `Version`). Ver `ESTADO.md` → `### Sesión 49 cont.` para el detalle
    completo de la resolución de conflicto y la verificación de que la API externa no se rompe.
 4. ~~**`3967fde40`** — *fix heap buffer overflow*~~ — **verificado 2026-07-21, NO aplica.** Corrige un
    comparador `<=` (no estrictamente débil) en el sort de `Packwiz.cpp` — el mismo bloque que
-   `5a0931d3c` ya reescribió con `sortMCVersions()` (`operator<=>` + desempate por string). Sin bug que
+   `94d705d68` ya reescribió con `sortMCVersions()` (`operator<=>` + desempate por string). Sin bug que
    corregir. Conflicto real al intentarlo, abortado.
 5. ~~**`5f874330d`** — *security(modrinth) reorder hash algo priority*~~ — **verificado 2026-07-21, NO
    aplica.** El fix reordena una cadena de fallback sha1→sha512→sha256. Verificado con `git blame`
@@ -170,7 +172,7 @@ Los 42 restantes son crashes puntuales y memory leaks reales de `modplatform/`, 
 `tools/dev/audit_upstream.sh` de nuevo para verlos todos con hash y carpeta.
 
 **Pendiente de acción — actualizado 2026-07-21, sesión 50:** de los 11 priorizados originales, **3
-aplicados** (`0c2b3b384`, `56936cf48`, `5a0931d3c`, sesión 49 cont.), **7 descartados por ya estar
+aplicados** (`c4e99152d`, `3cce733b1`, `94d705d68`, sesión 49 cont.), **7 descartados por ya estar
 resueltos de otra forma o no aplicar** (`345641f7d`, `f4b22dae9`, `3967fde40`, `5f874330d`,
 `ac13579b9`, `ded77e618`, `9cd199a49` — ver arriba cada uno), y **1 sin intentar por baja prioridad de
 plataforma** (`710789b70`, macOS, hardware/SO objetivo del proyecto es Linux). No queda ningún
@@ -206,19 +208,19 @@ requests con `QString::arg()` sobre un template crudo, interpolando valores de t
 `userToken.token`, `msaToken.token`) sin escapar comillas/backslashes. Confirmado heredado del fork vía
 `git blame` contra `09eb67f74`. Explotabilidad real siempre fue bajísima (valores vienen de Microsoft/
 Xbox Live sobre TLS). **Corregido:** los 3 reemplazados por `QJsonObject`/`QJsonDocument`, mismo
-esquema y campos, escapado automático. Compilado + `ctest` 31/31, commit `34a101ec6`. No se hizo login
+esquema y campos, escapado automático. Compilado + `ctest` 31/31, commit `fdd4cee33`. No se hizo login
 real de punta a punta con cuenta de Microsoft para confirmar en producción — recomendado antes de la
 próxima release.
 
 ## Próximos pasos recomendados, en orden de prioridad real (actualizado 2026-07-23)
 
-0. **[Nuevo — cobertura de test real, sesiones 53 cont./54, 2026-07-23]** La auditoría de `minecraft/auth/` (ítem 3 de abajo) fue de lectura de código — no había ni un test unitario propio sobre esa carpeta hasta ahora. Se agregaron 3: `AccountList_test.cpp` (verifica la regresión del off-by-one de `611b50894`), `AccountData_test.cpp` (round-trip de serialización, migración de token legacy, fallbacks) y `MinecraftAccount_test.cpp` (18 tests: `createOffline`/`createBlankMSA`, `uuidFromUsername`, `ownsMinecraft()`, los 5 casos de `shouldRefresh()`, `fillSession()`). Los tres verificados con prueba de control real (romper el bug/umbral a propósito, confirmar que el test lo detecta, revertir). Cobertura de `minecraft/auth/`: **3 de 12 archivos con test propio.** Pendiente real: `AuthFlow.cpp` y los 9 archivos de `steps/` — el flujo que sí habla con la red vía OAuth/XSTS, requiere mockear `Task`/`NetworkTask` para poder testearlo sin depender de un servidor real ni de credenciales de Microsoft. No es trivial, pero es el hueco de cobertura más grande que queda en esta carpeta.
+0. **[Nuevo — cobertura de test real, sesiones 53 cont./54, 2026-07-23]** La auditoría de `minecraft/auth/` (ítem 3 de abajo) fue de lectura de código — no había ni un test unitario propio sobre esa carpeta hasta ahora. Se agregaron 3: `AccountList_test.cpp` (verifica la regresión del off-by-one de `8f9b179a4`), `AccountData_test.cpp` (round-trip de serialización, migración de token legacy, fallbacks) y `MinecraftAccount_test.cpp` (18 tests: `createOffline`/`createBlankMSA`, `uuidFromUsername`, `ownsMinecraft()`, los 5 casos de `shouldRefresh()`, `fillSession()`). Los tres verificados con prueba de control real (romper el bug/umbral a propósito, confirmar que el test lo detecta, revertir). Cobertura de `minecraft/auth/`: **3 de 12 archivos con test propio.** Pendiente real: `AuthFlow.cpp` y los 9 archivos de `steps/` — el flujo que sí habla con la red vía OAuth/XSTS, requiere mockear `Task`/`NetworkTask` para poder testearlo sin depender de un servidor real ni de credenciales de Microsoft. No es trivial, pero es el hueco de cobertura más grande que queda en esta carpeta.
 
 1. **[Cerrado — 2026-07-21, sesión 50]** Los 9 cherry-picks restantes ya se intentaron uno por uno:
    8 no aplican (ya resueltos por otra vía), 1 (`710789b70`, macOS) queda en backlog de baja prioridad
    sin intentar. Ver tabla de cherry-picks arriba.
 2. **[Parcial — 2026-07-22, sesión 52]** De los 42 fixes de severidad menor originales, `tools/dev/audit_upstream.sh` corrido en vivo hoy encontró en realidad **53** (el número había quedado
-   desactualizado). 6 standalone intentados de verdad: 1 aplicado real (`d958a91ce`, commit `e031c5df7`,
+   desactualizado). 6 standalone intentados de verdad: 1 aplicado real (`a753988e0`, commit `a753988e0`,
    compilado+testeado), 5 ya resueltos de otra forma. **Los ~46 restantes no son candidatos sueltos —
    forman un cluster ligado al refactor de ownership de recursos de upstream** (`FolderModel` de
    punteros crudos a modelo con `shared_ptr`, serie larga de commits relacionados en
@@ -260,7 +262,7 @@ próxima release.
      nunca se adoptó en este fork y que ningún documento había registrado como pendiente hasta ahora.
      **Es una decisión de adopción de feature aparte, no parte de la decisión ya tomada sobre el
      refactor de ownership de recursos** — el dueño del proyecto todavía no se expidió sobre esta.
-     Cherry-pick de `1b3ff96ff` abortado limpio, árbol restaurado a `f36da8702` sin nada a medio
+     Cherry-pick de `1b3ff96ff` abortado limpio, árbol restaurado a `abcaddea9` sin nada a medio
      resolver. El resto de los ~30 candidatos sin intentar individualmente todavía puede repartirse
      entre estos dos features (ownership de recursos / task tracking) o ser genuinamente independiente
      — no asumido, pendiente de repetir este mismo método (`cherry-pick --no-commit` real, uno por uno)
