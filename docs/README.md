@@ -1,12 +1,6 @@
 # Índice de documentación — BetelineyLauncher
 
-Mapa de todos los documentos del proyecto: qué es cada uno, para qué sirve, y en qué orden conviene leerlos según lo que necesites. Objetivo: que nadie (ni una sesión nueva de Claude, ni un colaborador humano) tenga que adivinar dónde está algo.
-
-## Si querés retomar el trabajo del proyecto (empezar acá)
-
-**[`ESTADO.md`](../ESTADO.md)** (raíz) — fuente de verdad viva del proyecto. Lee SOLO la sección `## ESTADO ACTUAL` al principio: resume qué está hecho, qué falta, y qué decisiones esperan al dueño del proyecto. El resto del archivo (`## HISTORIAL DE SESIONES`) es el detalle sesión por sesión, útil para auditar una decisión pasada, no necesario para arrancar. Es **append-only** por convención propia: nunca se borra ni reescribe contenido de una sesión ya cerrada, solo se puede reorganizar/consolidar el resumen de arriba (ya se hizo en sesiones 33 y 54).
-
-**[`ESTADO_HISTORICO.md`](../ESTADO_HISTORICO.md)** (raíz) — sesiones 1-29 (arco fundacional: fork inicial, estabilización de CI, meta server), movidas acá en sesión de mantenimiento para no dejar `ESTADO.md` sin poda. **Solo consulta, no se edita.**
+Mapa de todos los documentos del proyecto: qué es cada uno, para qué sirve, y en qué orden conviene leerlos según lo que necesites. Objetivo: que nadie tenga que adivinar dónde está algo.
 
 ## Si querés entender cómo está armado el launcher
 
@@ -16,7 +10,7 @@ Mapa de todos los documentos del proyecto: qué es cada uno, para qué sirve, y 
 
 **[`PERFILES_JVM.md`](PERFILES_JVM.md)** — los 7 perfiles JVM del launcher explicados: qué flags G1GC/ZGC usa cada uno y por qué.
 
-**[`CHANGELOG.md`](CHANGELOG.md)** — historial de cambios técnico completo, commit por commit. Es la fuente de verdad de versiones publicadas (`ESTADO.md` remite acá para no duplicar).
+**[`CHANGELOG.md`](CHANGELOG.md)** — historial de cambios técnico completo, commit por commit. Es la fuente de verdad de las versiones publicadas.
 
 **[`INVESTIGACION_FORKS_COMPETENCIA.md`](INVESTIGACION_FORKS_COMPETENCIA.md)** — investigación de código real (no marketing) sobre FjordLauncher y ShatteredPrism: qué tienen, cuánto costaría portar su alt-auth, y por qué el "DRM" que ambos tocan no le aplica a Beteliney (ya tiene su propio Client ID de Microsoft). Insumo de roadmap, sin código implementado.
 
@@ -31,16 +25,6 @@ Para Linux, la chuleta rápida es [`LEEME.txt`](../LEEME.txt) (raíz) — comand
 ## Si querés contribuir código
 
 **[`CONTRIBUTING.md`](CONTRIBUTING.md)** — cómo proponer cambios al proyecto.
-
-## Sobre el uso de IA en este proyecto
-
-**[`FILOSOFIA_Y_METODOLOGIA.md`](FILOSOFIA_Y_METODOLOGIA.md)** — el *por qué* detrás de cómo se construye Beteliney: metodología de trabajo con IA, filosofía de documentación, visión de largo plazo, origen del nombre. No es fuente de estado (para eso, `ESTADO.md`).
-
-**[`GESTORES_Y_SKILLS.md`](GESTORES_Y_SKILLS.md)** — investigación y diseño de los subagentes, skills y hooks de Claude Code configurados en `.claude/` (qué es cada capa, por qué se decidió así, qué se descartó y por qué). Leer antes de tocar `.claude/agents/`, `.claude/skills/` o `.claude/settings.json`.
-
-**[`ESTRATEGIA_IA.md`](../ESTRATEGIA_IA.md)** (raíz) — comparación de modelos de IA (costos, capacidades) evaluados para el flujo de desarrollo del proyecto.
-
-**[`CLAUDE.md`](../CLAUDE.md)** (raíz) — instrucciones raíz que Claude Code carga automáticamente en cada sesión sobre este repo.
 
 ## Licencia
 

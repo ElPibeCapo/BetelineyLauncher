@@ -97,7 +97,6 @@ source/                          Raíz del repo (== raíz del proyecto, sin carp
 ├── screenshots/                  Capturas para README
 ├── build/                        Directorio de build generado por CMake/Ninja (gitignored)
 ├── ESTADO.md                     Fuente de verdad del estado del proyecto (raíz del repo)
-├── ESTRATEGIA_IA.md              Estrategia de trabajo con IA (raíz del repo)
 ├── COMPILAR_LINUX.sh             Build script Linux — menú de modos
 ├── COMPILAR_BETELINEY.bat        Build script Windows — menú
 ├── COMPILAR.ps1                  Build script PowerShell

@@ -22,8 +22,7 @@ tools/dev/.buildlogs/
 tools/dev/__pycache__/
 *.bak_*
 
-# Documentacion interna / privada (sesion 57): purgada del historial publico,
-# se mantiene en disco local para continuidad entre sesiones de IA.
+# Notas de trabajo internas: no forman parte de la distribucion publica.
 /ESTRATEGIA_IA.md
 /ESTADO.md
 /ESTADO_HISTORICO.md
@@ -32,12 +31,12 @@ tools/dev/__pycache__/
 /docs/GESTORES_Y_SKILLS.md
 /docs/AUDITORIA_UI.md
 /docs/HANDOFF-CLAUDE-CODE.md
+/docs/focus_probe.cpp
+/docs/focus_probe_tabbar.cpp
 /docs/rediseno-v2/
 
 # ── Scripts y documentos internos (no van al repo publico) ──
-# Agregado 2026-07-29 tras la purga. Estos archivos siguen existiendo en
-# local; lo que se evita es que vuelvan a subirse.
-# OJO: tools/dev/README.md NO va aca — el README nuevo si es publico.
+# Herramientas de uso interno. tools/dev/README.md NO va aca: ese si es publico.
 /CLAUDE.md
 /tools/dev/claude_guard_git_push.sh
 /tools/dev/check_sync_status.sh

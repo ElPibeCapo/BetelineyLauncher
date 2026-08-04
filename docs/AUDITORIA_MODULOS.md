@@ -1,8 +1,6 @@
 # Auditoría de Módulos — Registro de Estado de Revisión
 
-> Documento vivo. Se crea el **2026-07-19** (chat separado, fuera de la numeración de sesiones de
-> Claude Code que usa `ESTADO.md` — ver nota en ese documento) a partir de un fallo real: durante 48
-> sesiones,
+> Documento vivo. Se crea el **2026-07-19** a partir de un fallo real: durante 48 sesiones de trabajo,
 > ninguna documentación distinguía "módulo verificado" de "módulo heredado de Prism y nunca mirado" —
 > lo que llevó a asumir por defecto que todo estaba en orden simplemente porque nadie había reportado
 > un problema. `minecraft/auth/` (login Microsoft, manejo de tokens de sesión) llevaba **cero commits

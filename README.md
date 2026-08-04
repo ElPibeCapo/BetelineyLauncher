@@ -181,8 +181,7 @@ docs/ (ver índice completo en docs/README.md)
 ├── PERFILES_JVM.md      Flags G1GC/ZGC explicados
 ├── TROUBLESHOOTING.md   Problemas frecuentes y soluciones
 ├── COMPILAR_WINDOWS.md  Guía de compilación Windows
-├── CONTRIBUTING.md      Cómo contribuir código al proyecto
-└── GESTORES_Y_SKILLS.md Diseño de subagentes/skills/hooks de Claude Code
+└── CONTRIBUTING.md      Cómo contribuir código al proyecto
 
 ESTADO.md              Estado completo del proyecto (fuente de verdad)
 EMPAQUETAR_APPIMAGE.sh Script para generar AppImage
