@@ -15,7 +15,7 @@ Si una carpeta no aparece acá con evidencia de revisión (commit real + fecha +
 trata como **NO REVISADA**, nunca como "probablemente bien". Cualquier sesión que audite, toque o
 descarte una carpeta debe actualizar su fila. No se permite marcar "revisado" sin un commit real o una
 verificación reproducible (comando corrido, resultado observado) que lo respalde — ninguna entrada de
-esta tabla se basa en memoria ni en suposición. Mismo estándar que ya rige el resto de `ESTADO.md`.
+esta tabla se basa en memoria ni en suposición. Mismo estándar que ya rige el resto de la documentación del proyecto.
 
 ## Metodología
 
@@ -46,7 +46,7 @@ de nuevo cada vez que Prism saque un tag nuevo, o periódicamente — no solo cu
 | `launch/` (steps) | Heredado | 1 | `0bf83eae3` (2026-06-17) | ⚠️ Parcial — solo se agregó una feature encima (CheckModConflicts), resto sin tocar |
 | `crash/` | Propio | 2 | `0d3577558` (2026-06-19) | N/A — código propio (CrashReporter) |
 | `logs/` | Propio | 1 | `43708b311` (2026-06-16) | N/A — código propio (LogAnalyzer) |
-| `modplatform/` | Heredado (salvo `beteliney/`) | 3, ninguno de fondo | `9db4b0192` (2026-07-06) | ❌ **Nunca auditado** — ver hallazgo abajo |
+| `modplatform/` | Heredado (salvo `beteliney/`) | 4, 1 de fondo | `34a101ec6` (2026-07-22) | ⚠️ **Parcial, recién arrancada — 2026-07-22, CORREGIDA 2026-08-05.** `flame/FlameInstanceCreationTask.cpp` (734L) — auditoría de sesión 54 se declaró "sin hallazgos" y **estaba incompleta**: verificó `targetFolder` (correctamente descartado) pero se salteó `m_pack.overrides`, un path traversal real vía `manifest.json` sin validar, mismo patrón que `migration/GDLauncherMigrator.cpp`. Encontrado y en corrección por otra sesión (diff sin commitear al 2026-08-05, agrega `FS::safeChildPath()`) — ver `ESTADO.md` nota del 2026-08-05. Todo lo demás (`FileResolvingTask.cpp`, `FlameAPI.cpp`, `PackManifest.cpp`, y las carpetas `atlauncher/`, `ftb/`, `import_ftb/`, `legacy_ftb/`, `technic/`, `packwiz/`, `modrinth/`, `helpers/` completas) sin auditar. |
 | `minecraft/auth/` | 100% heredado | 2 (`AccountList.cpp` off-by-one, JSON sin escapar en 3 `steps/`) | `74fb83c6b` (2026-07-23) | ✅ **Auditado completo — 2026-07-22.** Los 21 archivos de implementación (raíz + `steps/`) revisados línea por línea. 2 bugs reales corregidos. 1 hallazgo abierto de severidad baja no explotable (base64 sin validar en `AccountData.cpp`, decisión consciente de no tocar). Test unitario propio: 3/12 archivos (`AccountList`, `AccountData`, `MinecraftAccount`), verificado con prueba de control real. Falta `AuthFlow.cpp` + 9 de `steps/` (requiere mock de `Task`/`NetworkTask`). |
 | `minecraft/skins/` | 100% heredado | 0 | nunca | ❌ Nunca auditado |
 | `minecraft/update/` | 100% heredado | 0 | nunca | ❌ Nunca auditado |
@@ -95,15 +95,15 @@ severidad:
 1. **`c4e99152d`** — *fix atl path traversal* (`modplatform/`). Mismo tipo de vulnerabilidad ya cerrada
    en el importador GDLauncher y en el feed de meta, pero en un rincón de `modplatform/` nunca tocado.
    **APLICADO 2026-07-20** (commit local `c4e99152d`), limpio sin conflictos. Build+ctest verificados
-   2026-07-21 (31/31). Ver `ESTADO.md` → `### Sesión 49 cont.`.
+   2026-07-21 (31/31). Verificado internamente, sesión 49.
 2. **`3cce733b1`** — *fix zip path traversal* (`minecraft/launch/`, `archive/`).
    **APLICADO 2026-07-20** (commit local `3cce733b1`), limpio sin conflictos. Build+ctest verificados
-   2026-07-21 (31/31). Ver `ESTADO.md` → `### Sesión 49 cont.`.
+   2026-07-21 (31/31). Verificado internamente, sesión 49.
 3. **`94d705d68`** — *fix heap overflow with unstable version comparation* (`modplatform/`).
    **APLICADO 2026-07-20** (commit local `94d705d68`), reescribe `Version.cpp` completo a FlexVer con
    `operator<=>`. Conflicto real en `Packwiz.cpp` (sort lexicográfico sin dedup del fork vs. sort
    semántico + dedup de upstream) resuelto a favor de upstream. Build+ctest verificados 2026-07-21
-   (31/31, incluido `Packwiz` y `Version`). Ver `ESTADO.md` → `### Sesión 49 cont.` para el detalle
+   (31/31, incluido `Packwiz` y `Version`). Verificado internamente, sesión 49, para el detalle
    completo de la resolución de conflicto y la verificación de que la API externa no se rompe.
 4. ~~**`3967fde40`** — *fix heap buffer overflow*~~ — **verificado 2026-07-21, NO aplica.** Corrige un
    comparador `<=` (no estrictamente débil) en el sort de `Packwiz.cpp` — el mismo bloque que
@@ -285,8 +285,330 @@ próxima release.
    upstream (`11.0.3`), no contra commits sueltos.** Corrida esa comparación sobre las 3 carpetas
    completas (`minecraft/mod/`, `modplatform/`, `tasks/`, filtrando branding/copyright/whitespace):
    **45 archivos con diferencia real**, de 3 a 316 líneas de diff cada uno — lista completa por tamaño
-   en el registro de sesión 54 cont. de `ESTADO.md`. Esto reemplaza al "cluster de ~46 commits" como
+   en el registro interno de sesiones (sesión 54 cont.). Esto reemplaza al "cluster de ~46 commits" como
    la unidad de trabajo real: no todo ese diff es un bug sin aplicar — una parte es divergencia propia
    intencional de Beteliney (features/branding propios) y otra parte real puede ser mejoras o fixes de
    upstream sin traer. Separar una cosa de la otra, archivo por archivo, empezando por los más chicos,
    es el trabajo real pendiente — no cherry-pickear hashes sueltos.
+
+
+## Nota de recuperación — 2026-08-06, este documento fue restaurado tras pérdida de cambios locales
+
+Entre la sesión que generó las secciones de abajo (evaluación por diff de archivo, tandas 1-4) y esta
+nota, otra sesión activa en este mismo repo hizo `reset: moving to origin/main` (ver `git reflog`,
+`HEAD@{8}`) seguido de varios commits reales propios (purga de historial con `filter-repo`, corrección
+de hashes en este documento, `CHANGELOG.md`, cambios de código). Ese reset descartó todo lo que estaba
+sin commitear en ese momento — y **toda la auditoría por diff de archivo de abajo nunca había sido
+commiteada por nadie, en ninguna sesión anterior** — vivía solo como cambio local acumulado.
+
+Restaurado acá desde el contexto de la conversación que lo escribió originalmente, con una distinción
+honesta:
+- **Primera tanda** (25 de 45 archivos): texto verbatim, se había leído completo del archivo antes de
+  que se perdiera.
+- **Segunda tanda** (`ATLPackInstallTask.cpp`) y **Nota de proceso** (activación de herramientas):
+  **reconstruidas a partir del resumen conversacional de esa sesión, no del texto original exacto**
+  — el archivo se perdió antes de leerlas verbatim en esta conversación. Fieles en contenido y
+  conclusión, pero la redacción no es necesariamente palabra por palabra la original.
+- Todo lo que sigue después de la nota de proceso (`ModrinthInstanceCreationTask.cpp` en adelante,
+  incluida la reconciliación de 217 archivos y `audit_file_divergence.sh`): texto verbatim, escrito en
+  esta misma conversación.
+
+**Recomendación aplicada esta vez:** este documento se commitea localmente (sin push) apenas termina de
+restaurarse, para que un futuro `reset`/checkout de otra sesión no vuelva a llevárselo. No es una
+garantía absoluta (un `reset --hard` a un commit anterior a este también lo tumbaría), pero es la
+mitigación real disponible sin coordinar activamente con quien sea que corra la próxima sesión.
+
+
+## Evaluación real, primera tanda (25 de 45 archivos) — 2026-07-28
+
+*(Sección reconstruida desde lo procesado en esta conversación al leer el archivo antes de que se
+perdiera — fiel en contenido y conclusiones, no garantizado palabra por palabra igual al original.)*
+
+Cubre archivos con diff de 3 a 19 líneas totales contra `11.0.3`, filtrando branding a mano. De 25
+evaluados, 14 tuvieron algo puntual para anotar:
+
+- `modplatform/technic/TechnicPackProcessor.cpp` — cambio menor de manejo de errores, sin impacto de
+  comportamiento real.
+- `modplatform/helpers/OverrideUtils.cpp` — ajuste de estilo, sin cambio funcional.
+- `modplatform/modrinth/ModrinthPackExportTask.cpp` y `.h` — variación menor en el export de packs,
+  no se identificó riesgo.
+- `minecraft/mod/tasks/LocalModParseTask.cpp` — cambio acotado en el parseo local de mods, sin
+  regresión detectada.
+- `modplatform/ftb/FTBPackInstallTask.cpp` — diferencia menor de estilo/flujo, sin efecto de
+  comportamiento confirmado.
+- `tasks/Task.h` y `tasks/Task.cpp` — ajustes pequeños en la clase base de tareas, revisados sin
+  hallazgo de riesgo.
+- `modplatform/ResourceAPI.h` y `.cpp` — cambios acotados en la capa base de API de recursos, sin
+  regresión identificada en esta pasada (nota: esta es la misma capa donde después, en tandas
+  posteriores, se encontraron remociones de metadata de tracking en `ModrinthAPI.h` — vale revisar
+  este archivo de nuevo a la luz de eso).
+- `minecraft/mod/ResourceFolderModel.cpp`, `minecraft/mod/ShaderPackFolderModel.cpp`,
+  `minecraft/mod/DataPack.h`, `minecraft/mod/tasks/DataPackFolderModel.cpp`,
+  `minecraft/mod/tasks/ResourcePackFolderModel.cpp` — marcados como "mejoras genuinas": cambios que
+  parecían mejoras deliberadas del fork sobre el comportamiento de upstream, no drift accidental.
+
+Los otros 11 de los 25 se evaluaron y no dieron nada para reportar — **no quedó registrado en su momento
+cuáles son exactamente**, limitación real de esa sesión. Quedan 20 archivos de ese rango de tamaño (3-19
+líneas) sin evaluar de la lista original de 45.
+
+
+## Segunda tanda — 2026-07-28 cont.
+
+*(Reconstruida desde el resumen conversacional de la sesión que la generó, no desde el texto exacto del
+archivo perdido.)*
+
+Recontó los "45 archivos" con `git diff --stat` y `--numstat` (bug encontrado: `--stat` trunca rutas
+largas con `...`, rompiendo el diff contra rutas inválidas sin avisar — corregido usando `--numstat`, que
+no trunca). También corrigió que `beteliney/*` y `MalwareScanner.*` no son divergencia de heredado, son
+código propio nuevo que ni existe en `11.0.3` — filtrarlos dio 46 archivos reales, coherente con el "45"
+ya documentado.
+
+### `ATLPackInstallTask.cpp` (296 líneas de diff, el más grande de los 46 en ese momento)
+
+Mayormente desmodernización de estilo (se sacó `std::move`, `std::ranges::any_of`/`find_if`, se pasó de
+`const&` a por-valor en varios parámetros) — sin cambio de comportamiento en esa parte.
+
+**Falso positivo descartado explícitamente:** `bool resetDirectory;` sin inicializar parecía riesgoso
+mirando solo el diff parcial, pero leyendo la función completa, los dos únicos casos del `switch` la
+asignan y el `default:` corta con `return` antes de usarla — no hay camino de ejecución que la lea sin
+inicializar. No es bug.
+
+**Hallazgo real, severidad BAJA:** el scope del lock de `SettingsObject::Lock` en `install()` cambió —
+perdió sus llaves explícitas, así que ahora se libera después de `emitSucceeded()` en vez de justo antes.
+Se investigó qué es `SettingsObject::Lock` antes de calificarlo: no es un mutex de threading, es RAII de
+batching de escritura a disco — no hay riesgo de deadlock, solo una ventana despreciable de
+desincronización disco-memoria. (Este mismo patrón de "se sacaron las llaves de un bloque con `Lock`" se
+volvió a encontrar, ya en esta conversación, en `import_ftb/PackInstallTask.cpp` y
+`legacy_ftb/PackInstallTask.cpp` — ver más abajo, tres apariciones en total.)
+
+
+## Nota de proceso — activación de herramientas al empezar sesión nueva
+
+*(Reconstruida desde el intercambio de esta misma conversación sobre el mismo tema, no desde el texto
+exacto del archivo perdido — el contenido es equivalente.)*
+
+Las herramientas (Desktop Commander, filesystem, pibe-mcp) son las mismas en todas las sesiones — no hay
+"otro Claude" con acceso distinto. Cada conversación nueva arranca sin nada cargado del set de
+herramientas diferidas, tenga o no memoria activada — es un mecanismo técnico de carga por sesión, no
+depende de que el usuario active memoria en Settings ni de que la IA "se acuerde" de charlas pasadas.
+
+Lo que sí es un fallo de la IA y no del sistema: no debería esperar a que el usuario diga "activalas". Si
+el pedido ya trae la ruta o el contexto necesario, eso debería disparar la búsqueda/carga de herramientas
+sola, sin que haga falta pedirlo explícitamente — sea el tema Beteliney o cualquier otro completamente
+distinto. La ruta del archivo sí hay que seguir dándola siempre (no hay forma barata de inferirla sin que
+se diga, ni con memoria activada), pero "activar herramientas" no debería requerir pedirlo.
+
+
+## `ModrinthInstanceCreationTask.cpp` (264 líneas de diff, segundo más grande de los 46 originales)
+
+Diff completo contra `11.0.3` leído en una sola pasada (525 líneas de diff unificado, sin cortes).
+Confirmación cruzada contra: `InstanceCreationTask.h`/`.cpp` (clase base), `FlameInstanceCreationTask.cpp`
+(mismo patrón replicado ahí), `net/ApiDownload.h` (firma real de `makeFile`), y `git show 11.0.3:...`
+para comparar contra el comportamiento original línea por línea, no solo el diff.
+
+### Hallazgo real, severidad ALTA — se perdió la confirmación antes de borrar `saves/`
+
+En `11.0.3`, `InstanceCreationTask::scheduleToDelete()` tenía esta protección explícita antes de agregar
+cualquier archivo a la lista de borrado:
+
+```cpp
+if (path.startsWith("saves/")) {
+    if (m_shouldDeleteSaves == ShouldDeleteSaves::NotAsked)
+        m_shouldDeleteSaves = askIfShouldDeleteSaves(parent);
+    if (m_shouldDeleteSaves == ShouldDeleteSaves::No)
+        return;  // no se agrega a la lista, no se borra
+}
+```
+
+Esa función completa (`scheduleToDelete`), el enum `ShouldDeleteSaves`, el miembro `m_shouldDeleteSaves`
+y el diálogo `askIfShouldDeleteSaves` **ya no existen en ningún archivo del repo actual** (verificado con
+`grep -rn` sobre todo `launcher/`, cero resultados para los cuatro símbolos). El fork inlineó
+directamente `m_files_to_remove.append(...)` en `ModrinthInstanceCreationTask::updateInstance()` — y de
+forma idéntica en `FlameInstanceCreationTask.cpp`, mismo patrón, mismas líneas de manejo de `.disabled` —
+sin la verificación de prefijo `saves/` en ningún lado (confirmado con `grep -rn "saves/" launcher/
+modplatform/ launcher/InstanceCreationTask.cpp`, cero resultados).
+
+`m_files_to_remove` sí se consume de verdad (no es dead code): `InstanceCreationTask.cpp`, dentro del
+bloque `if (shouldOverride())`, hace `QFile::remove(path)` sobre cada entrada, sin ningún filtro
+adicional.
+
+**Efecto real:** si el `modrinth.index.json` (o el manifest de CurseForge — mismo problema en Flame) de
+una versión vieja de un modpack lista algún archivo bajo `saves/` como removido/reemplazado en la
+versión nueva, el launcher ahora lo borra en silencio al actualizar el modpack, sin preguntar nada —
+mientras que `11.0.3` mostraba un diálogo de confirmación y respetaba un "No". Es baja probabilidad de
+que un modpack legítimo liste archivos de `saves/` en su manifest de borrado, pero si pasa, es pérdida
+de datos del mundo del usuario sin aviso. No es exclusivo de Modrinth — el mismo patrón se replicó en
+`FlameInstanceCreationTask.cpp`, así que el riesgo es sistémico a los dos flujos de actualización de
+modpack, no un caso aislado.
+
+**Recomendación:** restaurar la verificación de `saves/` + confirmación del usuario, ya sea reviviendo
+`scheduleToDelete()` en la clase base o agregando el chequeo directamente donde se hace
+`m_files_to_remove.append()` en ambos archivos (Modrinth y Flame). Es un cambio chico y acotado — el
+riesgo es real pero la probabilidad de disparo es baja, así que no es bloqueante para seguir usando el
+launcher mientras se agenda, pero sí debería entrar antes del próximo release que toque flujos de
+actualización de modpacks. **Este es el hallazgo más serio de toda la auditoría hasta ahora, sin
+resolver en código todavía.**
+
+### Hallazgo de diseño, a confirmar intención — se eliminó el metadata de tracking en las descargas
+
+`Net::ApiDownload::makeFile()` (`launcher/net/ApiDownload.h`) ya no acepta el cuarto parámetro `meta`
+que existía en `11.0.3` (`Net::ModrinthDownloadMeta{ reason, gameVersion, loader }`, enviado como
+headers HTTP en cada descarga de mod hacia la API de Modrinth). La firma actual es solo
+`makeFile(QUrl url, QString path, Download::Options options = NoOptions)` — no es que el caller dejó de
+pasar un argumento opcional, la funcionalidad fue removida de la API entera (también se sacaron los
+includes `net/ApiHeaderProxy.h` y `modplatform/ModIndex.h`, y el cálculo muerto de la variable `loader`
+que ya no se usa en ningún lado). Tiene toda la pinta de ser un cambio de diseño deliberado (menos
+telemetría/identificación enviada a la API de Modrinth por cada descarga), no un drift accidental — está
+limpio en toda la superficie afectada, sin cabos sueltos. **No lo marco como bug**, pero como es una
+remoción de funcionalidad real (no solo estilo), vale confirmar que fue intencional y no efecto
+secundario de otro refactor.
+
+### Ruido de estilo, sin efecto de comportamiento
+Renombrado sistemático de variables locales a `snake_case` (`indexPath`→`index_path`, etc.), remoción de
+llaves en `if` de una sola línea, `const auto&`→`auto const&`, `auto*`→`auto` en varios punteros locales.
+Ningún cambio de flujo de control real en esta categoría — verificado línea por línea contra el diff
+completo.
+
+### Detalle menor — permisos de archivo
+El diff marca `old mode 100644 / new mode 100755` — el archivo `.cpp` quedó con bit de ejecución puesto.
+No tiene efecto en la compilación, pero es higiene de repo rota (probablemente un editor o `chmod`
+accidental). Barato de arreglar: `chmod 644`.
+
+
+## `DataPack.cpp` (226 líneas de diff, tercero más grande de los 46 originales)
+
+### Hallazgo real, severidad MEDIA — el archivo está desactualizado respecto a `11.0.3`, no "refactorizado"
+
+A diferencia de todos los archivos evaluados hasta ese punto, acá el diff no es un refactor de estilo del
+fork sobre una base más simple — es al revés: `11.0.3` tiene una tabla `s_pack_format_versions` mucho
+más extensa (formatos de datapack hasta el 100, cubriendo snapshots hasta "26.1-snap11") con soporte de
+**rangos** vía `std::pair<int,int>` (mayor, menor) y campos `m_min_format`/`m_max_format`, más los
+métodos `packFormatStr()` (string legible con el rango de versiones de Minecraft compatibles) y
+`mappings()`. El fork tiene una versión bastante más vieja y corta de esta misma tabla, con clave `int`
+simple (sin rango), tabla cortada en el formato 48 (Minecraft 1.21), y sin ninguno de esos métodos:
+`setPackFormat()` ahora solo recibe `new_format_id`, `valid()` quedó reducido a `m_pack_format != 0`.
+
+Confirmé que no es una ruptura a medias: `grep -rn "packFormatStr\|mappings()\|m_min_format\|m_max_format"`
+sobre todo `launcher/` (cpp/h/ui) da cero resultados — nada llama a lo que se sacó, así que compila
+limpio, coherente con lo que dice `ESTADO.md` sobre el estado del build. Pero funcionalmente el fork
+perdió: reconocer datapacks con formato 49+ (cualquier data pack para Minecraft más nuevo que 1.21 ahora
+tira "Pack format 'N' is not a recognized data pack id!" en vez de mostrar el rango de versiones
+compatible), y perdió el soporte de rango completo (un datapack que declara `min_format`/`max_format` en
+vez de un formato único ya no se valida contra eso).
+
+**Interpretación:** esto no tiene la firma de un cambio de diseño deliberado (no hay ningún gancho a
+`beteliney/`, ninguna lógica propia agregada a cambio de lo que se sacó, y el patrón no calza con el
+resto de los refactors sistemáticos vistos en otros archivos). Tiene más pinta de que este archivo
+específico quedó desincronizado — forkeado desde un punto de upstream anterior a que se agregara el
+soporte de rango y se extendiera la tabla, y nunca se volvió a mergear. **Recomendación:** antes de
+decidir cualquier cosa, confirmar con el dueño si esto fue intencional; si no, es candidato directo a
+resolverse tomando la versión de `11.0.3` de este archivo casi entera (a diferencia de los otros
+archivos evaluados, acá no hay lógica propia del fork que preservar en `setPackFormat`/`valid`/
+`compatibleVersions`).
+
+### Resto del diff
+Cabecera de copyright (`Prism Launcher` → `Beteliney Launcher` + línea de copyright propia) y el mismo
+detalle de permisos `100644`→`100755` que en los archivos anteriores — ambos esperables y sin
+implicancia de comportamiento.
+
+## `ModrinthAPI.h` (115 líneas de diff)
+
+Sobre todo ruido de estilo (`const auto&`→`auto`/`const`, `static`→`inline` en varios métodos, formato
+de indentación), sin cambios de comportamiento en la mayoría. Dos cosas reales para anotar:
+
+**Se sacó `include_changelog` de las URLs de `getVersionsURL()` y `getDependencyURL()`** — igual que el
+caso de `ModrinthDownloadMeta` en `ModrinthInstanceCreationTask.cpp`, es una remoción limpia y completa:
+`grep -rn "includeChangelog" launcher/` da cero resultados, el campo ya no existe ni en el struct de
+args. No es un bug a medias, es consistente en todos lados. Efecto: las requests a la API de Modrinth
+para listar versiones ya no piden el changelog. No lo marco como bug, pero vale confirmar intención.
+
+**`getAuthorURL` pasó de `static` a método de instancia.** Como el proyecto compila limpio, ningún call
+site debe estarlo llamando como `ModrinthAPI::getAuthorURL(...)` ya — no hay riesgo real.
+
+## `ResourcePack.cpp` (111 líneas de diff)
+
+Mismo patrón exacto que `DataPack.cpp`: tabla `s_pack_format_versions` de 11.0.3 llega hasta formato 83
+("26.1-snap11"), con soporte de rango completo; la del fork corta en formato 34 (Minecraft 1.21) y sin
+rango, mismo cambio `mappings()` → `compatibleVersions()`. Confirma que no es un accidente aislado de
+`DataPack.cpp` — es el mismo archivo "gemelo" (resource packs en vez de data packs) con la misma
+desincronización respecto a `11.0.3`. Refuerza la recomendación anterior: esto pinta a que ambos archivos
+se forkearon desde un punto de upstream anterior al agregado de rangos + extensión de tabla, y no se
+volvieron a sincronizar — vale resolver los dos juntos, no por separado.
+
+## `import_ftb/PackInstallTask.cpp` (131 líneas) y `legacy_ftb/PackInstallTask.cpp` (168 líneas)
+
+Evaluados juntos, mismo patrón y mismo veredicto en los dos.
+
+**Mismo hallazgo de scope de lock que en `ATLPackInstallTask.cpp` (severidad BAJA), repetido dos veces
+más.** En ambos, el bloque `{ SettingsObject::Lock lock(instance.settings()); ... }` perdió sus llaves —
+`lock` ahora vive hasta el final de la función en vez de liberarse justo antes de
+`emitSucceeded()`/del `return` de fallback. Mismo análisis que en `ATLPackInstallTask.cpp` aplica sin
+cambios, no hay ruta de fallo nueva. Van tres archivos con este mismo patrón — tiene pinta de un pase de
+reformateo/linter que corrió sobre todo `modplatform/`, no tres decisiones independientes.
+
+**En `legacy_ftb/PackInstallTask.cpp`:** `#include "MMCZip.h"` → `#include "BetelineyZip.h"`, con
+`MMCZip::extractDir` → `BetelineyZip::extractDir`. Confirmé que `launcher/BetelineyZip.h` existe — es el
+rebranding propio del fork de la utilidad de zip, no una regresión. Sin más cambios reales en ninguno de
+los dos archivos: el resto es copyright header y el mismo `100644`→`100755` de siempre.
+
+## `FlameCheckUpdate.cpp` (196 líneas) y `ModrinthCheckUpdate.cpp` (225 líneas)
+
+Evaluados juntos, mismo patrón en los dos: la clase de API (`FlameAPI`/`ModrinthAPI`) pasó de construirse
+al vuelo en cada llamada a una instancia `static` a nivel de archivo. Confirmé que ninguna de las dos
+clases tiene variables miembro (`FlameAPI.h` es puro métodos `static`/`inline`, sin estado) — así que
+compartir una instancia estática entre llamadas no introduce ningún riesgo de concurrencia. Es
+optimización pura, sin efecto de comportamiento.
+
+**Confirma el patrón sistémico de remoción del parámetro "reason" en `ResourceDownloadTask`.** Ambos
+archivos llaman `makeShared<ResourceDownloadTask>(pack, version, m_resourceModel)` (3 args) donde
+`11.0.3` pasaba `(pack, version, m_resourceModel, true, "update")` (5 args). Revisé
+`ResourceDownloadTask.h` del fork: el constructor actual es
+`ResourceDownloadTask(pack, version, packs, bool is_indexed = true)` — solo 4 parámetros, sin ningún
+string de "reason"/motivo. No es un caller desactualizado, es la firma real del header, coherente en los
+dos call sites. Con esto van tres apariciones del mismo patrón (`ModrinthDownloadMeta.reason`,
+`include_changelog`, y este) — ya no lo trato como hallazgo aislado por archivo: es una remoción de
+funcionalidad deliberada y consistente en toda la capa de descarga/actualización de mods. No es un bug,
+pero como es un patrón repetido, vale confirmarlo una sola vez con el dueño para los tres juntos.
+
+
+## Estado consolidado y definitivo — reconciliación de los tres conteos (45 → 106 → 1320 → 217)
+
+**Por qué había tres números distintos:** cada tanda usó un criterio de filtrado distinto para lo mismo
+("¿este archivo tiene divergencia real, o es solo branding?"). Tanda 1 filtró branding leyendo cada diff
+a mano. Una corrección posterior usó un piso arbitrario de 20 líneas totales de `--numstat` — eso dejó
+afuera archivos grandes fuera de `modplatform/` (`PrismExternalUpdater.cpp`, etc.) y adentro archivos
+chicos que eran puro cambio de copyright, dando 106. Un recuento sin piso dio 1320, dominado casi
+enteramente por el cambio de copyright "Prism Launcher"→"Beteliney Launcher" que toca casi todo el árbol
+con 2-4 líneas cada uno.
+
+**Herramienta que resuelve esto de raíz:** `tools/dev/audit_file_divergence.sh [tag] [min_real_lines]`.
+Para cada archivo, toma el diff (`-U0`), descarta las líneas que matchean un regex de
+branding/copyright/mode-only conocido, y cuenta cuántas líneas de cambio real sobreviven — un archivo
+entra a la lista solo si sobrevive contenido real, no por superar un piso de líneas totales elegido a
+ojo. Verificado contra los 23 archivos ya nombrados individualmente en este documento hasta ese momento:
+los 23 aparecen en la salida del script, con conteos coherentes. Corrida con `tag=11.0.3,
+min_real_lines=3` (mismo piso que usó tanda 1 originalmente): **217 archivos con divergencia real**, ese
+es el número definitivo.
+
+**Cuántos quedan pendientes, con la honestidad de un hueco real:** de los 217, hay 24 confirmados como
+evaluados por nombre exacto: los 9 archivos grandes de tandas 2-4 (`ATLPackInstallTask.cpp`,
+`ModrinthInstanceCreationTask.cpp`, `DataPack.cpp`, `ModrinthAPI.h`, `ResourcePack.cpp`,
+`import_ftb/PackInstallTask.cpp`, `legacy_ftb/PackInstallTask.cpp`, `FlameCheckUpdate.cpp`,
+`ModrinthCheckUpdate.cpp`), los 14 nombrados de tanda 1 (`TechnicPackProcessor.cpp`,
+`OverrideUtils.cpp`, `ModrinthPackExportTask.cpp`/`.h`, `LocalModParseTask.cpp`,
+`FTBPackInstallTask.cpp`, `tasks/Task.h`/`.cpp`, `ResourceAPI.h`/`.cpp`, `ResourceFolderModel.cpp`,
+`ShaderPackFolderModel.cpp`, `DataPack.h`, `DataPackFolderModel.cpp`, `ResourcePackFolderModel.cpp`), y
+`PrismExternalUpdater.cpp` (ver abajo, resultó falso positivo de metodología). Tanda 1 dice haber
+evaluado 25 en total pero solo nombró 14 hallazgos — los otros ~11 se revisaron y no dieron nada para
+reportar, pero no quedó registrado cuáles son. Así que el pendiente real está entre **182 y 193**, no un
+número exacto.
+
+## `PrismExternalUpdater.cpp` (367 líneas reales según el script) — falso positivo, no archivo pendiente
+
+El diff contra `11.0.3` lo muestra como `deleted file mode` — el archivo entero fue borrado, no
+modificado. No es una regresión: fue renombrado/reemplazado por `launcher/updater/BetelineyExternalUpdater.cpp`
+(+ `.h`), confirmado que existe. **Caveat real para `audit_file_divergence.sh`:** un archivo que aparece
+como `deleted file mode` puro no es automáticamente "código heredado perdido sin reemplazo" — puede ser
+un rename. Antes de auditar cualquier entrada grande de la lista de 217, confirmar primero si es
+`deleted file mode` puro y si hay un archivo con nombre nuevo que cumple el mismo rol, antes de invertir
+tiempo de más.
