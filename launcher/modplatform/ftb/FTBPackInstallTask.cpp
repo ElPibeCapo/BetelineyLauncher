@@ -303,7 +303,16 @@ void PackInstallTask::downloadPack()
         if (file.serverOnly || file.url.isEmpty())
             continue;
 
-        auto path = FS::PathCombine(m_stagingPath, ".minecraft", file.path, file.name);
+        // BETELINEY: file.path y file.name vienen sin sanear del manifiesto de FTB (Json::requireString).
+        // safeChildPath acota el resultado a m_stagingPath — mismo patron de path traversal ya
+        // corregido en el importador de Flame (FlameInstanceCreationTask.cpp).
+        auto path = FS::safeChildPath(FS::PathCombine(m_stagingPath, ".minecraft"), FS::PathCombine(file.path, file.name));
+        if (path.isEmpty()) {
+            emitFailed(tr("El archivo '%1' del manifiesto del modpack intenta escribir fuera del "
+                          "directorio de la instancia.")
+                           .arg(FS::PathCombine(file.path, file.name)));
+            return;
+        }
         qDebug() << "Will try to download" << file.url << "to" << path;
 
         QFileInfo file_info(file.name);
@@ -370,7 +379,16 @@ void PackInstallTask::copyBlockedMods()
             continue;
         }
 
-        auto dest_path = FS::PathCombine(m_stagingPath, ".minecraft", mod.targetFolder, mod.name);
+        // BETELINEY: mod.targetFolder y mod.name vienen sin sanear del manifiesto de FTB.
+        // safeChildPath acota el resultado a m_stagingPath (mismo motivo que en downloadPack()).
+        auto dest_path =
+            FS::safeChildPath(FS::PathCombine(m_stagingPath, ".minecraft"), FS::PathCombine(mod.targetFolder, mod.name));
+        if (dest_path.isEmpty()) {
+            emitFailed(tr("El mod bloqueado '%1' del manifiesto del modpack intenta escribir fuera del "
+                          "directorio de la instancia.")
+                           .arg(FS::PathCombine(mod.targetFolder, mod.name)));
+            return;
+        }
 
         setStatus(tr("Copying Blocked Mods (%1 out of %2 are done)").arg(QString::number(i), QString::number(total)));
 

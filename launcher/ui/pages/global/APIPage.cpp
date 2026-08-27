@@ -198,6 +198,11 @@ void APIPage::applySettings()
     s->set("ModrinthToken", modrinthToken);
     s->set("UserAgentOverride", ui->userAgentLineEdit->text());
     s->set("TechnicClientID", ui->technicClientID->text());
+
+    // BETELINEY: sin esto, cambiar FlameKeyOverride/MSAClientIDOverride acá no tenía efecto hasta
+    // reiniciar el launcher completo (m_capabilities solo se calculaba una vez, en el constructor
+    // de Application) y encima sin avisarle nada al usuario. Se refresca ya mismo.
+    APPLICATION->updateCapabilities();
 }
 
 bool APIPage::apply()

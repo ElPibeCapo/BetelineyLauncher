@@ -786,7 +786,15 @@ void PackInstallTask::downloadMods()
             }
             jobPtr->addNetAction(dl);
 
-            auto path = FS::PathCombine(m_stagingPath, "minecraft", relpath, mod.file);
+            // BETELINEY: mod.file viene sin sanear del manifiesto de ATLauncher (Json::requireString).
+            // safeChildPath acota el resultado a m_stagingPath, mismo patron ya corregido en Flame/FTB.
+            auto path = FS::safeChildPath(FS::PathCombine(m_stagingPath, "minecraft", relpath), mod.file);
+            if (path.isEmpty()) {
+                emitFailed(tr("El mod '%1' del manifiesto del modpack intenta escribir fuera del "
+                              "directorio de la instancia.")
+                               .arg(mod.file));
+                return;
+            }
 
             if (mod.type == ModType::Forge) {
                 auto ver = getComponentVersion("net.minecraftforge", mod.version);
@@ -853,7 +861,15 @@ void PackInstallTask::downloadMods()
                     if (relpath == Q_NULLPTR)
                         continue;
 
-                    auto path = FS::PathCombine(m_stagingPath, "minecraft", relpath, mod.file);
+                    // BETELINEY: mod.file viene sin sanear del manifiesto de ATLauncher (Json::requireString).
+            // safeChildPath acota el resultado a m_stagingPath, mismo patron ya corregido en Flame/FTB.
+            auto path = FS::safeChildPath(FS::PathCombine(m_stagingPath, "minecraft", relpath), mod.file);
+            if (path.isEmpty()) {
+                emitFailed(tr("El mod '%1' del manifiesto del modpack intenta escribir fuera del "
+                              "directorio de la instancia.")
+                               .arg(mod.file));
+                return;
+            }
 
                     if (mod.type == ModType::Forge) {
                         auto ver = getComponentVersion("net.minecraftforge", mod.version);
