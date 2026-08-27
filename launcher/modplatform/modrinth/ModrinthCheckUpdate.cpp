@@ -15,11 +15,11 @@
 
 static ModrinthAPI api;
 
-ModrinthCheckUpdate::ModrinthCheckUpdate(QList<Resource*>& resources,
-                                         std::vector<Version>& mcVersions,
+ModrinthCheckUpdate::ModrinthCheckUpdate(QList<Resource*> resources,
+                                         std::vector<Version> mcVersions,
                                          QList<ModPlatform::ModLoaderType> loadersList,
                                          ResourceFolderModel* resourceModel)
-    : CheckUpdateTask(resources, mcVersions, std::move(loadersList), resourceModel)
+    : CheckUpdateTask(std::move(resources), std::move(mcVersions), std::move(loadersList), resourceModel)
     , m_hashType(ModPlatform::ProviderCapabilities::hashType(ModPlatform::ResourceProvider::MODRINTH).first())
 {
     if (!m_loadersList.isEmpty()) {  // this is for mods so append all the other posible loaders to the initial list

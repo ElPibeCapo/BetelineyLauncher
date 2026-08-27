@@ -709,6 +709,46 @@ class FileSystemTest : public QObject {
         QCOMPARE(FS::pathTruncate("C:\\bar\\foo.txt", 1), QDir::toNativeSeparators("C:\\bar"));
 #endif
     }
+
+    // Sesion 63: cobertura de FS::safeChildPath(), extraida al centralizar el fix de path
+    // traversal que ya se habia aplicado por separado en el importador de GDLauncher (sesion 32)
+    // y ahora tambien en el manejo de 'overrides' de modpacks de Flame.
+    void test_safeChildPath_data()
+    {
+        QTest::addColumn<QString>("base");
+        QTest::addColumn<QString>("child");
+        QTest::addColumn<bool>("shouldReject");
+
+        QTest::newRow("subpath simple") << "/home/user/instance" << "mods/test.jar" << false;
+        QTest::newRow("igual a la base (.)") << "/home/user/instance" << "." << false;
+        QTest::newRow("net queda adentro pese a un ..") << "/home/user/instance" << "mods/../config/settings.json" << false;
+
+        QTest::newRow("traversal directo") << "/home/user/instance" << "../../../etc/passwd" << true;
+        QTest::newRow("traversal anidado") << "/home/user/instance" << "mods/../../etc/passwd" << true;
+        // caso clasico: un check ingenuo de solo cleaned.startsWith(base) (sin la barra) dejaria
+        // pasar esto, porque "/home/user/instance-evil" empieza con "/home/user/instance"
+        QTest::newRow("prefijo del directorio hermano, no subdirectorio real")
+            << "/home/user/instance" << "../instance-evil/secret" << true;
+        QTest::newRow("vacio se rechaza") << "/home/user/instance" << "" << true;
+    }
+
+    void test_safeChildPath()
+    {
+        QFETCH(QString, base);
+        QFETCH(QString, child);
+        QFETCH(bool, shouldReject);
+
+        auto result = FS::safeChildPath(base, child);
+
+        if (shouldReject) {
+            QVERIFY2(result.isEmpty(), qPrintable(QString("esperaba rechazo para base=%1 child=%2 pero devolvio %3").arg(base, child, result)));
+        } else {
+            QVERIFY2(!result.isEmpty(), qPrintable(QString("esperaba que se aceptara base=%1 child=%2").arg(base, child)));
+            const QString absBase = QDir(base).absolutePath();
+            QVERIFY2(result == absBase || result.startsWith(absBase + "/"),
+                     qPrintable(QString("resultado %1 se escapo de la base %2").arg(result, absBase)));
+        }
+    }
 };
 
 QTEST_GUILESS_MAIN(FileSystemTest)

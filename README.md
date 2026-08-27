@@ -169,7 +169,7 @@ launcher/
 ├── ui/dialogs/FavoriteServersDialog.h/cpp   UI de gestión de servidores favoritos
 └── ui/pages/modplatform/beteliney/    BetelineyPackPage (UI)
 
-tools/dev/                             8 herramientas de desarrollo (build_fast.sh, check_ci.sh, secret_scan.sh, etc. — ver tools/dev/README.md)
+tools/dev/                             5 herramientas de desarrollo (build_fast.sh, check_build.sh, secret_scan.sh, etc. — ver tools/dev/README.md)
 
 packaging/
 └── com.beteliney.BetelineyLauncher.json  Manifest Flatpak
@@ -183,7 +183,6 @@ docs/ (ver índice completo en docs/README.md)
 ├── COMPILAR_WINDOWS.md  Guía de compilación Windows
 └── CONTRIBUTING.md      Cómo contribuir código al proyecto
 
-ESTADO.md              Estado completo del proyecto (fuente de verdad)
 EMPAQUETAR_APPIMAGE.sh Script para generar AppImage
 ```
 
@@ -222,7 +221,7 @@ EMPAQUETAR_APPIMAGE.sh Script para generar AppImage
 - [ ] i18n propio conectado a Weblate o similar
 - [ ] Publicar en r/feedthebeast, r/Minecraft, Discord de Prism Launcher
 
-**Ideas de mejora ya implementadas** (corregido en esta revisión — estaban listadas abajo como "no confirmadas aún" pero ya están en `main`, ver `ESTADO.md` y `docs/CHANGELOG.md` sección "Sin publicar aún"):
+**Ideas de mejora ya implementadas** (corregido en esta revisión — estaban listadas abajo como "no confirmadas aún" pero ya están en `main`, ver `docs/CHANGELOG.md` sección "Sin publicar aún"):
 
 - [x] Backup manual de mundos antes de actualizar una instancia (botón en página de instancia)
 - [x] Badge de mods con actualización disponible en la card de instancia
@@ -233,7 +232,7 @@ EMPAQUETAR_APPIMAGE.sh Script para generar AppImage
 - [x] Firma Ed25519 fail-closed en el updater
 - [x] Tema de Alto Contraste (WCAG AA) — accesibilidad baja visión/daltonismo
 
-**Ideas de mejora futuras (investigadas y verificadas, no confirmadas aún — ver bloque "ESTADO CONSOLIDADO" al final de `ESTADO.md` para el plan completo y priorizado):**
+**Ideas de mejora futuras (investigadas y verificadas, no confirmadas aún — priorización y detalle se llevan en el tracker interno del proyecto):**
 
 - [ ] Discord Rich Presence a nivel de proceso launcher/juego (librería oficial `discord-rpc` deprecada por Discord, forks comunitarios activos siguen siendo viables técnicamente — decisión de implementación sin tomar)
 - [ ] Preset de BetelineyPacks con fuente CurseForge (esfuerzo medio — limitado por el "Project Distribution Toggle" de CurseForge)
@@ -245,7 +244,7 @@ EMPAQUETAR_APPIMAGE.sh Script para generar AppImage
 
 **El_PibeCapo** — creador y director del proyecto.
 
-Contacto: [elpibecapoofficial@gmail.com](mailto:elpibecapoofficial@gmail.com) (personal) · [betelineylauncher@gmail.com](mailto:betelineylauncher@gmail.com) (proyecto)
+Contacto: [betelineylauncher@gmail.com](mailto:betelineylauncher@gmail.com)
 
 ## Licencia
 

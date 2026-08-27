@@ -303,6 +303,19 @@ QString PathCombine(const QString& path1, const QString& path2);
 QString PathCombine(const QString& path1, const QString& path2, const QString& path3);
 QString PathCombine(const QString& path1, const QString& path2, const QString& path3, const QString& path4);
 
+/**
+ * @brief combina baseDir con una ruta relativa no confiable, rechazando el resultado si escapa
+ *        de baseDir (path traversal via "../"). A diferencia de PathCombine (que solo limpia
+ *        el path con QDir::cleanPath sin acotarlo a ningun directorio), esta funcion esta pensada
+ *        para combinar baseDir con datos que vienen de una fuente externa no confiable (manifest
+ *        de un modpack, base de datos de un launcher de terceros, etc.).
+ * @param baseDir directorio base absoluto
+ * @param childRelative ruta relativa no confiable
+ * @return ruta combinada y limpia dentro de baseDir, o QString vacio si childRelative intenta
+ *         escapar de baseDir
+ */
+QString safeChildPath(const QString& baseDir, const QString& childRelative);
+
 QString AbsolutePath(const QString& path);
 
 /**

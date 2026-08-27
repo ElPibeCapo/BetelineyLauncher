@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# build_fast.sh — evita el cuelgue de LTO documentado en ESTADO.md
+# build_fast.sh — evita el cuelgue de LTO documentado internamente
 # (sesiones 20, 27, 29, 31, 32, 33: "ninja -C build -j$(nproc)" sin
 # restringir targets se cuelga en este hardware con LTO activo).
 #
@@ -42,6 +42,23 @@ LOG_FILE="$LOG_DIR/build_$TS.log"
 
 MODE="${1:-full}"
 cd "$REPO_ROOT"
+
+# Sesion 61: si "build-dev/" no existe, ninja aborta con
+#   ninja: fatal: chdir to 'build-dev' - No such file or directory
+# y el modo "full" no lo configuraba (solo lo hacen "tests" y "updater").
+# Paso real: se habia borrado build-dev/ para recuperar 12 GB y el script
+# quedo inservible sin decir por que. Ahora se autoconfigura con los mismos
+# ajustes documentados en la cabecera: RelWithDebInfo, sin LTO, linker lld.
+if [ ! -f "$BUILD_DIR/build.ninja" ]; then
+    echo "[build_fast] $BUILD_DIR no existe o no esta configurado. Configurando..." | tee -a "$LOG_FILE"
+    cmake -S . -B "$BUILD_DIR" -G Ninja \
+          -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+          -DENABLE_LTO=OFF \
+          -DBUILD_TESTING=ON \
+          -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld" \
+          -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld" >>"$LOG_FILE" 2>&1 \
+      || { echo "[build_fast] Fallo la configuracion. Ver $LOG_FILE"; exit 1; }
+fi
 
 TARGETS=""
 case "$MODE" in

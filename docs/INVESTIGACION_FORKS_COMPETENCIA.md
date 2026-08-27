@@ -48,7 +48,7 @@ Además de esos archivos nuevos, Fjord modifica **6 archivos core compartidos**:
 `minecraft/auth/AccountData.cpp/.h`, `minecraft/auth/AuthFlow.cpp`, `minecraft/auth/MinecraftAccount.cpp/.h`,
 `minecraft/auth/Parsers.cpp`. Estos son los mismos archivos donde Beteliney ya hizo trabajo propio real
 (el off-by-one de `AccountList::data()`, sesión 50 cont., y el reemplazo de interpolación de string por
-`QJsonObject`/`QJsonDocument` en los 3 pasos de login OAuth/XSTS, sesión 53 — ver `ESTADO.md`). Portar
+`QJsonObject`/`QJsonDocument` en los 3 pasos de login OAuth/XSTS, sesión 53 — trazado internamente). Portar
 alt-auth no es copiar 7 archivos y listo: es reconciliar a mano contra fixes de seguridad propios ya
 hechos ahí. Estimación honesta: trabajo real de una sesión completa dedicada, no un cherry-pick trivial.
 
@@ -104,6 +104,6 @@ Beteliney. Queda documentado acá como candidato de roadmap; no se tocó código
 investigación pura a pedido del dueño.
 
 Las features que Copilot listó como "únicas de Beteliney" (diagnóstico de logs en español, perfiles
-JVM, BetelineyPacks, tema neón, Command Palette, etc.) sí están confirmadas reales contra `ESTADO.md`
+JVM, BetelineyPacks, tema neón, Command Palette, etc.) sí están confirmadas reales contra el registro interno del proyecto
 y el propio código — en eso el chat no mintió, solo lo envolvió en un marco de marketing que no
 aportaba nada al análisis.

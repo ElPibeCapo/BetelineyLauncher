@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # check_build.sh — sondea un build lanzado con build_fast.sh SIN bloquear
-# la terminal. Aplica el patrón real ya usado a mano en sesiones 27/28/29/31
-# de ESTADO.md: comparar el timestamp del binario contra el de los fuentes
+# la terminal. Aplica el patrón real ya usado a mano en sesiones previas:
+# comparar el timestamp del binario contra el de los fuentes
 # modificados, en vez de esperar a que el proceso de ninja termine.
 #
 # Uso: tools/dev/check_build.sh [ruta/al/binario]

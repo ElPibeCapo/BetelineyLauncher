@@ -31,6 +31,7 @@ tools/dev/__pycache__/
 /docs/GESTORES_Y_SKILLS.md
 /docs/AUDITORIA_UI.md
 /docs/HANDOFF-CLAUDE-CODE.md
+/docs/HANDOFF-MARKETING-ALMA.md
 /docs/focus_probe.cpp
 /docs/focus_probe_tabbar.cpp
 /docs/rediseno-v2/
@@ -48,3 +49,5 @@ tools/dev/__pycache__/
 /tools/dev/check_meta_urls.sh
 /tools/dev/audit_file_divergence.sh
 /tools/dev/check-internos.sh
+/PENDIENTES.md
+/PRIORIDADES.md

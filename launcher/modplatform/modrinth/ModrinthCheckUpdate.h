@@ -6,8 +6,8 @@ class ModrinthCheckUpdate : public CheckUpdateTask {
     Q_OBJECT
 
    public:
-    ModrinthCheckUpdate(QList<Resource*>& resources,
-                        std::vector<Version>& mcVersions,
+    ModrinthCheckUpdate(QList<Resource*> resources,
+                        std::vector<Version> mcVersions,
                         QList<ModPlatform::ModLoaderType> loadersList,
                         ResourceFolderModel* resourceModel);
 

@@ -1,6 +1,5 @@
 =============================================
-  Beteliney Launcher — v8.3.0
-  2026-06-18
+  Beteliney Launcher — v8.4.0
   Autor: El_PibeCapo <elpibecapoofficial@gmail.com>
 =============================================
 
@@ -105,61 +104,4 @@ PROBLEMAS FRECUENTES:
     → Guía completa: docs/TROUBLESHOOTING.md
 
 ---------------------------------------------
-
-CAMBIOS v7.3.0 (2026-03-29):
-  Nuevos / actualizados (2026-03-29):
-    - Logo Beteliney: hexágono ⬡ con B neon #39FF14, reemplaza logo Prism
-      (SVG + PNG 256px + ICO multi-size en program_info/)
-    - EMPAQUETAR_LINUX.sh: empaquetado para Linux (tar.gz / AppImage / .deb)
-    - beteliney-updater.sh: nuevo flag --log [N] para ver logs de update
-    - fix_icons.py: nuevo flag --dry-run para preview sin escribir
-    - docs/PERFILES_JVM.md: documentación técnica completa de perfiles JVM
-    - JavaSettingsWidget: detección automática de iGPU vía lspci (Linux)
-      sugerencia automática del perfil iGPU si se detecta GPU integrada
-    - JavaPage.cpp: strings traducidos al español
-    - AboutDialog: personalizado con branding Beteliney, link al repo,
-      versión en neon, referencia a Prism Launcher como base
-  BetelineyTheme v3:
-    - Tema gamer completo: deep-space navy + neon #39FF14
-    - Gradientes en TODOS los widgets Qt (toolbars, buttons, tabs,
-      scrollbars, sliders, inputs, listas, menus, dialogos, etc.)
-    - Toolbars diferenciadas por nombre (mainToolBar / instanceToolBar / newsToolBar)
-    - Items seleccionados con accent strip lateral 3px #39FF14
-    - GroupBox title: neon #39FF14 bold
-    - ProgressBar: gradient animado #22BB0C → #50FF28
-    - Tab activa: border-bottom 2px #39FF14
-  Cuentas No-Premium:
-    - anyAccountIsValid() acepta AccountType::Offline directamente
-    - No-Premium lanza el juego sin verificar Premium
-    - Textos: "Offline" → "No-Premium", "MSA" → "Premium"
-    - Estados de cuenta en espanol
-  Scripts:
-    - MONTAR_WINDOWS_NOBARA.sh: deteccion dinamica de usuario Windows
-      (sin hardcodear nombres de usuario)
-    - COMPILAR.ps1: Find-Qt y Find-MinGW dinamicos sin rutas hardcodeadas
-
-CAMBIOS v7.1.0:
-  - Nuevo perfil JVM "iGPU / RAM compartida (Vega 10, Intel UHD)"
-  - NumberOfConcurrentDownloads adaptativo segun RAM (4/6/10 hilos)
-  - MinMemAlloc default: 1024 MB → 512 MB
-  - COMPILAR_LINUX.sh: deteccion automatica CPU (znver1 vs native)
-  - Nuevo: MONTAR_WINDOWS_NOBARA.sh y EMPAQUETAR_WINDOWS.bat
-
-CAMBIOS v7.0.2:
-  - G1NewSizePercent: 20 → 30 (perfil Ligero)
-  - Nuevo umbral suitableMaxMem: >= 12 GB → 4 GB para MC
-  - MinMemAlloc default: 1024 → 512 MB
-
-CAMBIOS v7.0.1:
-  - Xss: 768k → 1M (perfil Ligero, fix StackOverflowError con mods)
-  - minMemMB: 1024 → 2048 (perfil Balanceado)
-  - windeployqt: --skip-plugin-types generic,networkinformation
-  - Launcher_Domain: beteliney.local → beteliney.github.io (fix RFC 6762)
-
-CAMBIOS v7.0.0:
-  - XboxProfileStep, branding Beteliney, perfiles JVM Aikar
-  - Flags: -O3 -march=znver1 -mtune=znver1, LTO, --gc-sections
-  - Menu completo en COMPILAR_BETELINEY.bat
-
-Changelog tecnico completo: docs/CHANGELOG.md
-
+Changelog tecnico completo y actualizado: docs/CHANGELOG.md

@@ -717,6 +717,22 @@ QString PathCombine(const QString& path1, const QString& path2, const QString& p
     return PathCombine(PathCombine(path1, path2, path3), path4);
 }
 
+QString safeChildPath(const QString& baseDir, const QString& childRelative)
+{
+    if (childRelative.isEmpty())
+        return {};
+
+    const QString base = QDir(baseDir).absolutePath();
+    const QString cleaned = QDir::cleanPath(base + "/" + childRelative);
+
+    // cleanPath resuelve los ".." logicamente (sin tocar el filesystem), asi que alcanza
+    // para detectar el escape sin necesitar que el path exista.
+    if (cleaned != base && !cleaned.startsWith(base + "/"))
+        return {};
+
+    return cleaned;
+}
+
 QString AbsolutePath(const QString& path)
 {
     return QFileInfo(path).absolutePath();

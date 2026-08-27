@@ -337,7 +337,18 @@ std::unique_ptr<MinecraftInstance> FlameCreationTask::createInstance()
     }
 
     if (!m_pack.overrides.isEmpty()) {
-        QString overridePath = FS::PathCombine(m_stagingPath, m_pack.overrides);
+        // m_pack.overrides viene del manifest.json dentro del zip del modpack — no es un dato
+        // confiable (puede venir de un pack de terceros, incluso importado localmente sin pasar
+        // por CurseForge). Si contuviera "../", PathCombine no lo hubiera bloqueado (solo limpia
+        // el path, no lo acota a m_stagingPath) — mismo patron de path traversal ya corregido en
+        // el importador de GDLauncher (migration/GDLauncherMigrator.cpp).
+        QString overridePath = FS::safeChildPath(m_stagingPath, m_pack.overrides);
+        if (overridePath.isEmpty()) {
+            setError(tr("El campo 'overrides' del manifest del modpack intenta salir del directorio "
+                        "de la instancia:\n") +
+                     m_pack.overrides);
+            return nullptr;
+        }
         if (QFile::exists(overridePath)) {
             // Create a list of overrides in "overrides.txt" inside flame/
             Override::createOverrides("overrides", parent_folder, overridePath);

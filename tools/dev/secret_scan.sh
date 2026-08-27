@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # secret_scan.sh — grep de patrones de credenciales conocidos antes de
-# commitear. Motivación (sesión 15 de ESTADO.md): la API key de CurseForge
-# quedó commiteada en texto plano en ESTADO.md y estuvo expuesta
+# commitear. Motivación: la API key de CurseForge quedó commiteada en
+# texto plano en un documento interno y estuvo expuesta
 # públicamente hasta que se detectó a mano.
 #
 # Uso manual: tools/dev/secret_scan.sh

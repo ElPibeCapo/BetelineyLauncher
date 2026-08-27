@@ -11,7 +11,7 @@
 
 ## Sin publicar aún — commits en `main` desde `v8.4.0` (2026-07-06 a 2026-08-03)
 
-> Nota: la 8.4.0 no trajo features nuevas, pero tampoco fue solo un bump de versión: entre la 8.3 y la 8.4.0 hay 39 commits con arreglos reales — el crash `free(): invalid pointer` en 6 sitios, cuatro fixes del build de Windows, la condición de carrera de `CopyJars` que rompía el CI en ambas plataformas, tres backports de Prism 11.0.2, los presets con hashes SHA-512 verificados y dos redacciones de la API key de CurseForge. Todo lo real de esta sección vive en `main` sin tag propio todavía — la próxima release debería llevar estos cambios y bumpear a `v8.5.0` (ver `## VERSIONES` en `ESTADO.md`: nunca reusar `v8.3.0`/`v8.4.0`).
+> Nota: la 8.4.0 no trajo features nuevas, pero tampoco fue solo un bump de versión: entre la 8.3 y la 8.4.0 hay 39 commits con arreglos reales — el crash `free(): invalid pointer` en 6 sitios, cuatro fixes del build de Windows, la condición de carrera de `CopyJars` que rompía el CI en ambas plataformas, tres backports de Prism 11.0.2, los presets con hashes SHA-512 verificados y dos redacciones de la API key de CurseForge. Todo lo real de esta sección vive en `main` sin tag propio todavía — la próxima release debería llevar estos cambios y bumpear a `v8.5.0` (nunca reusar `v8.3.0`/`v8.4.0`).
 
 ### Seguridad
 
@@ -43,7 +43,7 @@
 
 | Commit | Cambio |
 |---|---|
-| `77a199f3a` | **Badge de detección de GraalVM mostraba una cifra de rendimiento sin fuente verificable** (`JavaSettingsWidget.cpp`) — "+10-20% FPS en Minecraft", la misma cifra que `ESTADO.md` (sesión 42) ya había marcado como no verificada, cita mal puesta en un documento externo apuntando a un artículo sin relación con JVM. La documentación se había corregido pero el texto de UI (visible al usuario real) había quedado sin tocar. Se saca el número; queda solo la afirmación técnica real (JIT más agresivo que OpenJDK), sin comprometerse con ninguna cifra hasta medirla en hardware propio. |
+| `77a199f3a` | **Badge de detección de GraalVM mostraba una cifra de rendimiento sin fuente verificable** (`JavaSettingsWidget.cpp`) — "+10-20% FPS en Minecraft", la misma cifra que ya se había marcado internamente como no verificada, cita mal puesta en un documento externo apuntando a un artículo sin relación con JVM. La documentación se había corregido pero el texto de UI (visible al usuario real) había quedado sin tocar. Se saca el número; queda solo la afirmación técnica real (JIT más agresivo que OpenJDK), sin comprometerse con ninguna cifra hasta medirla en hardware propio. |
 | `87b18c060` | **`Launcher_Git` apuntaba a la org vieja** (`program_info/CMakeLists.txt`) — el valor se compila directo al diálogo "Acerca de" real (`AboutDialog.cpp`) y apuntaba a `github.com/beteliney/BetelineyLauncher`, un remoto que no existe. Corregido al remoto real, `ElPibeCapo/BetelineyLauncher`. |
 
 ### Nuevas funciones
@@ -56,7 +56,138 @@
 | `8af24f71a` | **Sistema de logros de marca por tiempo jugado** — 5 logros (1h/10h/50h/100h/500h de juego acumulado en una instancia), notificación visual tipo toast (esquina inferior derecha, cola FIFO si se desbloquean varios a la vez), persistencia en `SettingsObject`. |
 | `977a1f83e` | **Sandboxing opcional con Bubblewrap (`bwrap`) para el proceso de Minecraft en Linux** — opción configurable, no forzada por defecto (no todos los sistemas tienen `bwrap`, ni todas las configuraciones de instancia son compatibles con un sandbox estricto). |
 
+### Pendiente — auditoría del 20-21 ago (Manus + verificación propia), sin commit todavía
+
+> No son ideas de backlog (eso vive en `documentacion-proyecto/BIBLIA_MASTER_V2.md`, sección 16). Son hallazgos verificados contra código y feeds reales, con evidencia línea por línea, sin arreglar aún. Mismo patrón que ya se vio y se corrigió antes en esta misma tabla (badge de GraalVM con cifra sin fuente, link a la org vieja) — documentación/feed desincronizado de lo que el código o el servidor realmente hacen, ahora en más lugares.
+
+| Área | Hallazgo | Evidencia |
+|---|---|---|
+| Malware scanner | Feed público (`meta/v1/malware/known-hashes.json`) vacío en vivo (`sha256: []`, `sha512: []`, `updated: 2026-06-21`) pese a que `README.md` (línea 214, checkbox `[x]`) dice que se sembró con datos reales el 2026-07-18. La siembra nunca llegó a producción o se revirtió. `MalwareScanner` sigue fail-open si el feed falla o está vacío. | Fetch en vivo al feed + grep del README, 21 ago |
+| BetelineyPacks | Pack remoto "Vanilla Optimizado" (`meta/v1/beteliney-packs/vanilla-optimizado.json`) tiene 8/8 mods sin `url` ni `sha512`. `BetelineyPackInstallTask` hace `continue` silencioso por cada mod sin url — el pack se instala "exitoso" con 0 mods. Coexiste sin distinción visual, mismo nombre, con el preset built-in bueno de `BetelineyPresets.h` (4 mods, hash real) — el usuario no puede distinguir cuál elige. | Fetch en vivo al feed + lectura de `BetelineyPackInstallTask.cpp` y `BetelineyPackPage.cpp::openedImpl()`, 21 ago |
+| Updater | Ruta AppImage (`BetelineyUpdaterApp::run()`, rama `m_isAppimage`) delega a `AppImageUpdate.AppImage` vía `callAppImageUpdate()` sin pasar nunca por `performUpdate()` — se salta enteramente la verificación de firma Ed25519 que sí protege la ruta normal (commit `53d092728`). Aplica igual con canal beta o estable. | Lectura de `BetelineyUpdaterApp.cpp`, 21 ago |
+| Telemetría | `TelemetryEnabled` registrado en `true` (opt-out). En `MainWindow.cpp`, `Telemetry::instance().start()` se llama antes de `shouldShowFirstRunNotice()` — el timer del primer heartbeat (5s) queda programado antes de que el usuario vea el aviso, que además es informativo (`QMessageBox::information`, un botón OK), no un consentimiento real. Endpoint sigue siendo el placeholder `REEMPLAZAR.workers.dev`, sin desplegar — hoy no manda nada, pero el orden quedaría igual el día que se despliegue. | Lectura de `BetelineyTelemetry.cpp` + `MainWindow.cpp`, 21 ago |
+| UX | `Ctrl+K` colisiona en 3 sitios: `actionKillInstance` (`MainWindow.ui`), Command Palette (`MainWindow.cpp`, commit `484402e48`), y otra vez Kill en `InstanceWindow.cpp`. No hay sistema de atajos configurables por el usuario para resolverlo de raíz. | Búsqueda de texto en los 3 archivos, 21 ago |
+| CI | `build.yml` compila con `-DBUILD_TESTING=OFF` en Linux y Windows — los tests nunca corren en CI pese al historial de "ctest 31/31" citado commit por commit en esta misma tabla (esos 31/31 son corridas locales, no de CI). | Lectura de `.github/workflows/build.yml`, 21 ago |
+| Documentación | **CORREGIDO 21 ago — este hallazgo estaba mal.** Se había afirmado que `ESTADO.md` y `docs/GESTORES_Y_SKILLS.md` no existían, basado en una búsqueda apuntada a la carpeta padre (`BetelineyLauncher/`) en vez de `BetelineyLauncher/source/`. Ambos existen: `source/ESTADO.md` (358 KB, 3242 líneas, modificado hoy) y `source/docs/GESTORES_Y_SKILLS.md`. Verificado de nuevo con ruta correcta, 21 ago. |
+
+### Verificado 24 ago — path traversal en Flame/ATLauncher, ya resuelto
+
+Una auditoría paralela (`docs/AUDITORIA_DEUDA_TECNICA_20260820.md`, no vista hasta ahora) mencionaba path traversal sin corregir en Flame/ATLauncher. Verificado contra el código actual: **ya está resuelto en ambos** — `FlameInstanceCreationTask.cpp` usa `FS::safeChildPath(m_stagingPath, m_pack.overrides)` (con comentario propio documentando el riesgo, cambio sin commitear todavía, parte del working tree ya conocido en `PENDIENTES.md`), y `ATLPackInstallTask.cpp` tiene `isPathTraversal()` con bloqueo real (`qWarning` + `return false`), ya commiteado de antes. No es pendiente.
+
+**Otros hallazgos de esa auditoría paralela, ya resueltos o confirmados sin acción, no duplico la tabla completa acá — ver el documento original**: `BetelineyCode.h` confirmado huérfano (coincide con lo ya anotado en la Biblia 16.7/16.8), con un dato nuevo — el easter egg que SÍ funciona es el `KonamiCode.h/.cpp` heredado de Prism sin rebrandear (conectado en `MainWindow.cpp:131/315/571`); `telemetry-worker/` ya tiene el código del backend escrito (Cloudflare Worker + esquema SQL), solo falta el deploy manual — el pendiente es más chico de lo que sugería la fila de Telemetría de arriba; `CommandPaletteDialog`/`FavoriteServers` confirmados limpios, sin TODO/FIXME.
+
+### Confirmado en vivo, 24 ago — el asset roto de Windows (pendiente #2 de PENDIENTES.md) afectó a un usuario real
+
+Capturas de WhatsApp del dueño muestran `beteliney.exe` fallando al arrancar en Windows con 4 errores de "DLL no encontrada" en cadena: `libtomlplusplus-3.dll`, `libb2-1.dll`, `Qt6Sql.dll`, `libexpat-1.dll` — el usuario ni siquiera llega a ver la ventana principal, tiene que darle "Aceptar" a cuatro diálogos de error del sistema operativo uno detrás del otro.
+
+**No es un bug nuevo, ni sin arreglo técnico.** El comentario de `EMPAQUETAR_WINDOWS.bat` (agregado en Sesión 61) ya documentaba estas mismas 4 DLLs exactas como el problema que rompió la release v8.4.0 publicada por el CI. La causa: `windeployqt` resuelve las DLL de Qt (incluido `Qt6Sql`, que usa `GDLauncherMigrator` para leer `data.sqlite`), pero no resuelve dependencias de terceros vía MinGW/vcpkg (`tomlplusplus`, `libb2`, `expat`) — para eso existe `tools/dev/win_collect_dlls.sh`, que recorre la tabla de importaciones de forma recursiva y **aborta el build si queda algo sin resolver**.
+
+Verificado contra el workflow real: **`build.yml` ya invoca `win_collect_dlls.sh` en el paso de empaquetado de Windows del CI**, con la verificación de "falla si queda alguna DLL sin resolver" activa. O sea, cualquier build que el CI genere desde que se agregó ese paso debería salir completo. El problema real es el que ya tenías anotado en `PENDIENTES.md` §2: **el asset viejo y roto sigue publicado en la release v8.4.0 de GitHub, nadie lo reemplazó por uno nuevo generado con el CI ya arreglado** — el token del agente no puede borrarlo, es acción tuya. Estas capturas son la primera confirmación real, con un usuario de carne y hueso, de que ese asset roto sigue activo y la gente lo sigue bajando.
+
+**Aparte, sin resolver todavía:** `EMPAQUETAR_WINDOWS.bat` (el script que corre alguien local, sin CI) tiene el mismo agujero sin cubrir del todo — `win_collect_dlls.sh` necesita bash+objdump (MSYS2), que un `.bat` de cmd.exe nativo no tiene disponible, así que solo cubre la mitad (la parte de Qt vía `windeployqt`). El propio comentario lo marca como "sin verificar, no hay máquina Windows disponible para probar este .bat".
+
+### Bugs reales de la comunidad de PrismLauncher (2026), no los 157 TODO/FIXME - 24 ago
+
+Aclaración importante: los 157 TODO/FIXME de 16.9 **no son bugs confirmados**, son deuda de diseño/cosas sin terminar marcadas por los propios devs. Esto de acá sí son bugs reales, reportados y arreglados por la comunidad oficial de PrismLauncher entre v11.0.0 y v11.1.0 (en desarrollo), relevantes por ser el proyecto del que Beteliney es fork.
+
+**Críticos (memoria/freeze/crash), prioridad alta de verificar contra el código propio:**
+- `#5551` Memory leak y crash con el modal de data packs — Beteliney tiene `DataPackPage.cpp` (dos, en `ui/pages/modplatform/` e `ui/pages/instance/`) y `ResourceDownloadDialog.cpp`. Sin verificar en detalle si el fix ya está incluido (el diff exacto de Prism no se pudo obtener en esta sesión).
+- `#5388` Infinite loop en `SkinManageDialog` — Beteliney tiene su propio `SkinManageDialog.cpp`. **Verificado parcialmente**: los 3 caminos de la espera síncrona (`Task::aborted`, `Task::failed`, `Task::succeeded`) tienen su `quit()` correspondiente sobre `uuidLoop`/`profileLoop` — no se ve el patrón clásico de loop sin salida. No se pudo confirmar al 100% contra el diff real del fix de Prism.
+- `#5289` Crash con paquete de red inválido de un servidor — relevante para estabilidad/seguridad de red, sin verificar contra el código de Beteliney todavía.
+
+**Relevantes para el foco de Beteliney (cuentas no-premium, updater propio):**
+- `#5542` Cuentas offline no se refrescan al lanzar el juego.
+- `#5620` No borrar cuentas Microsoft viejas hasta reautenticar exitosamente.
+- `#5492` String de fallo de Xbox incorrecto.
+- `#5486` "Fixes to PrismExternalUpdater" — **muy relevante**, Beteliney tiene su propia clase `BetelineyExternalUpdater` heredada de esa misma base. Sin verificar el diff exacto de qué se arregló.
+- `#5370` Updater no reseteaba la tarea actual en la señal de "terminado" (v11.0.2, parche de emergencia sobre un bug que la propia v11.0.1 había introducido).
+- `#5334` No contar mods .jar al chequear librerías offline.
+
+**En desarrollo ahora mismo en Prism (v11.1.0, todavía no publicado), ideas que ya veníamos proponiendo de forma independiente:**
+- `#5886` "Add warning for untrusted mods in imported modpacks" — coincide casi exacto con la idea de "Modo Confianza" propuesta en 16.5. Prism está construyendo algo similar en paralelo, ahora mismo.
+- "Avoid excessive config writes (less freezing especially on HDD!)" — optimización de rendimiento real.
+- `#5860` "Cache resource hard link count" — relacionado con la deduplicación de mods entre instancias que había quedado como "verificar si ya existe" en 16.2.
+
+**Otros, menor prioridad o no aplicables:** `#5387` (botones de copiar/subir en ScreenshotsPage), `#5717` (dependencias no habilitan/deshabilitan otras), `#5415` (lógica de abortar tareas), `#5485` ("usar idioma del sistema"), `#5204` (sacar caracteres de marca registrada de nombres de carpeta de instancia), `#5332` (build en 32 bits, no aplica), `#5427` (Cmd+Q en macOS, no aplica - Beteliney es Linux/Windows).
+
+**Pendiente real**: ninguno de estos se verificó al 100% contra el código de Beteliney salvo el de SkinManageDialog (parcial). Antes de decidir cuáles portar, habría que conseguir el diff real de cada PR de Prism (no se pudo traer completo en esta sesión, GitHub devolvía solo metadata) y compararlo línea por línea contra el archivo equivalente de Beteliney.
+
+### Ampliación 24 ago — changelogs completos de v11.0.0 y v11.0.3 traídos íntegros (no solo snippets de búsqueda)
+
+Se trajeron las páginas oficiales completas de prismlauncher.org (v11.0.0, 7 min de lectura, ~55 PRs; v11.0.3, ~35 PRs). Además de lo ya listado arriba:
+
+**Críticos nuevos, sin verificar contra Beteliney:**
+- `#4822` "Do not delete LaunchController before we're done using it" — use-after-free real, confirmado por el propio título del PR. Beteliney tiene `LaunchController.h/.cpp` (heredado). **No se pudo confirmar si el fix está incluido** — sin diff exacto disponible en esta sesión. Prioridad alta de verificar manualmente, es del mismo tipo de bug que ya se corrigió antes en Beteliney (ver commit `53d092728`/fixes previos documentados más arriba en este changelog) y del mismo tipo que el segfault sin resolver (pendiente #1, `ESTADO.md` privado).
+- `#5301` "LaunchController: fix double task finish" — condición de carrera de doble finalización, mismo archivo que arriba.
+- `#5187` "Fix infinite update" — loop infinito en el flujo de actualización (distinto del updater con Ed25519 que ya se auditó, pero relacionado).
+- `#5000` "fix crash with skin format" — otro crash de skins, además del de `SkinManageDialog` ya listado.
+- `#5418` "fix world size uninitialized memory and UI refresh signal" — lectura de memoria sin inicializar, riesgo real de comportamiento indefinido.
+- `#5050` "Use an owning QByteArray in ByteArraySink" — bug de lifetime de buffer.
+- `#5043` "fix(flame): avoid double-fail assert in file resolving" — assert duplicado en el resolver de archivos de CurseForge, misma área que se investigó con la conversación sobre Shiwa.
+- `#5034` "fix zip path traversal" (genérico, el reportado por el investigador externo Thinkseal) — **distinto** del `#5511 "fix Atl path traversal"` ya confirmado presente en Beteliney. Este es el fix base de extracción de ZIP; Beteliney usa `FS::safeChildPath` en Flame, coherente con este fix, pero no se confirmó línea por línea que sea exactamente este PR.
+
+**Relevante y ya verificado, contradice parcialmente un hallazgo propio anterior:**
+- `#4622` "Ask before deleting saves as part of a Modpack update" (Prism 11.0.0) — Prism ya pregunta antes de borrar mundos guardados al actualizar un pack. **Verificado contra el TODO real de Beteliney en `FlameInstanceCreationTask.cpp:170-171`**: ese TODO sigue intacto y trata de un problema relacionado pero distinto — "overrides" (configs/resourcepacks del modpack) y mods deshabilitados por el usuario, no específicamente los `saves/`. No se pudo confirmar si Beteliney heredó el fix de `#4622` en otro punto del flujo de actualización sin revisar más archivos.
+
+**Contexto adicional de por qué existe el path traversal fix en primer lugar**: `#5034`/el fix original fue reportado responsablemente por un investigador de seguridad externo (Thinkseal), no encontrado internamente — dato de color, refuerza que la comunidad de Prism sí recibe auditorías de seguridad externas reales.
+
+**Otros de menor prioridad traídos en esta ampliación**: `#5513` (no borrar directorios base al vaciar el metacache — riesgo de pérdida de datos), `#5442`/`#5444` (rutas vacías y espacios en blanco mal manejados en URLs de packs), `#5216` (tarea de actualización de componente no se sobreescribe bien con modo de red distinto), `#5645` (mostrar error cuando falla la autorización por código de dispositivo), `#5602`/`#5487` (uso de APIs nativas para detectar GPU — referencia técnica real para la idea de auto-perfil JVM por hardware ya en el backlog).
+
+### CONFIRMADO con solución concreta, 24 ago — use-after-free real en `LaunchController` (`#4822` de Prism)
+
+No es conjetura, es lectura directa del código con razonamiento técnico verificado paso a paso:
+
+1. `Application.cpp`: `connect(controller.get(), &LaunchController::finished, this, &Application::controllerFinished);` — sin `Qt::QueuedConnection` explícito. Emisor (`controller`) y receptor (`Application`) están en el mismo hilo (el hilo principal de la GUI) → Qt resuelve esto como conexión **directa/síncrona**.
+2. Cuando `LaunchController` hace `emit finished()` desde dentro de alguna de sus propias funciones, Qt llama **inmediatamente**, todavía en el mismo call stack, a `Application::controllerFinished()`.
+3. Esa función hace `extras.controller.reset()` (línea 1708) — **destruye el objeto `LaunchController` mientras el código que hizo el `emit` original todavía sigue en el stack, sin terminar de ejecutarse.**
+4. Cuando el control vuelve a la función de `LaunchController` que hizo el `emit`, corre sobre un objeto ya destruido — use-after-free clásico de Qt/C++, exactamente el patrón que describe el título del PR de Prism `#4822` ("Do not delete LaunchController before we're done using it"). Beteliney tiene el código idéntico, sin el fix.
+
+**Solución concreta, patrón estándar de Qt para este caso exacto** (cambio de una línea, bajo riesgo):
+```cpp
+// Application.cpp:1708, en vez de:
+extras.controller.reset();
+// usar:
+extras.controller.release()->deleteLater();
+```
+`release()` desengancha el objeto del `unique_ptr` sin destruirlo; `deleteLater()` le pide a Qt que lo borre recién en el próximo ciclo del event loop, después de que el `emit finished()` original termine de desenrollar su stack por completo. Sin efectos secundarios esperados sobre el resto de la función (el resto de `controllerFinished()` no vuelve a tocar `extras.controller` después de esa línea).
+
+**Relevancia real**: este es exactamente el tipo de bug que puede producir crashes intermitentes y difíciles de reproducir — coherente en naturaleza (aunque no confirmado como la misma causa) con el segfault sin resolver documentado como pendiente #1 en `ESTADO.md` privado. Vale la pena probarlo como primer candidato a investigar ese segfault, dado que es una causa raíz real ya identificada con solución lista, en vez de seguir a ciegas.
+
+### Cronología completa + v11.0.1/11.0.2/11.1.0 traídas - 24 ago
+
+Cronología real (fechas 2026): 10.0.5 (14 feb) → **11.0.0** (8 abr, "our fastest major release yet") → **11.0.1** (12 abr, parche crítico "para lanzar versiones viejas de Minecraft y actualizar Modpacks") → **11.0.2** (13 abr, parche de emergencia de un día para después — el propio anuncio dice "hicimos suficientes releases como para romper sutilmente nuestro updater con la última" — el sistema de actualización automática de Prism se rompió a sí mismo y tocó pedirle a la gente de Windows/AppImage/Linux Portable que actualizara a mano) → **11.0.3** (11 jul, ~35 fixes) → **11.1.0** en testing por Discord, sin publicar todavía. Dato de color: v10.0.3 y v10.0.4 nunca llegaron a publicarse, ni Prism se salva de releases fallidas.
+
+**v11.0.1 (parche crítico, 4 días después de 11.0.0):**
+- `#5333` Permitir desactivar el aviso de RAM baja.
+- `#5334` No contar mods .jar al chequear librerías offline (ya listado).
+- `#5332` Build roto en arquitecturas de 32 bits (no aplica a Beteliney).
+
+**v11.0.2 (parche de un solo cambio, emergencia del updater):**
+- `#5370` "Updater: Do not reset current task in finished signal" — el único cambio de todo el release, sobre el propio sistema de actualización. Máxima relevancia para el `BetelineyExternalUpdater`/`BetelineyUpdater` ya auditado — confirma que el patrón "updater que se rompe a sí mismo entre versiones" es un riesgo real y ya materializado en el proyecto del que Beteliney es fork.
+
+**v11.1.0 (en testing, lista completa):**
+- `#5886` Warning para mods no confiables (ya listado, coincide con "Modo Confianza" propuesto en 16.5).
+- `#5662` "Added missing tab stops and/or fixed their order" — accesibilidad de navegación por teclado (orden de Tab), distinto de la idea de "atajos configurables" ya en el backlog — vale sumarlo como idea de accesibilidad adicional en 16.6.
+- `#5858`/`#5945`/`#5913` "Avoid excessive config writes" — 3 PRs para el mismo problema, sugiere que costó varios intentos resolverlo bien. Relevante en general para el patrón de guardado de settings de Beteliney.
+- `#5860` Cache resource hard link count (ya listado).
+- `#5818` "Fix existing instance shortcuts not being detected", `#5816` "Fix instance shortcuts breaking when the instance is renamed", `#5822` "Prevent renaming instance folder while instance is running" — 3 bugs relacionados a accesos directos de instancia (shortcuts de escritorio) y renombrado, área no explorada todavía en Beteliney.
+- **`#5779` "fix: crash when trying to install a disabled modloader"** — crítico, sin verificar contra Beteliney. Relevante porque conecta con el TODO ya encontrado en `FlameInstanceCreationTask.cpp:93` sobre manejo pobre de instalaciones duplicadas/en conflicto.
+- `#4997` Colores del menú difíciles de leer en macOS (no aplica).
+
+### Investigado y descartado, 24 ago — falso positivo en `World::m_gameType`
+
+Por inspección propia (no de un PR de Prism) sospeché memoria sin inicializar en `World.h`: el campo `GameType m_gameType;` no tiene `=` explícito, a diferencia de los demás campos de la clase (`m_size = 0`, `m_randomSeed = 0`, `m_isValid = false`), y confirmé que `World::readFromFS()`/`readFromZip()` retornan antes de asignarlo en caminos de error (`level.dat` ilegible o ausente). **Seguí la cadena hasta el final y no es un bug**: `struct GameType` (definido en el mismo header) tiene `enum { Unknown = -1, ... } type = Unknown;` con inicializador in-class, y `GameType() = default;` respeta ese inicializador — `m_gameType` siempre arranca en `Unknown` de forma segura, aunque no se vea a simple vista en el punto de declaración. Descartado con evidencia, no solo por sospecha.
+
+### Cierre de esta ronda de "bugs, errores, fallas, cómo solucionar" - 24 ago
+
+**Con solución concreta lista para aplicar (1)**: el use-after-free de `LaunchController` de arriba — cambio de una línea, `extras.controller.release()->deleteLater();` en vez de `.reset()`.
+
+**Confirmados sin bug tras investigar a fondo (3)**: path traversal en Flame/ATLauncher (ya resuelto), memoria de `World::m_gameType` (falso positivo, recién descartado), SkinManageDialog (los 3 caminos de error cubiertos, aunque sin diff exacto de Prism para comparar).
+
+**Sin verificar todavía, quedan como pendiente explícito para la próxima ronda si se retoma**: crash con modloader deshabilitado (`#5779`), doble finalización de tarea en LaunchController (`#5301` — relacionado al use-after-free ya confirmado, mismo archivo, vale la pena revisar junto), loop infinito de actualización (`#5187`), bug de `ByteArraySink` (`#5050`), assert doble en Flame file resolving (`#5043`).
+
 ---
+
 
 ### Herramientas, pruebas y mantenimiento
 

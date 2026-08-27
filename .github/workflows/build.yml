@@ -198,7 +198,8 @@ jobs:
         run: |
           PKG="${{ steps.ver.outputs.pkgname }}"
           mkdir -p "dist/$PKG/platforms" "dist/$PKG/tls" "dist/$PKG/imageformats" \
-                   "dist/$PKG/iconengines" "dist/$PKG/styles" "dist/$PKG/jars"
+                   "dist/$PKG/iconengines" "dist/$PKG/styles" "dist/$PKG/jars" \
+                   "dist/$PKG/sqldrivers"
           cp build/beteliney.exe "dist/$PKG/"
           find build/libraries -name "*.jar" -exec cp {} "dist/$PKG/jars/" \; 2>/dev/null || true
           find build/jars    -name "*.jar" -exec cp {} "dist/$PKG/jars/" \; 2>/dev/null || true
@@ -209,23 +210,30 @@ jobs:
           cp "$QT_PLUGINS/tls/"*.dll               "dist/$PKG/tls/"       2>/dev/null || true
           cp "$QT_PLUGINS/imageformats/"*.dll       "dist/$PKG/imageformats/" 2>/dev/null || true
           cp "$QT_PLUGINS/iconengines/"*.dll        "dist/$PKG/iconengines/" 2>/dev/null || true
-          # DLLs de dependencias
-          for dll in Qt6Core Qt6Gui Qt6Widgets Qt6Network Qt6NetworkAuth Qt6Xml Qt6Concurrent Qt6OpenGL Qt6OpenGLWidgets Qt6Svg; do
-            cp "$QT_BIN/${dll}.dll" "dist/$PKG/" 2>/dev/null || true
-          done
-          # Runtime MinGW y otras DLLs necesarias
-          for dll in /mingw64/bin/libgcc_s_seh-1.dll /mingw64/bin/libstdc++-6.dll \
-                     /mingw64/bin/libwinpthread-1.dll /mingw64/bin/libarchive*.dll \
-                     /mingw64/bin/libcmark.dll /mingw64/bin/libqrencode*.dll \
-                     /mingw64/bin/zlib1.dll /mingw64/bin/libzstd.dll \
-                     /mingw64/bin/libbz2*.dll /mingw64/bin/liblzma*.dll \
-                     /mingw64/bin/liblz4*.dll /mingw64/bin/libssl*.dll \
-                     /mingw64/bin/libsodium*.dll \
-                     /mingw64/bin/libcrypto*.dll /mingw64/bin/libxml2*.dll \
-                     /mingw64/bin/libiconv*.dll /mingw64/bin/libcharset*.dll; do
-            cp "$dll" "dist/$PKG/" 2>/dev/null || true
-          done
+          cp "$QT_PLUGINS/sqldrivers/"*.dll         "dist/$PKG/sqldrivers/" 2>/dev/null || true
+          cp "$QT_PLUGINS/styles/"*.dll             "dist/$PKG/styles/"     2>/dev/null || true
+          # Dependencias: se resuelven recorriendo la tabla de importaciones
+          # del ejecutable y de cada plugin, en vez de una lista a mano.
+          # Falla el build si queda alguna sin resolver.
+          bash tools/dev/win_collect_dlls.sh "dist/$PKG" \
+               "dist/$PKG/beteliney.exe" \
+               "dist/$PKG"/*/*.dll
           cd dist && 7z a "${{ steps.ver.outputs.zipname }}" "$PKG"
+
+      - name: Smoke test del paquete
+        shell: pwsh
+        run: |
+          # PATH limpio a proposito: sin /mingw64/bin. Si el paquete depende de
+          # algo instalado en el runner y no incluido, tiene que fallar ACA.
+          $env:PATH = "C:\Windows\system32;C:\Windows"
+          $exe = "dist/${{ steps.ver.outputs.pkgname }}/beteliney.exe"
+          if (-not (Test-Path $exe)) { throw "No existe $exe" }
+          $salida = & $exe --version 2>&1
+          $codigo = $LASTEXITCODE
+          Write-Host "salida: $salida"
+          if ($codigo -ne 0) { throw "El ejecutable empaquetado no arranca (codigo $codigo)" }
+          if ("$salida" -notmatch "BetelineyLauncher") { throw "Salida inesperada: $salida" }
+          Write-Host "El paquete arranca en un entorno limpio."
 
       - uses: actions/upload-artifact@v4
         with:

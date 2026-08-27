@@ -12,6 +12,8 @@ Mapa de todos los documentos del proyecto: qué es cada uno, para qué sirve, y 
 
 **[`CHANGELOG.md`](CHANGELOG.md)** — historial de cambios técnico completo, commit por commit. Es la fuente de verdad de las versiones publicadas.
 
+**[`TELEMETRIA.md`](TELEMETRIA.md)** — qué datos de telemetría manda el launcher, qué no, y por qué (privacidad primero).
+
 **[`INVESTIGACION_FORKS_COMPETENCIA.md`](INVESTIGACION_FORKS_COMPETENCIA.md)** — investigación de código real (no marketing) sobre FjordLauncher y ShatteredPrism: qué tienen, cuánto costaría portar su alt-auth, y por qué el "DRM" que ambos tocan no le aplica a Beteliney (ya tiene su propio Client ID de Microsoft). Insumo de roadmap, sin código implementado.
 
 ## Si querés compilar, empaquetar o resolver un problema

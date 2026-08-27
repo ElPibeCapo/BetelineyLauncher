@@ -63,6 +63,35 @@ mkdir "%STAGE_DIR%"
 
 :: Copiar todos los archivos del build (exe + dlls + plugins Qt)
 xcopy /e /i /y "%EXE_DIR%\*" "%STAGE_DIR%\" >nul
+
+REM ---------------------------------------------------------------------
+REM Sesion 61: el xcopy de arriba solo lleva lo que ya estaba en la carpeta
+REM de build. NO resuelve las dependencias del ejecutable. El paquete que
+REM el CI publico en la release v8.4.0 no arrancaba en Windows 11 por
+REM cuatro DLL faltantes (libtomlplusplus-3, libb2-1, Qt6Sql, libexpat-1),
+REM y este script tiene exactamente el mismo agujero.
+REM
+REM windeployqt resuelve la parte de Qt, incluidos los plugins de
+REM plataforma, imageformats, iconengines y sqldrivers (este ultimo lo
+REM necesita GDLauncherMigrator para leer el data.sqlite de GDLauncher).
+REM Lo que windeployqt NO resuelve son las dependencias de terceros que
+REM vienen de MinGW/vcpkg: para eso esta tools/dev/win_collect_dlls.sh,
+REM que recorre la tabla de importaciones de forma recursiva y falla si
+REM queda alguna sin resolver. Ese script necesita bash + objdump, o sea
+REM MSYS2; desde aca solo se puede cubrir la mitad de Qt.
+REM
+REM SIN VERIFICAR: no hay maquina Windows disponible para probar este .bat.
+REM El camino verificado es el del CI (.github/workflows/build.yml).
+REM ---------------------------------------------------------------------
+where windeployqt >nul 2>&1
+if %ERRORLEVEL%==0 (
+    echo [*] Resolviendo dependencias de Qt con windeployqt...
+    windeployqt --release --no-translations --no-opengl-sw "%STAGE_DIR%\beteliney.exe"
+    if errorlevel 1 echo [!] windeployqt fallo. El paquete puede quedar incompleto.
+) else (
+    echo [!] windeployqt no esta en el PATH. El paquete puede quedar incompleto:
+    echo [!] faltarian las DLL de Qt y sus plugins. Abri un shell de MSYS2 MinGW64.
+)
 echo  [OK] Archivos copiados
 
 :: Copiar portable.txt si existe (Prism/Beteliney modo portatil)

@@ -11,11 +11,15 @@ class CheckUpdateTask : public Task {
     Q_OBJECT
 
    public:
-    CheckUpdateTask(QList<Resource*>& resources,
-                    std::vector<Version>& mcVersions,
+    CheckUpdateTask(QList<Resource*> resources,
+                    std::vector<Version> mcVersions,
                     QList<ModPlatform::ModLoaderType> loadersList,
                     ResourceFolderModel* resourceModel)
-        : Task(), m_resources(resources), m_gameVersions(mcVersions), m_loadersList(std::move(loadersList)), m_resourceModel(resourceModel)
+        : Task()
+        , m_resources(std::move(resources))
+        , m_gameVersions(std::move(mcVersions))
+        , m_loadersList(std::move(loadersList))
+        , m_resourceModel(resourceModel)
     {}
 
     struct Update {
@@ -64,8 +68,8 @@ class CheckUpdateTask : public Task {
     void checkFailed(Resource* failed, QString reason, QUrl recover_url = {});
 
    protected:
-    QList<Resource*>& m_resources;
-    std::vector<Version>& m_gameVersions;
+    QList<Resource*> m_resources;
+    std::vector<Version> m_gameVersions;
     QList<ModPlatform::ModLoaderType> m_loadersList;
     ResourceFolderModel* m_resourceModel;
 

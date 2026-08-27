@@ -6,11 +6,11 @@ class FlameCheckUpdate : public CheckUpdateTask {
     Q_OBJECT
 
    public:
-    FlameCheckUpdate(QList<Resource*>& resources,
-                     std::vector<Version>& mcVersions,
+    FlameCheckUpdate(QList<Resource*> resources,
+                     std::vector<Version> mcVersions,
                      QList<ModPlatform::ModLoaderType> loadersList,
                      ResourceFolderModel* resourceModel)
-        : CheckUpdateTask(resources, mcVersions, std::move(loadersList), resourceModel)
+        : CheckUpdateTask(std::move(resources), std::move(mcVersions), std::move(loadersList), resourceModel)
     {}
 
    public slots:

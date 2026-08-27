@@ -1,7 +1,7 @@
 # ⬡ Beteliney Launcher — Arquitectura Técnica
 
 > Documento de referencia del proyecto. Basado en lectura directa del código fuente.
-> Última actualización: **2026-07-14** (sesión 39, actualizado por auditoría de documentación) · Versión: **8.4.0** (tag) — `main` tiene 14 commits reales sin tagear encima, ver `ESTADO.md` sección ESTADO ACTUAL y `docs/CHANGELOG.md` sección "Sin publicar aún".
+> Última actualización: **2026-07-14** (sesión 39, actualizado por auditoría de documentación) · Versión: **8.4.0** (tag) — `main` tiene 14 commits reales sin tagear encima, ver `docs/CHANGELOG.md` sección "Sin publicar aún".
 > **Este documento estuvo congelado desde 2026-04-05 (v7.5.0/7.7.0) hasta esta revisión — todo lo de abajo se verificó contra el código real, no contra la versión vieja del archivo.**
 
 ---
@@ -96,7 +96,6 @@ source/                          Raíz del repo (== raíz del proyecto, sin carp
 ├── packaging/                    Manifest Flatpak
 ├── screenshots/                  Capturas para README
 ├── build/                        Directorio de build generado por CMake/Ninja (gitignored)
-├── ESTADO.md                     Fuente de verdad del estado del proyecto (raíz del repo)
 ├── COMPILAR_LINUX.sh             Build script Linux — menú de modos
 ├── COMPILAR_BETELINEY.bat        Build script Windows — menú
 ├── COMPILAR.ps1                  Build script PowerShell
@@ -313,7 +312,7 @@ ctest -R "MetaPathTraversal" --output-on-failure
 
 ## Bugs conocidos
 
-> **Corregido en esta revisión** — este bloque decía "auditoría 2026-03-31" y apuntaba a `docs/PENDIENTES.md`, que no existe. Los 7 bugs de esa auditoría **ya están todos resueltos** (verificado contra `ESTADO.md`, sesiones 12 y posteriores). Se dejan documentados por trazabilidad histórica, no como pendientes:
+> **Corregido en esta revisión** — este bloque decía "auditoría 2026-03-31" y apuntaba a `docs/PENDIENTES.md`, que no existe. Los 7 bugs de esa auditoría **ya están todos resueltos** (verificado internamente contra el registro de sesiones del proyecto, sesión 12 y posteriores). Se dejan documentados por trazabilidad histórica, no como pendientes:
 
 | ID | Prioridad | Archivo | Descripción breve | Estado |
 |----|-----------|---------|-------------------|--------|
@@ -322,10 +321,10 @@ ctest -R "MetaPathTraversal" --output-on-failure
 | BUG-3 | 🟡 Media | `lanzar.sh` | Race condition iGPU en primer arranque — cfg no existe aún | ✅ Resuelto (`.cfg` mínimo con perfil iGPU se crea antes de lanzar el exe) |
 | BUG-4 | 🟡 Media | `beteliney-updater.sh` | `--silent` no llama `verify_build` | ✅ Verificado ya correcto (`apply_update; recompile; verify_build`) |
 | BUG-5 | 🟡 Media | (doc obsoleto) | LTO documentado como OFF pero en código es ON | ✅ No aplica — LTO está ON, con `IPO OFF` solo en `nbt++` por bug de GCC 15, y el hang histórico de linkeo con LTO se resolvió en sesión 37 (job pool) |
-| BUG-6 | 🟢 Baja | `tools/dev/` | Verificación de archivos de test | ✅ Cubierto — `tools/dev/check_build.sh` y `estado_actual.sh` existen |
+| BUG-6 | 🟢 Baja | `tools/dev/` | Verificación de archivos de test | ✅ Cubierto — `tools/dev/check_build.sh` existe |
 | BUG-7 | 🟢 Baja | `COMPILAR_LINUX.sh` | `ensure_libnbt()` sin pin de versión | — sin confirmar en esta revisión, no crítico |
 
-**Vulnerabilidades de seguridad encontradas y cerradas después de esta auditoría** (no son parte de los BUG-1..7, son hallazgos posteriores — ver `ESTADO.md` sesiones 32, 38 y 39 para el detalle completo):
+**Vulnerabilidades de seguridad encontradas y cerradas después de esta auditoría** (no son parte de los BUG-1..7, son hallazgos posteriores — trazadas internamente en el registro de sesiones 32, 38 y 39 del proyecto):
 - Path traversal en el importador GDLauncher (sesión 32)
 - Path traversal en `uid`/`version` del feed de meta remoto (sesión 38)
 - Path traversal en `Component::m_uid` local (`mmc-pack.json`) y en `Meta::Require::uid` compartido (feed remoto + local + `patches/*.json`) — el vector más grave, porque se dispara automáticamente en cada resolve/launch sin interacción del usuario (sesión 39)
@@ -372,11 +371,11 @@ Sandboxing **opcional** del proceso de Minecraft en Linux vía `bwrap` (Bubblewr
 - Sesión 37: job pool dedicado para los pasos de linkeo con LTO — resolvió un cuelgue histórico del build que venía arrastrándose desde varias sesiones (20/27/29/31/32/33/36) sin diagnóstico certero hasta entonces.
 
 ### Vulnerabilidades de path traversal cerradas (sesiones 32, 38, 39)
-Ver tabla "Bugs conocidos" arriba, último bloque — resumen completo en `ESTADO.md`.
+Ver tabla "Bugs conocidos" arriba, último bloque — resumen completo en el registro interno de sesiones.
 
 ### `tools/dev/` — 8 herramientas de desarrollo (sesión 35)
-Cada una trazada a un fallo real documentado previamente en `ESTADO.md`, no especulativas:
-`build_fast.sh`, `check_build.sh`, `check_ci.sh`, `check_meta_urls.sh`, `estado_actual.sh`, `install_hooks.sh`, `secret_scan.sh`, `verify_presets.py` — más `tools/dev/README.md` explicando cada una.
+Cada una trazada a un fallo real documentado previamente en el registro interno de sesiones, no especulativas:
+`build_fast.sh`, `check_build.sh`, `install_hooks.sh`, `secret_scan.sh`, `verify_presets.py` — más `tools/dev/README.md` explicando cada una.
 
 ---
 
