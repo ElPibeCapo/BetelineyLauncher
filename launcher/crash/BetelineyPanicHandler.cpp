@@ -5,6 +5,8 @@
  */
 #include "BetelineyPanicHandler.h"
 
+#include <algorithm>
+
 #include <QDateTime>
 #include <QDesktopServices>
 #include <QDialog>
@@ -19,6 +21,10 @@
 #include <QUrl>
 #include <QUrlQuery>
 #include <QVBoxLayout>
+
+#if !defined(Q_OS_WIN32)
+#include <unistd.h>  // getuid(), para checkAndShowCrashReport()
+#endif
 
 // ── Parte 1: signal handler (sin Qt, solo syscalls seguros) ────────────────
 
@@ -68,7 +74,7 @@ static void panicHandler(int sig)
     memcpy(path + sizeof(CRASH_PREFIX) - 1, pidStr, i + 1);
     memcpy(path + sizeof(CRASH_PREFIX) - 1 + i, ".txt", 5);
 
-    int fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    int fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0600);
     if (fd >= 0) {
         safeWrite(fd, "BetelineyLauncher crash report\n");
         safeWrite(fd, "Signal: ");
@@ -91,6 +97,16 @@ static void panicHandler(int sig)
 
 void Beteliney::installPanicHandler()
 {
+    // BETELINEY: precalentar backtrace() fuera del signal handler. La primera invocación de
+    // backtrace() en glibc dispara la carga dinámica de símbolos, que internamente puede hacer
+    // malloc() (documentado en `man backtrace`: "this initial invocation may deadlock ... if a
+    // fatal signal is delivered to another thread ... while the dynamic loader lock is held").
+    // En una app multi-hilo como esta (Qt, NetJobs en background), un crash real dentro del
+    // panicHandler podría colgarse ahí en vez de escribir el reporte. Forzar la carga acá, en
+    // frío, evita que la primera llamada real ocurra dentro del handler.
+    void* warmup[1];
+    backtrace(warmup, 1);
+
     struct sigaction sa;
     memset(&sa, 0, sizeof(sa));
     sa.sa_handler = panicHandler;
@@ -154,6 +170,20 @@ void Beteliney::checkAndShowCrashReport(const QString& launcherVersion)
 #endif
 
     auto crashFiles = tmp.entryInfoList(filter, QDir::Files, QDir::Time);
+
+#if !defined(Q_OS_WIN32)
+    // BETELINEY: /tmp es compartido entre todos los usuarios del sistema (a diferencia de
+    // %TEMP% en Windows, que ya es por-usuario). Sin este filtro, en una máquina multiusuario
+    // se podía listar/intentar abrir el crash report de otra cuenta. El fix de permisos 0600
+    // en panicHandler() ya evita que se pueda LEER el contenido ajeno, pero esto además evita
+    // mostrarle al usuario un diálogo de reporte vacío por intentar abrir un archivo que no le
+    // pertenece.
+    const auto myUid = getuid();
+    crashFiles.erase(std::remove_if(crashFiles.begin(), crashFiles.end(),
+                                     [myUid](const QFileInfo& fi) { return fi.ownerId() != myUid; }),
+                      crashFiles.end());
+#endif
+
     if (crashFiles.isEmpty())
         return;
 
@@ -218,6 +248,11 @@ void Beteliney::checkAndShowCrashReport(const QString& launcherVersion)
 
     dlg.exec();
 
-    // Borrar el archivo de crash después de mostrarlo
-    QFile::remove(crashFile.absoluteFilePath());
+    // Borrar el archivo de crash después de mostrarlo. Si falla (permisos, archivo bloqueado),
+    // el mismo reporte reaparecería en cada arranque futuro sin fin — se loguea para que quede
+    // rastro, en vez de fallar en silencio.
+    if (!QFile::remove(crashFile.absoluteFilePath())) {
+        qWarning() << "No se pudo borrar el crash report" << crashFile.absoluteFilePath()
+                   << "- puede volver a aparecer en el próximo arranque.";
+    }
 }
