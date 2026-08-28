@@ -186,6 +186,13 @@ Por inspección propia (no de un PR de Prism) sospeché memoria sin inicializar 
 
 **Sin verificar todavía, quedan como pendiente explícito para la próxima ronda si se retoma**: crash con modloader deshabilitado (`#5779`), doble finalización de tarea en LaunchController (`#5301` — relacionado al use-after-free ya confirmado, mismo archivo, vale la pena revisar junto), loop infinito de actualización (`#5187`), bug de `ByteArraySink` (`#5050`), assert doble en Flame file resolving (`#5043`).
 
+**Motivo de por qué quedaron sin verificar, y cómo cerrarlos de verdad**: en esta sesión (chat web) GitHub solo devolvió metadata de las páginas de PR, nunca el diff línea por línea — sin eso, seguir buscando por texto libre en el código es apuesta, no verificación. **Camino recomendado**: pasarle esta lista de 5 números de PR a Claude Code (que sí tiene acceso a `git`/`gh` real) para que clone `PrismLauncher/PrismLauncher`, corra `git show <hash-del-PR>` o `gh pr diff <numero>` de cada uno, y compare línea por línea contra el archivo equivalente de Beteliney — convierte cada pendiente en un sí/no confirmado en minutos:
+- `#5779` fix: crash when trying to install a disabled modloader
+- `#5301` LaunchController: fix double task finish
+- `#5187` fix infinite update
+- `#5050` Use an owning QByteArray in ByteArraySink
+- `#5043` fix(flame): avoid double-fail assert in file resolving
+
 ---
 
 
