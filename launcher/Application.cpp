@@ -1705,7 +1705,14 @@ void Application::controllerFinished()
             QMetaObject::invokeMethod(extras.window, &QWidget::close, Qt::QueuedConnection);
         }
     }
-    extras.controller.reset();
+    // BETELINEY (upstream Prism #4822, "Do not delete LaunchController before we're done using it"):
+    // la conexión de la línea 1619 (controller -> Application::controllerFinished) es directa/síncrona,
+    // mismo hilo. Cuando controller hace `emit finished(...)`, esta función corre YA, todavía dentro
+    // del mismo call stack que sigue desenrollándose adentro de LaunchController. Destruirlo acá con
+    // .reset() era un use-after-free real: al volver el control a la función de LaunchController que
+    // hizo el emit, corría sobre un objeto ya liberado. release()+deleteLater() lo desengancha sin
+    // destruirlo ahora, y deja que Qt lo borre recién en el próximo ciclo del event loop.
+    extras.controller.release()->deleteLater();
     subRunningInstance();
 
     // quit when there are no more windows.

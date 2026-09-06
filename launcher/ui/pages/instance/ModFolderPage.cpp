@@ -165,10 +165,8 @@ void ModFolderPage::downloadMods()
         return;  // this is a null instance or a legacy instance
 
     auto profile = static_cast<MinecraftInstance*>(m_instance)->getPackProfile();
-    if (!profile->getModLoaders().has_value()) {
-        if (handleNoModLoader()) {
-            return;
-        }
+    if (!profile->getModLoaders().has_value() && handleNoModLoader()) {
+        return;
     }
 
     m_downloadDialog = new ResourceDownload::ModDownloadDialog(this, m_model, m_instance);
@@ -222,10 +220,8 @@ void ModFolderPage::updateMods(bool includeDeps)
         return;  // this is a null instance or a legacy instance
 
     auto profile = static_cast<MinecraftInstance*>(m_instance)->getPackProfile();
-    if (!profile->getModLoaders().has_value()) {
-        if (handleNoModLoader()) {
-            return;
-        }
+    if (!profile->getModLoaders().has_value() && handleNoModLoader()) {
+        return;
     }
     if (APPLICATION->settings()->get("ModMetadataDisabled").toBool()) {
         QMessageBox::critical(this, tr("Error"), tr("¡Las actualizaciones de mods no están disponibles cuando los metadatos están desactivados!"));
@@ -327,10 +323,8 @@ void ModFolderPage::changeModVersion()
         return;  // this is a null instance or a legacy instance
 
     auto profile = static_cast<MinecraftInstance*>(m_instance)->getPackProfile();
-    if (!profile->getModLoaders().has_value()) {
-        if (handleNoModLoader()) {
-            return;
-        }
+    if (!profile->getModLoaders().has_value() && handleNoModLoader()) {
+        return;
     }
     if (APPLICATION->settings()->get("ModMetadataDisabled").toBool()) {
         QMessageBox::critical(this, tr("Error"), tr("¡Las actualizaciones de mods no están disponibles cuando los metadatos están desactivados!"));
@@ -419,14 +413,27 @@ inline bool ModFolderPage::handleNoModLoader()
     switch (resp) {
         case QMessageBox::Yes: {
             // Should be safe
-            auto profile = static_cast<MinecraftInstance*>(this->m_instance)->getPackProfile();
+            auto* profile = static_cast<MinecraftInstance*>(this->m_instance)->getPackProfile();
             InstallLoaderDialog dialog(profile, QString(), this);
-            bool ret = dialog.exec();
+            // true si el usuario terminó el diálogo de instalar loader
+            // false si canceló/cerró el diálogo
+            bool dialogAccepted = dialog.exec() != 0;
             this->m_container->refreshContainer();
 
-            // returning negation of dialog.exec which'll be true if the install loader dialog got canceled/closed
-            // and false if the user went through and installed a loader
-            return !ret;
+            if (!dialogAccepted) {
+                return true;
+            }
+            if (!profile->getModLoaders().has_value()) {
+                // BETELINEY (upstream PR #5779): el diálogo se aceptó pero el modloader instalado
+                // quedó deshabilitado (o el resolve todavía no terminó) — getSupportedModLoaders()
+                // devolvería nullopt, y los .value() de más abajo en el flujo de mods crasheaban
+                // (std::bad_optional_access) en vez de mostrar este aviso.
+                CustomMessageBox::selectable(this, tr("Error"), tr("No se instaló ningún cargador de mods. Intentalo de nuevo."),
+                                              QMessageBox::Warning)
+                    ->show();
+                return true;
+            }
+            return false;
         }
         case QMessageBox::No: {
             // Nothing happens the dialog is already closing

@@ -186,12 +186,7 @@ Por inspección propia (no de un PR de Prism) sospeché memoria sin inicializar 
 
 **Sin verificar todavía, quedan como pendiente explícito para la próxima ronda si se retoma**: crash con modloader deshabilitado (`#5779`), doble finalización de tarea en LaunchController (`#5301` — relacionado al use-after-free ya confirmado, mismo archivo, vale la pena revisar junto), loop infinito de actualización (`#5187`), bug de `ByteArraySink` (`#5050`), assert doble en Flame file resolving (`#5043`).
 
-**Motivo de por qué quedaron sin verificar, y cómo cerrarlos de verdad**: en esta sesión (chat web) GitHub solo devolvió metadata de las páginas de PR, nunca el diff línea por línea — sin eso, seguir buscando por texto libre en el código es apuesta, no verificación. **Camino recomendado**: pasarle esta lista de 5 números de PR a Claude Code (que sí tiene acceso a `git`/`gh` real) para que clone `PrismLauncher/PrismLauncher`, corra `git show <hash-del-PR>` o `gh pr diff <numero>` de cada uno, y compare línea por línea contra el archivo equivalente de Beteliney — convierte cada pendiente en un sí/no confirmado en minutos:
-- `#5779` fix: crash when trying to install a disabled modloader
-- `#5301` LaunchController: fix double task finish
-- `#5187` fix infinite update
-- `#5050` Use an owning QByteArray in ByteArraySink
-- `#5043` fix(flame): avoid double-fail assert in file resolving
+**Actualización 2026-08-28 (chat web) — los 5 diffs reales sí se consiguieron** (clonando `PrismLauncher/PrismLauncher` y usando `git show`/`git diff` sobre los commits de merge, en vez de depender de la metadata de la página de GitHub). Resultado real, detalle completo en `PENDIENTES.md` sección 9.6/9.7: `#5779` aplicado y verificado (34/34 tests); `#5301` diagnosticado con evidencia real (doble emisión `failed`+`aborted` confirmada) pero dejado sin aplicar por decisión de UX; `#5187`, `#5050` y `#5043` resultaron ser refactors de gran escala (borran módulos enteros, cambian firmas de 40+ archivos) que exceden el alcance seguro de una sesión — quedan documentados con su diff real ya en mano. Además, esta misma sesión encontró y aplicó, con evidencia de código verificada de forma independiente, el mismo use-after-free que Prism arregló en su PR `#4822` (`Application::controllerFinished()` destruía el `LaunchController` mientras su propio `emit finished()` seguía en el stack) — ver `PENDIENTES.md` 9.6 para el detalle y el estado real de si esto resuelve o no el segfault pendiente #1 (no confirmado, el crash no se pudo reproducir en 3 intentos).
 
 ---
 

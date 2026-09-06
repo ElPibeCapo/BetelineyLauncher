@@ -164,6 +164,13 @@ void InstallLoaderDialog::done(int result)
         auto* page = pageCast(container->selectedPage());
         if (page->selectedVersion()) {
             profile->setComponentVersion(page->id(), page->selectedVersion()->descriptor());
+            // BETELINEY (upstream PR #5779): si el usuario tenía este componente instalado pero
+            // deshabilitado, y elige "instalar" de nuevo, sin esto quedaba deshabilitado igual —
+            // getSupportedModLoaders() seguía devolviendo nullopt después de "instalar", causando
+            // el mismo crash que este fix soluciona en el resto de los .value() de este PR.
+            if (auto component = profile->getComponent(page->id())) {
+                component->setEnabled(true);
+            }
             profile->resolve(Net::Mode::Online);
         }
     }
