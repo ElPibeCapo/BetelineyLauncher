@@ -480,8 +480,21 @@ void BetelineyUpdaterApp::run()
     }
     if (m_isAppimage) {
         bool result = true;
-        if (need_update)
+        if (need_update) {
+            // BETELINEY: verificación de firma real, antes ausente. callAppImageUpdate() delega
+            // TODA la descarga/aplicación del update a un binario externo de terceros
+            // (AppImageUpdate, protocolo zsync), completamente por fuera del flujo verificado con
+            // Ed25519 que usa performUpdate() para el resto de las plataformas. Sin esto, la ruta
+            // AppImage era el único bypass real de la verificación fail-closed. Se descarga el
+            // asset .AppImage del release por el canal ya verificado y se chequea su firma antes
+            // de invocar la herramienta externa — no reemplaza el mecanismo delta de
+            // AppImageUpdate (sigue siendo el que efectivamente aplica el update), pero confirma
+            // que el release en sí es uno firmado por nosotros antes de arrancarlo.
+            if (!verifyAppImageReleaseIsSigned(latest)) {
+                return exit(1);
+            }
             result = callAppImageUpdate();
+        }
         return exit(result ? 0 : 1);
     }
 
@@ -880,6 +893,70 @@ std::optional<QByteArray> BetelineyUpdaterApp::downloadSignatureFor(const GitHub
     }
 
     return *response;
+}
+
+bool BetelineyUpdaterApp::verifyAppImageReleaseIsSigned(const GitHubRelease& release)
+{
+    GitHubReleaseAsset appimage_asset;
+    bool found = false;
+    for (const auto& asset : release.assets) {
+        if (asset.name.endsWith(".zsync"))
+            continue;
+        if (asset.name.toLower().endsWith("appimage")) {
+            appimage_asset = asset;
+            found = true;
+            break;
+        }
+    }
+
+    if (!found) {
+        showFatalErrorMessage(tr("Actualización rechazada por seguridad"),
+                               tr("El release %1 no incluye ningún archivo .AppImage — no se puede verificar ni aplicar la "
+                                  "actualización.")
+                                   .arg(release.tag_name));
+        return false;
+    }
+
+    auto file = downloadAsset(appimage_asset);
+    if (!file.exists()) {
+        showFatalErrorMessage(tr("Error al descargar"), tr("No se pudo descargar %1 para verificar su firma antes de actualizar.").arg(appimage_asset.name));
+        return false;
+    }
+
+    auto signature = downloadSignatureFor(appimage_asset, release.assets);
+    if (!signature.has_value()) {
+        FS::deletePath(file.absoluteFilePath());
+        showFatalErrorMessage(tr("Actualización rechazada por seguridad"),
+                               tr("%1 no trae una firma de publicación verificable.\n\n"
+                                  "Por seguridad, Beteliney Launcher se niega a aplicar actualizaciones sin firma "
+                                  "criptográfica válida. No se ejecutó AppImageUpdate. El archivo descargado fue eliminado.")
+                                   .arg(appimage_asset.name));
+        return false;
+    }
+
+    QFile downloaded_file(file.absoluteFilePath());
+    if (!downloaded_file.open(QIODevice::ReadOnly)) {
+        FS::deletePath(file.absoluteFilePath());
+        showFatalErrorMessage(tr("Error de verificación"), tr("No se pudo reabrir %1 para verificar su firma.").arg(appimage_asset.name));
+        return false;
+    }
+    QByteArray file_bytes = downloaded_file.readAll();
+    downloaded_file.close();
+
+    bool valid = UpdateVerify::verifyReleaseSignature(file_bytes, signature.value());
+    // Ya se verificó lo que hacía falta: que el release en GitHub trae un .AppImage firmado por
+    // nosotros. La copia descargada acá no se usa para instalar nada — AppImageUpdate hace su
+    // propio delta-download vía zsync a continuación. Se limpia para no dejar un duplicado del
+    // AppImage completo en /tmp.
+    FS::deletePath(file.absoluteFilePath());
+
+    if (!valid) {
+        showFatalErrorMessage(tr("Actualización rechazada por seguridad"),
+                               tr("La firma de %1 no es válida. No se ejecutó AppImageUpdate.").arg(appimage_asset.name));
+        return false;
+    }
+
+    return true;
 }
 
 bool BetelineyUpdaterApp::callAppImageUpdate()
