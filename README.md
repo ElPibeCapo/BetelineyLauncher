@@ -17,6 +17,8 @@
   <a href="https://discord.gg/fMbSkEd85r"><img alt="Discord" src="https://img.shields.io/badge/Discord-Únete-5865F2?style=for-the-badge&logo=discord&logoColor=white"></a>
 </p>
 
+> 🏖 **En pausa temporal** — sin desarrollo activo hasta aproximadamente el 10 de octubre de 2026. Vuelvo pronto.
+
 <p align="center">
   <a href="https://github.com/ElPibeCapo/BetelineyLauncher/actions/workflows/build.yml"><img alt="Build" src="https://github.com/ElPibeCapo/BetelineyLauncher/actions/workflows/build.yml/badge.svg"></a>
   <a href="https://github.com/ElPibeCapo/BetelineyLauncher/releases/latest"><img alt="Última release" src="https://img.shields.io/github/v/release/ElPibeCapo/BetelineyLauncher?label=release"></a>
